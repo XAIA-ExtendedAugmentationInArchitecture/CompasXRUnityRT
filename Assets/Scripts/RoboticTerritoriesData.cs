@@ -38,12 +38,13 @@ namespace CompasXR.RoboticTerritories.Data
     {
         public string Name { get; set; }
         public Box Box { get; set; }
-        // public GameObject ZoneObject { get; set; }
+        public GameObject ZoneObject { get; set; }
         public static Zone FromData(string Name, Dictionary<string, object> jsonDataDict)
         {
             Zone zone = new Zone();
             zone.Name = Name;
             zone.Box = Box.FromData(jsonDataDict as Dictionary<string, object>);
+            zone.ZoneObject = zone.CreateZoneObject();
             return zone;
         }
 
@@ -55,10 +56,11 @@ namespace CompasXR.RoboticTerritories.Data
 
         public GameObject CreateZoneObject()
         {
-            GameObject zoneObject = new GameObject();
+            GameObject zoneObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
             zoneObject.name = Name;
             zoneObject.transform.position = new Vector3(Box.frame.point[0], Box.frame.point[1], Box.frame.point[2]);
             zoneObject.transform.localScale = new Vector3(Box.xsize, Box.ysize, Box.zsize);
+
             return zoneObject;
         }
     }

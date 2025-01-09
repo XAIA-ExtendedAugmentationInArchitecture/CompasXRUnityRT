@@ -252,7 +252,7 @@ namespace CompasXR.Core
             }
             // Debug.Log($"DeserializeZonesSnapshot: The number of nodes stored in the Assembly Dict is {dataDict.Count}");
 
-            PrintZonesDict(Zones);
+            // PrintZonesDict(Zones);
         }
 
         public void PrintZonesDict(ProjectZones zones)
