@@ -661,38 +661,5 @@ namespace CompasXR.Core.Data
 
     }
 
-    /////////////////////////////////// CLASSES FOR GEOMETRY OBJECTS //////////////////////////////////////
-    [System.Serializable]
-    public class Box
-    {
-        /*
-        * Box : A class to define the structure of a box in the assembly data structure.
-        * It is based off the Compas data structure for a box.
-        */
-        public Frame frame { get; set; }
-        public float xsize { get; set; }
-        public float ysize { get; set; }
-        public float zsize { get; set; }
-        public static Box Parse(object jsondata)
-        {
-            /*
-            * Method to create an instance of a the Box class from a json string.
-            */
-            Dictionary<string, object> jsonDataDict = jsondata as Dictionary<string, object>;
-            return FromData(jsonDataDict);
-        }
-        public static Box FromData(Dictionary<string, object> jsonDataDict)
-        {
-            /*
-            * Method to create an instance of a the Box class from a dictionary.
-            */
-            Box box = new Box();
-            box.frame = Frame.FromData(jsonDataDict["frame"] as Dictionary<string, object>);
-            box.xsize = Convert.ToSingle(jsonDataDict["xsize"]);
-            box.ysize = Convert.ToSingle(jsonDataDict["ysize"]);
-            box.zsize = Convert.ToSingle(jsonDataDict["zsize"]);
-            return box;
-        }   
-    }
 
 }

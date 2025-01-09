@@ -15,6 +15,8 @@ using CompasXR.Core.Data;
 using CompasXR.AppSettings;
 using CompasXR.Database.FirebaseManagment;
 using Unity.IO.LowLevel.Unsafe;
+using CompasXR.RoboticTerritories.Data;
+using UnityEngine.InputSystem.Interactions;
 
 namespace CompasXR.Core
 {
@@ -80,7 +82,7 @@ namespace CompasXR.Core
         
         // TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         public DatabaseReference dbReferenceZones;
-        public Dictionary<string, Node> ZoneDataDict { get; private set; } = new Dictionary<string, Node>(); //TODO: FIX THIS
+        public ProjectZones ProjectZones = new ProjectZones();
 
         // TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -193,48 +195,72 @@ namespace CompasXR.Core
             dbReferenceZones = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("zones");
 
             // await FetchRTDDatawithEventHandler(dbReferenceQRCodes, snapshot => DeserializeAssemblyDataSnapshot(snapshot, QRCodeDataDict), "TrackingDict");
-            DataHandlers.FetchDataFromDatabaseReference(dbReferenceZones, snapshot => DeserializeZoneDataSnapshot(snapshot, ZoneDataDict));
+            await DataHandlers.FetchDataFromDatabaseReference(dbReferenceZones, snapshot => DeserializeZoneDataSnapshot(snapshot, ProjectZones));
 
 
         }
 
-        private void DeserializeZoneDataSnapshot(DataSnapshot snapshot, Dictionary<string, Node> dataDict)
+        private void DeserializeZoneDataSnapshot(DataSnapshot snapshot, ProjectZones Zones)
         {
             /*
             * Method is used to deserialize the Assembly Node data from the Firebase Realtime Database.
             * It is designed to take a snapshot of the Node data reference and iterate through them parsing the information.
             */
-            dataDict.Clear();
 
-            Debug.Log($"DeserializeZone: The number of nodes stored in the Assembly Dict is {dataDict.Count}");
-            // Debug.Log($"DeserializeZone: The data is {JsonConvert.SerializeObject(snapshot)}");
+            Zones.Clear();
+
             foreach (DataSnapshot childSnapshot in snapshot.Children)
             {
 
                 Debug.Log($"DeserializeZone: The key is {childSnapshot.Key}");
-                Debug.Log($"DeserializeZone: The value is {childSnapshot.GetValue(true)}");
-                Debug.Log($"DeserializeZone: The value is {childSnapshot.GetValue(true).GetType()}");
+                Debug.Log($"DeserializeZone: The Type is {childSnapshot.GetValue(true).GetType()}");
                 Debug.Log($"DeserializeZone: The string is {JsonConvert.SerializeObject(childSnapshot.GetRawJsonValue())}");
-                
-                // Debug.Log("STRING VALUE: " + childSnapshot.GetRawJsonValue);
+                string ZoneKey = childSnapshot.Key;
+                Dictionary<string, Zone> ZonesDict = new Dictionary<string, Zone>();
 
-                // string key = childSnapshot.Key;
-                // var json_data = childSnapshot.GetValue(true);
-                // Node node_data = Node.Parse(key, json_data);
-                // if (node_data.IsValidNode())
-                // {
-                //     dataDict[key] = node_data;
-                //     dataDict[key].type_id = key;
-                // }
-                // else
-                // {
-                //     if (node_data.part.dtype != "compas_timber.connections")
-                //     {
-                //         Debug.LogWarning($"DeserializeAssemblyDataSnapshot: Invalid Node structure for key '{key}'. Not added to the dictionary.");
-                //     }
-                // }
+                foreach (DataSnapshot zoneSnapshot in childSnapshot.Children)
+                {
+                    Debug.Log($"ZONECHILDREN: The key is {zoneSnapshot.Key}");
+                    Debug.Log($"ZONECHILDREN: The Type is {zoneSnapshot.GetValue(true).GetType()}");
+                    Debug.Log($"ZONECHILDREN: The string is {JsonConvert.SerializeObject(zoneSnapshot.GetRawJsonValue())}");
+                    string zoneKey = zoneSnapshot.Key;
+                    var json_data = zoneSnapshot.GetValue(true);
+
+                    Zone zone_data = Zone.Parse(zoneKey, json_data);
+                    ZonesDict.Add(zoneKey, zone_data);
+                }
+
+                switch (ZoneKey)
+                {   
+                    case "tele_mimic_zone":
+                        Zones.MimicZones = ZonesDict;
+                        break;
+                    case "mimic_zones":
+                        Zones.InferenceZones = ZonesDict;
+                        break;
+                    case "inference_zones":
+                        Zones.TelemimicZones = ZonesDict;
+                        break;
+                    case "boundry_zone":
+                        Zones.BoundaryZone = ZonesDict;
+                        break;
+                    default:
+                        Debug.LogWarning($"DeserializeZoneDataSnapshot: Invalid Zone Type for key '{ZoneKey}'. Not added to the dictionary.");
+                        break;
+                }
+                Debug.Log($"DeserializeZoneDataSnapshot: The number of zones in the Zone {ZoneKey} is {ZonesDict.Count}");
             }
-            Debug.Log($"DeserializeAssemblyDataSnapshot: The number of nodes stored in the Assembly Dict is {dataDict.Count}");
+            // Debug.Log($"DeserializeZonesSnapshot: The number of nodes stored in the Assembly Dict is {dataDict.Count}");
+
+            PrintZonesDict(Zones);
+        }
+
+        public void PrintZonesDict(ProjectZones zones)
+        {
+            Debug.Log($"Mimic Zones: {JsonConvert.SerializeObject(zones.MimicZones)}");
+            Debug.Log($"Inference Zones: {JsonConvert.SerializeObject(zones.InferenceZones)}");
+            Debug.Log($"Telemimic Zones: {JsonConvert.SerializeObject(zones.TelemimicZones)}");
+            Debug.Log($"Boundary Zones: {JsonConvert.SerializeObject(zones.BoundaryZone)}");
         }
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
