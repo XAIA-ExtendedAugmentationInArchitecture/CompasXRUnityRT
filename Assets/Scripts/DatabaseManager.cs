@@ -62,6 +62,15 @@ namespace CompasXR.Core
         public string Key { get; set; }
     }
 
+    public class ZonesInfoReceivedEventArgs : EventArgs
+    {
+        /*
+        * UserInfoDataItemsDictEventArgs : Class inherits from EventArgs &
+        * it is used to send the UserInfo Class on events.
+        */
+        public ProjectZones Zones { get; set; }
+    }
+
     public class ApplicationSettingsEventArgs : EventArgs
     {
         /*
@@ -122,6 +131,10 @@ namespace CompasXR.Core
         
         public delegate void UpdateUserInfoEventHandler(object source, UserInfoDataItemsDictEventArgs e);
         public event UpdateUserInfoEventHandler UserInfoUpdate;
+
+        
+        public delegate void ZonesReceivedEventHandler(object source, ZonesInfoReceivedEventArgs e);
+        public event ZonesReceivedEventHandler ZonesInfoReceived;
 
         //Other Scripts
         public UIFunctionalities UIFunctionalities;
@@ -197,10 +210,7 @@ namespace CompasXR.Core
 
             await FetchRTDDatawithEventHandler(dbReferenceQRCodes, snapshot => DeserializeAssemblyDataSnapshot(snapshot, QRCodeDataDict), "TrackingDict");
             await DataHandlers.FetchDataFromDatabaseReference(dbReferenceZones, snapshot => DeserializeZoneDataSnapshot(snapshot, ProjectZones));
-
-
         }
-
         private void DeserializeZoneDataSnapshot(DataSnapshot snapshot, ProjectZones Zones)
         {
             /*
@@ -228,17 +238,17 @@ namespace CompasXR.Core
                 {   
                     case "tele_mimic_zone":
                         Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
-                        Zones.MimicZones = ZonesDict;
+                        Zones.TelemimicZones = ZonesDict;
                         break;
                     case "mimic_zones":
                         Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
-                        Zones.InferenceZones = ZonesDict;
+                        Zones.MimicZones = ZonesDict;
                         break;
                     case "inference_zones":
                         Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
-                        Zones.TelemimicZones = ZonesDict;
+                        Zones.InferenceZones = ZonesDict;
                         break;
-                    case "boundry_zone":
+                    case "boundary_zone":
                         Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
                         Zones.BoundaryZone = ZonesDict;
                         break;
@@ -248,8 +258,9 @@ namespace CompasXR.Core
                 }
                 Debug.Log($"DeserializeZoneDataSnapshot: The number of zones in the Zone {ZoneKey} is {ZonesDict.Count}");
             }
-        }
 
+            OnZonesReceived(ProjectZones);
+        }
         public void PrintZonesDict(ProjectZones zones)
         {
             Debug.Log($"Mimic Zones: {JsonConvert.SerializeObject(zones.MimicZones)}");
@@ -1007,6 +1018,22 @@ namespace CompasXR.Core
             */
             ApplicationSettingUpdate(this, new ApplicationSettingsEventArgs(){Settings = settings});
         }
+
+        //TODO: Robotic Territories Testing////////////////////////////////////////////////////////////////////////////////////////////
+        protected virtual void OnZonesReceived(ProjectZones ProjectZones)
+        {
+            /*
+            * Method is used to trigger the Zones Received Event.
+            * It is designed to trigger the event and send the Zones to the respective classes.
+            */
+            UnityEngine.Assertions.Assert.IsNotNull(ZonesInfoReceived, "Database dict is null!");
+            Debug.Log("ZonesReceived: Sending Zones to the respective classes");
+            ZonesInfoReceived(this, new ZonesInfoReceivedEventArgs() {Zones = ProjectZones});
+
+        }
+
+        //TODO: Robotic Territories Testing////////////////////////////////////////////////////////////////////////////////////////////
+
     }
 
     public static class DataHandlers

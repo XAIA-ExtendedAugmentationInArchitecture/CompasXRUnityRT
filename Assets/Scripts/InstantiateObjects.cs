@@ -9,6 +9,7 @@ using CompasXR.UI;
 using CompasXR.Core.Data;
 using CompasXR.Core.Extentions;
 using CompasXR.AppSettings;
+using CompasXR.RoboticTerritories.Data;
 
 namespace CompasXR.Core
 {
@@ -68,6 +69,68 @@ namespace CompasXR.Core
         }
 
     /////////////////////////////// INSTANTIATE OBJECTS //////////////////////////////////////////
+
+        //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+        public void OnZonesReceived(object source, ZonesInfoReceivedEventArgs e)
+        {
+            /*
+            * Method is used to handle the event when the database is initialized
+            */
+            Debug.Log("OnZonesRecived: Zones Received");
+            PlaceZones(e.Zones);
+        }
+
+        public void PlaceZones(ProjectZones projectZones)
+        {
+            /*
+            * Method is used to place the zones in the AR space
+            */
+            if (projectZones != null)
+            {
+                Debug.Log("PlaceZones: Placing Zones");
+                foreach (KeyValuePair<string, Zone> entry in projectZones.BoundaryZone)
+                {
+                    if (entry.Value != null)
+                    {
+                        PlaceZone(entry.Key, entry.Value);
+                    }
+                }
+                
+                foreach (KeyValuePair<string, Zone> entry in projectZones.InferenceZones)
+                {
+                    if (entry.Value != null)
+                    {
+                        PlaceZone(entry.Key, entry.Value);
+                    }
+                }
+
+                foreach (KeyValuePair<string, Zone> entry in projectZones.MimicZones)
+                {
+                    if (entry.Value != null)
+                    {
+                        PlaceZone(entry.Key, entry.Value);
+                    }
+                }
+
+                foreach (KeyValuePair<string, Zone> entry in projectZones.TelemimicZones)
+                {
+                    if (entry.Value != null)
+                    {
+                        PlaceZone(entry.Key, entry.Value);
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogWarning("PlaceZones: Project Zones is null");
+            }
+        }
+
+        public void PlaceZone(string Key, Zone zone)
+        {
+            Debug.Log($"PlaceZone: {zone.Name} from Zone: {Key}");
+        }
+        //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
         {
             /*

@@ -52,6 +52,7 @@ namespace CompasXR.Core
             checkFirebase.FirebaseInitialized += DBInitializedFetchSettings;
             databaseManager.ApplicationSettingUpdate += databaseManager.FetchRoboticTerritoriesData;
             databaseManager.TrackingDictReceived += qrLocalization.OnTrackingInformationReceived;
+            databaseManager.ZonesInfoReceived += instantiateObjects.OnZonesReceived;
 
             // databaseManager.ApplicationSettingUpdate += databaseManager.FetchData;
             // databaseManager.ApplicationSettingUpdate += mqttTrajectoryReceiver.SetCompasXRTopics;
