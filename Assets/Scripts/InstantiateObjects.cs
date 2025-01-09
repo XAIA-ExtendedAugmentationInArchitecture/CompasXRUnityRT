@@ -253,7 +253,7 @@ namespace CompasXR.Core
                         cylinderObject.transform.SetParent(element.transform);
                         break;
 
-                    case "1.Box":                    
+                    case "1.Box":
                         element = new GameObject();
                         element.transform.position = Vector3.zero;
                         element.transform.rotation = Quaternion.identity;

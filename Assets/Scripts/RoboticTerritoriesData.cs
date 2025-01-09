@@ -4,11 +4,13 @@ using UnityEngine;
 using CompasXR.Core.Data;
 using System.Linq;
 using System;
+using CompasXR.Core;
 
 namespace CompasXR.RoboticTerritories.Data
 {   
     /*
     */
+    //TODO: FIX BOX INSTANTIATION.
 
     public class ProjectZones
     {
@@ -44,7 +46,7 @@ namespace CompasXR.RoboticTerritories.Data
             Zone zone = new Zone();
             zone.Name = Name;
             zone.Box = Box.FromData(jsonDataDict as Dictionary<string, object>);
-            zone.ZoneObject = zone.CreateZoneObject();
+            // zone.ZoneObject = zone.CreateZoneObject();
             return zone;
         }
 
@@ -53,16 +55,15 @@ namespace CompasXR.RoboticTerritories.Data
             Dictionary<string, object> jsonDataDict = jsondata as Dictionary<string, object>;
             return FromData(Name, jsonDataDict);
         }
-
         public GameObject CreateZoneObject()
         {
             GameObject zoneObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
             zoneObject.name = Name;
             zoneObject.transform.position = new Vector3(Box.frame.point[0], Box.frame.point[1], Box.frame.point[2]);
-            zoneObject.transform.localScale = new Vector3(Box.xsize, Box.ysize, Box.zsize);
-
+            zoneObject.transform.localScale = new Vector3(Box.xsize, Box.ysize, Box.zsize);    
             return zoneObject;
         }
+
     }
 
     [System.Serializable]
@@ -76,6 +77,7 @@ namespace CompasXR.RoboticTerritories.Data
         public float xsize { get; set; }
         public float ysize { get; set; }
         public float zsize { get; set; }
+        public GameObject BoxObject { get; set; }
         public static Box Parse(object jsondata)
         {
             /*
@@ -95,6 +97,13 @@ namespace CompasXR.RoboticTerritories.Data
             box.ysize = Convert.ToSingle(jsonDataDict["ysize"]);
             box.zsize = Convert.ToSingle(jsonDataDict["zsize"]);
             return box;
-        }   
+        }
+        public GameObject CreateObject()
+        {
+            GameObject boxObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            boxObject.transform.localScale = new Vector3(xsize, ysize, zsize);
+            ObjectInstantiaion.InstantiateObjectFromRightHandFrameData(boxObject, frame.point, frame.xaxis, frame.yaxis, false, false);            
+            return boxObject;
+        }
     }
 }

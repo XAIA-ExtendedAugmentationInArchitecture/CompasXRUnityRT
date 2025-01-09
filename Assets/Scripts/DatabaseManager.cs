@@ -193,8 +193,9 @@ namespace CompasXR.Core
             */
             dbRefrenceProject = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name);
             dbReferenceZones = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("zones");
+            dbReferenceQRCodes = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("QRFrames").Child("graph").Child("node");
 
-            // await FetchRTDDatawithEventHandler(dbReferenceQRCodes, snapshot => DeserializeAssemblyDataSnapshot(snapshot, QRCodeDataDict), "TrackingDict");
+            await FetchRTDDatawithEventHandler(dbReferenceQRCodes, snapshot => DeserializeAssemblyDataSnapshot(snapshot, QRCodeDataDict), "TrackingDict");
             await DataHandlers.FetchDataFromDatabaseReference(dbReferenceZones, snapshot => DeserializeZoneDataSnapshot(snapshot, ProjectZones));
 
 
@@ -212,20 +213,13 @@ namespace CompasXR.Core
             foreach (DataSnapshot childSnapshot in snapshot.Children)
             {
 
-                Debug.Log($"DeserializeZone: The key is {childSnapshot.Key}");
-                Debug.Log($"DeserializeZone: The Type is {childSnapshot.GetValue(true).GetType()}");
-                Debug.Log($"DeserializeZone: The string is {JsonConvert.SerializeObject(childSnapshot.GetRawJsonValue())}");
                 string ZoneKey = childSnapshot.Key;
                 Dictionary<string, Zone> ZonesDict = new Dictionary<string, Zone>();
 
                 foreach (DataSnapshot zoneSnapshot in childSnapshot.Children)
                 {
-                    Debug.Log($"ZONECHILDREN: The key is {zoneSnapshot.Key}");
-                    Debug.Log($"ZONECHILDREN: The Type is {zoneSnapshot.GetValue(true).GetType()}");
-                    Debug.Log($"ZONECHILDREN: The string is {JsonConvert.SerializeObject(zoneSnapshot.GetRawJsonValue())}");
                     string zoneKey = zoneSnapshot.Key;
                     var json_data = zoneSnapshot.GetValue(true);
-
                     Zone zone_data = Zone.Parse(zoneKey, json_data);
                     ZonesDict.Add(zoneKey, zone_data);
                 }
@@ -233,15 +227,19 @@ namespace CompasXR.Core
                 switch (ZoneKey)
                 {   
                     case "tele_mimic_zone":
+                        Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
                         Zones.MimicZones = ZonesDict;
                         break;
                     case "mimic_zones":
+                        Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
                         Zones.InferenceZones = ZonesDict;
                         break;
                     case "inference_zones":
+                        Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
                         Zones.TelemimicZones = ZonesDict;
                         break;
                     case "boundry_zone":
+                        Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
                         Zones.BoundaryZone = ZonesDict;
                         break;
                     default:
@@ -250,9 +248,6 @@ namespace CompasXR.Core
                 }
                 Debug.Log($"DeserializeZoneDataSnapshot: The number of zones in the Zone {ZoneKey} is {ZonesDict.Count}");
             }
-            // Debug.Log($"DeserializeZonesSnapshot: The number of nodes stored in the Assembly Dict is {dataDict.Count}");
-
-            // PrintZonesDict(Zones);
         }
 
         public void PrintZonesDict(ProjectZones zones)
