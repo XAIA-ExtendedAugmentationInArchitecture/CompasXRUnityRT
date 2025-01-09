@@ -53,17 +53,17 @@ namespace CompasXR.Robots
         protected override void Start()
         {
             base.Start();
-            OnStartorRestartInitilization();
+            // OnStartorRestartInitilization();
         }
         protected override void Update()
         {
-            base.Update();
+            // base.Update();
         }
         public void OnDestroy()
         {
-            UnsubscribeFromCompasXRTopics();
-            RemoveConnectionEventListners();
-            Disconnect();
+            // UnsubscribeFromCompasXRTopics();
+            // RemoveConnectionEventListners();
+            // Disconnect();
         }
 
         //////////////////////////////////////////// General Methods ////////////////////////////////////////////

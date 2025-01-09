@@ -78,6 +78,13 @@ namespace CompasXR.Core
         * The primary goal of the DatabaseManager class is to handle data from the Firebase RealtimeDatabase and Storage.
         */
         
+        // TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+        public DatabaseReference dbReferenceZones;
+        public Dictionary<string, Node> ZoneDataDict { get; private set; } = new Dictionary<string, Node>(); //TODO: FIX THIS
+
+        // TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+
+
         // Firebase database references
         public DatabaseReference dbReferenceAssembly;
         public DatabaseReference dbReferenceBuildingPlan;
@@ -174,6 +181,64 @@ namespace CompasXR.Core
                 }
             });
         }    
+        
+        //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+        public async void FetchRoboticTerritoriesData(object source, ApplicationSettingsEventArgs e)
+        {
+            /*
+            * Method is used to fetch the data from the Firebase Realtime Database.
+            * It is used to fetch the data and trigger events to send the data to the respective classes.
+            */
+            dbRefrenceProject = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name);
+            dbReferenceZones = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("zones");
+
+            // await FetchRTDDatawithEventHandler(dbReferenceQRCodes, snapshot => DeserializeAssemblyDataSnapshot(snapshot, QRCodeDataDict), "TrackingDict");
+            DataHandlers.FetchDataFromDatabaseReference(dbReferenceZones, snapshot => DeserializeZoneDataSnapshot(snapshot, ZoneDataDict));
+
+
+        }
+
+        private void DeserializeZoneDataSnapshot(DataSnapshot snapshot, Dictionary<string, Node> dataDict)
+        {
+            /*
+            * Method is used to deserialize the Assembly Node data from the Firebase Realtime Database.
+            * It is designed to take a snapshot of the Node data reference and iterate through them parsing the information.
+            */
+            dataDict.Clear();
+
+            Debug.Log($"DeserializeZone: The number of nodes stored in the Assembly Dict is {dataDict.Count}");
+            // Debug.Log($"DeserializeZone: The data is {JsonConvert.SerializeObject(snapshot)}");
+            foreach (DataSnapshot childSnapshot in snapshot.Children)
+            {
+
+                Debug.Log($"DeserializeZone: The key is {childSnapshot.Key}");
+                Debug.Log($"DeserializeZone: The value is {childSnapshot.GetValue(true)}");
+                Debug.Log($"DeserializeZone: The value is {childSnapshot.GetValue(true).GetType()}");
+                Debug.Log($"DeserializeZone: The string is {JsonConvert.SerializeObject(childSnapshot.GetRawJsonValue())}");
+                
+                // Debug.Log("STRING VALUE: " + childSnapshot.GetRawJsonValue);
+
+                // string key = childSnapshot.Key;
+                // var json_data = childSnapshot.GetValue(true);
+                // Node node_data = Node.Parse(key, json_data);
+                // if (node_data.IsValidNode())
+                // {
+                //     dataDict[key] = node_data;
+                //     dataDict[key].type_id = key;
+                // }
+                // else
+                // {
+                //     if (node_data.part.dtype != "compas_timber.connections")
+                //     {
+                //         Debug.LogWarning($"DeserializeAssemblyDataSnapshot: Invalid Node structure for key '{key}'. Not added to the dictionary.");
+                //     }
+                // }
+            }
+            Debug.Log($"DeserializeAssemblyDataSnapshot: The number of nodes stored in the Assembly Dict is {dataDict.Count}");
+        }
+
+        //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+
         public async void FetchData(object source, ApplicationSettingsEventArgs e)
         {
             /*

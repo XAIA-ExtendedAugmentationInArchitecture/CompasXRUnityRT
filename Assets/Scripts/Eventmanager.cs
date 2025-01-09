@@ -50,13 +50,15 @@ namespace CompasXR.Core
             
             //Establish Global Event Listeners
             checkFirebase.FirebaseInitialized += DBInitializedFetchSettings;
-            databaseManager.ApplicationSettingUpdate += databaseManager.FetchData;
-            databaseManager.ApplicationSettingUpdate += mqttTrajectoryReceiver.SetCompasXRTopics;
-            databaseManager.DatabaseInitializedDict += instantiateObjects.OnDatabaseInitializedDict;
-            databaseManager.TrackingDictReceived += qrLocalization.OnTrackingInformationReceived;
-            instantiateObjects.PlacedInitialElements += databaseManager.AddListeners;
-            databaseManager.DatabaseUpdate += instantiateObjects.OnDatabaseUpdate;
-            databaseManager.UserInfoUpdate += instantiateObjects.OnUserInfoUpdate;
+            databaseManager.ApplicationSettingUpdate += databaseManager.FetchRoboticTerritoriesData;
+
+            // databaseManager.ApplicationSettingUpdate += databaseManager.FetchData;
+            // databaseManager.ApplicationSettingUpdate += mqttTrajectoryReceiver.SetCompasXRTopics;
+            // databaseManager.DatabaseInitializedDict += instantiateObjects.OnDatabaseInitializedDict;
+            // databaseManager.TrackingDictReceived += qrLocalization.OnTrackingInformationReceived;
+            // instantiateObjects.PlacedInitialElements += databaseManager.AddListeners;
+            // databaseManager.DatabaseUpdate += instantiateObjects.OnDatabaseUpdate;
+            // databaseManager.UserInfoUpdate += instantiateObjects.OnUserInfoUpdate;
         }
 
         //////////////////////////// Event Methods //////////////////////////////////////

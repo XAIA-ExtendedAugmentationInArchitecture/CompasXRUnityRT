@@ -2151,10 +2151,8 @@ namespace CompasXR.UI
             * Set Drop Down Options From String List is used to set the add a list to a drop down item.
             */
             List<TMP_Dropdown.OptionData> options = new List<TMP_Dropdown.OptionData>();
-            Debug.Log("StringList: " + JsonConvert.SerializeObject(stringList));
             foreach(string stringItem in stringList)
             {
-                Debug.Log($"SetDropDownOptionsFromStringList: Adding {stringItem} to the dropdown.");
                 options.Add(new TMP_Dropdown.OptionData(stringItem));
             }
             return options;
