@@ -35543,6 +35543,9 @@ MonoBehaviour:
     - m_Text: ETHZurichRFL
       m_Image: {fileID: 0}
       m_Color: {r: 1, g: 1, b: 1, a: 1}
+    - m_Text: UR20
+      m_Image: {fileID: 0}
+      m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
@@ -75271,8 +75274,8 @@ Transform:
   - {fileID: 1058878725}
   - {fileID: 377112299}
   - {fileID: 1557846220}
-  - {fileID: 774910885}
   - {fileID: 2108076368}
+  - {fileID: 774910885}
   m_Father: {fileID: 664389695}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &5818580662098798942
@@ -80774,10 +80777,11 @@ MonoBehaviour:
   ActiveRobotObjects: {fileID: 0}
   ActiveRobot: {fileID: 0}
   ActiveTrajectoryParentObject: {fileID: 0}
-  RobotURDFList:
+  RobotPreFabList:
   - UR3
   - UR5
   - UR10e
+  - UR20
   - ETHZurichRFL
 --- !u!224 &8456128683707837387
 RectTransform:

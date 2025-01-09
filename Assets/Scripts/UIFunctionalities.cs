@@ -358,7 +358,7 @@ namespace CompasXR.UI
             RobotSelectionControlObjects = GameObject.Find("RobotSelectionControls");
             RobotSelectionDropdownObject = RobotSelectionControlObjects.FindObject("RobotSelectionDropdown");
             RobotSelectionDropdown = RobotSelectionDropdownObject.GetComponent<TMP_Dropdown>();
-            List<TMP_Dropdown.OptionData> robotOptions = UserInterface.SetDropDownOptionsFromStringList(RobotSelectionDropdown ,trajectoryVisualizer.RobotURDFList);
+            List<TMP_Dropdown.OptionData> robotOptions = UserInterface.SetDropDownOptionsFromStringList(RobotSelectionDropdown ,trajectoryVisualizer.RobotPreFabList);
             RobotSelectionDropdown.onValueChanged.AddListener(RobotSelectionDropdownValueChanged);
             if(RobotSelectionControlObjects == null)
             {
@@ -2151,8 +2151,10 @@ namespace CompasXR.UI
             * Set Drop Down Options From String List is used to set the add a list to a drop down item.
             */
             List<TMP_Dropdown.OptionData> options = new List<TMP_Dropdown.OptionData>();
+            Debug.Log("StringList: " + JsonConvert.SerializeObject(stringList));
             foreach(string stringItem in stringList)
             {
+                Debug.Log($"SetDropDownOptionsFromStringList: Adding {stringItem} to the dropdown.");
                 options.Add(new TMP_Dropdown.OptionData(stringItem));
             }
             return options;
