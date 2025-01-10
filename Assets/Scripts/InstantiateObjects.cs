@@ -101,7 +101,6 @@ namespace CompasXR.Core
             SetZonesMaterials(); //TODO: This is stupid, but will hopefully work before the other one is finished
             PlaceZones(e.Zones, ZonesParentObjectsDict);
         }
-
         public void PlaceZones(ProjectZones projectZones, Dictionary<string, GameObject> parentObjects)
         {
             /*
@@ -115,7 +114,7 @@ namespace CompasXR.Core
                     if (entry.Value != null)
                     {
                         GameObject parentObject = parentObjects["BoundaryZoneParent"];
-                        PlaceZone(entry.Value, parentObject, UnbuiltMaterial);
+                        PlaceZone(entry.Value, parentObject);
                     }
                 }
                 
@@ -124,7 +123,7 @@ namespace CompasXR.Core
                     if (entry.Value != null)
                     {
                         GameObject parentObject = parentObjects["InferenceZonesParent"];
-                        PlaceZone(entry.Value, parentObject, UnbuiltMaterial);
+                        PlaceZone(entry.Value, parentObject);
                     }
                 }
 
@@ -133,7 +132,7 @@ namespace CompasXR.Core
                     if (entry.Value != null)
                     {
                         GameObject parentObject = parentObjects["MimicZonesParent"];
-                        PlaceZone(entry.Value, parentObject, UnbuiltMaterial);
+                        PlaceZone(entry.Value, parentObject);
                     }
                 }
 
@@ -142,7 +141,7 @@ namespace CompasXR.Core
                     if (entry.Value != null)
                     {
                         GameObject parentObject = parentObjects["TelemimicZonesParent"];
-                        PlaceZone(entry.Value, parentObject, UnbuiltMaterial);
+                        PlaceZone(entry.Value, parentObject);
                     }
                 }
             }
@@ -151,7 +150,7 @@ namespace CompasXR.Core
                 Debug.LogWarning("PlaceZones: Project Zones is null");
             }
         }
-        public void PlaceZone(Zone zone, GameObject ParentObject, Material material) //TODO: THIS NEEDS TO BE A MATERIAL DICT.
+        public void PlaceZone(Zone zone, GameObject ParentObject) //TODO: THIS NEEDS TO BE A MATERIAL DICT.
         {
             Debug.Log($"PlaceZone: {zone.Name} In parent Object: {ParentObject}");
             GameObject zoneObject = zone.CreateZoneObject();
@@ -160,7 +159,6 @@ namespace CompasXR.Core
             zoneObject.GetComponent<Renderer>().material = zone.ZoneInactiveMaterial;
 
         }
-
         public void SetZonesMaterials() //TODO: This is stupid, but works lol
         {
             //This is a dumb method, but it is just used to coordinate the zones materials on start

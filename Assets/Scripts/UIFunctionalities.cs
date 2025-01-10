@@ -263,7 +263,6 @@ namespace CompasXR.UI
             UserInterface.FindButtonandSetOnClickAction(RoboticTerritoriesConstantUIObjects, ref PreviousZoneButtonObject, "PreviousZoneButton", PreviousZoneButton);
 
         }
-
         public void NextZoneButton()
         {
             /*
@@ -282,7 +281,6 @@ namespace CompasXR.UI
                 Debug.LogWarning("NextZoneButton: Current Zone Index is at the max value.");
             }
         }
-
         public void PreviousZoneButton()
         {
             /*
@@ -301,7 +299,6 @@ namespace CompasXR.UI
                 Debug.LogWarning("PreviousZoneButton: Current Zone Index is at the min value.");
             }
         }
-
         public void ColorZonesBasedOnCurrentMode(ProjectZones.CurrentZoneMode cuttentMode)
         {
             /*
@@ -340,7 +337,6 @@ namespace CompasXR.UI
             }
             
         }
-
         public void ColorZoneBasedOnActivity(Dictionary<string, Zone> zoneDict, bool isActive)
         {
             /*
@@ -1521,7 +1517,7 @@ namespace CompasXR.UI
             float p2Distance = (float)Math.Round(objectLengths[1], 2);
             ObjectLengthsText.text = $"P1 | {p1Distance}     P2 | {p2Distance}";
         }
-        public void ToggleRobot(Toggle toggle)
+        public void ToggleRobot(Toggle toggle) //TODO: ADAPT FOR ROBOTIC TERRITORIES
         {
             /*
             * Method is used to toggle the robot in the scene.
