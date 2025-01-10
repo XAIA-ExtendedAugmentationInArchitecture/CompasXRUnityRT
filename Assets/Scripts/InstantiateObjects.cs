@@ -10,6 +10,7 @@ using CompasXR.Core.Data;
 using CompasXR.Core.Extentions;
 using CompasXR.AppSettings;
 using CompasXR.RoboticTerritories.Data;
+using Newtonsoft.Json;
 
 namespace CompasXR.Core
 {
@@ -41,6 +42,7 @@ namespace CompasXR.Core
         public Material SearchedObjectMaterial;
         public Material ActiveRobotMaterial;
         public Material InactiveRobotMaterial;
+        public Material OutlineMaterial;
 
         //Parent Objects
         public GameObject QRMarkers; 
@@ -77,7 +79,7 @@ namespace CompasXR.Core
         public Material RobotZoneMaterial;
         public Material CollaborationZoneMaterial;
         public Material PickZoneMaterial;
-        public Material OutlineMaterial;
+        public Material ZonesOutlineMaterial;
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -96,6 +98,7 @@ namespace CompasXR.Core
             * Method is used to handle the event when the database is initialized
             */
             Debug.Log("OnZonesRecived: Zones Received");
+            SetZonesMaterials(); //TODO: This is stupid, but will hopefully work before the other one is finished
             PlaceZones(e.Zones, ZonesParentObjectsDict);
         }
 
@@ -153,8 +156,68 @@ namespace CompasXR.Core
             Debug.Log($"PlaceZone: {zone.Name} In parent Object: {ParentObject}");
             GameObject zoneObject = zone.CreateZoneObject();
             zoneObject.transform.SetParent(ParentObject.transform, false);
-            zoneObject.GetComponent<Renderer>().material = material;
+            zoneObject.GetComponent<Renderer>().material = zone.ZoneActiveMaterial;
 
+        }
+
+        public void SetZonesMaterials() //TODO: This is stupid, but works lol
+        {
+            //This is a dumb method, but it is just used to coordinate the zones materials on start
+            Dictionary<string, Zone> boundaryZone = databaseManager.ProjectZones.BoundaryZone;
+            Dictionary<string, Zone> inferenceZones = databaseManager.ProjectZones.InferenceZones;
+            Dictionary<string, Zone> mimicZones = databaseManager.ProjectZones.MimicZones;
+            Dictionary<string, Zone> telemimicZones = databaseManager.ProjectZones.TelemimicZones;
+
+            foreach (KeyValuePair<string, Zone> entry in boundaryZone)
+            {
+                entry.Value.ZoneActiveMaterial = ZonesOutlineMaterial;
+                entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+            }
+            foreach (KeyValuePair<string, Zone> entry in inferenceZones)
+            {
+                if(entry.Key == "collaboration_zone")
+                {
+                    entry.Value.ZoneActiveMaterial = CollaborationZoneMaterial;
+                    entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                }
+                else if(entry.Key == "pick_zone")
+                {
+                    entry.Value.ZoneActiveMaterial = PickZoneMaterial;
+                    entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                }
+                else
+                {
+                    entry.Value.ZoneActiveMaterial = HumanZoneMaterial;
+                    entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                }
+            }
+            foreach (KeyValuePair<string, Zone> entry in mimicZones)
+            {
+                if(entry.Key == "human_zone")
+                {
+                    entry.Value.ZoneActiveMaterial = HumanZoneMaterial;
+                    entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                }
+                else
+                {
+                    entry.Value.ZoneActiveMaterial = RobotZoneMaterial;
+                    entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                }
+            }
+            foreach (KeyValuePair<string, Zone> entry in telemimicZones)
+            {
+                if(entry.Key == "human_zone")
+                {
+                    entry.Value.ZoneActiveMaterial = HumanZoneMaterial;
+                    entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                }
+                else
+                {
+                    entry.Value.ZoneActiveMaterial = RobotZoneMaterial;
+                    entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                }
+            }
+            // Debug.Log("ZonesMaterials: Set Zones Materials " + JsonConvert.SerializeObject(databaseManager.ProjectZones));
         }
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
@@ -195,12 +258,14 @@ namespace CompasXR.Core
             RobotZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("RobotZone").GetComponentInChildren<Renderer>().material;
             CollaborationZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("CollaborationZone").GetComponentInChildren<Renderer>().material;
             PickZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("PickZone").GetComponentInChildren<Renderer>().material;
+            ZonesOutlineMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("OutlineMaterial").GetComponentInChildren<Renderer>().material;
 
             if(HumanZoneMaterial == null || RobotZoneMaterial == null || CollaborationZoneMaterial == null || PickZoneMaterial == null)
             {
                 Debug.LogError("A Zone Material is null");
             }
-            else{
+            else
+            {
                 Debug.Log("Zone Materials Found");
             }
 
