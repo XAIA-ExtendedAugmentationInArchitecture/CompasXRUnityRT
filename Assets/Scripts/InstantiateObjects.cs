@@ -62,6 +62,19 @@ namespace CompasXR.Core
         private GameObject OtherUserIndacator;
         public GameObject ObjectLengthsTags;
 
+        //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+
+        Dictionary<string, GameObject> ZonesParentObjectsDict = new Dictionary<string, GameObject>();
+
+        GameObject ZonesParentObject;
+        GameObject BoundaryZoneParent;
+        GameObject InferenceZonesParent;
+        GameObject MimicZonesParent;
+        GameObject TelemimicZonesParent;
+
+
+        //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+
     /////////////////////////////// Monobehaviour Methods //////////////////////////////////////////
         public void Awake()
         {
@@ -77,10 +90,10 @@ namespace CompasXR.Core
             * Method is used to handle the event when the database is initialized
             */
             Debug.Log("OnZonesRecived: Zones Received");
-            PlaceZones(e.Zones);
+            PlaceZones(e.Zones, ZonesParentObjectsDict);
         }
 
-        public void PlaceZones(ProjectZones projectZones)
+        public void PlaceZones(ProjectZones projectZones, Dictionary<string, GameObject> parentObjects)
         {
             /*
             * Method is used to place the zones in the AR space
@@ -92,7 +105,8 @@ namespace CompasXR.Core
                 {
                     if (entry.Value != null)
                     {
-                        PlaceZone(entry.Key, entry.Value);
+                        GameObject parentObject = parentObjects["BoundaryZoneParent"];
+                        PlaceZone(entry.Value, parentObject, UnbuiltMaterial);
                     }
                 }
                 
@@ -100,7 +114,8 @@ namespace CompasXR.Core
                 {
                     if (entry.Value != null)
                     {
-                        PlaceZone(entry.Key, entry.Value);
+                        GameObject parentObject = parentObjects["InferenceZonesParent"];
+                        PlaceZone(entry.Value, parentObject, UnbuiltMaterial);
                     }
                 }
 
@@ -108,7 +123,8 @@ namespace CompasXR.Core
                 {
                     if (entry.Value != null)
                     {
-                        PlaceZone(entry.Key, entry.Value);
+                        GameObject parentObject = parentObjects["MimicZonesParent"];
+                        PlaceZone(entry.Value, parentObject, UnbuiltMaterial);
                     }
                 }
 
@@ -116,7 +132,8 @@ namespace CompasXR.Core
                 {
                     if (entry.Value != null)
                     {
-                        PlaceZone(entry.Key, entry.Value);
+                        GameObject parentObject = parentObjects["TelemimicZonesParent"];
+                        PlaceZone(entry.Value, parentObject, UnbuiltMaterial);
                     }
                 }
             }
@@ -125,10 +142,13 @@ namespace CompasXR.Core
                 Debug.LogWarning("PlaceZones: Project Zones is null");
             }
         }
-
-        public void PlaceZone(string Key, Zone zone)
+        public void PlaceZone(Zone zone, GameObject ParentObject, Material material) //TODO: THIS NEEDS TO BE A MATERIAL DICT.
         {
-            Debug.Log($"PlaceZone: {zone.Name} from Zone: {Key}");
+            Debug.Log($"PlaceZone: {zone.Name} In parent Object: {ParentObject}");
+            GameObject zoneObject = zone.CreateZoneObject();
+            zoneObject.transform.SetParent(ParentObject.transform, false);
+            zoneObject.GetComponent<Renderer>().material = material;
+
         }
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
@@ -147,6 +167,31 @@ namespace CompasXR.Core
             {
                 Debug.LogWarning("ScrollSearchManager is null");
             }
+
+            //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+
+            //Find Parent Objects
+            ZonesParentObject = GameObject.Find("ZonesParent");
+
+            BoundaryZoneParent = ZonesParentObject.FindObject("BoundaryZoneParent");
+            InferenceZonesParent = ZonesParentObject.FindObject("InferenceZonesParent");
+            MimicZonesParent = ZonesParentObject.FindObject("MimicZonesParent");
+            TelemimicZonesParent = ZonesParentObject.FindObject("TelemimicZonesParent");
+            
+            ZonesParentObjectsDict.Add("BoundaryZoneParent", BoundaryZoneParent);
+            ZonesParentObjectsDict.Add("InferenceZonesParent", InferenceZonesParent);
+            ZonesParentObjectsDict.Add("MimicZonesParent", MimicZonesParent);
+            ZonesParentObjectsDict.Add("TelemimicZonesParent", TelemimicZonesParent);
+
+            if(BoundaryZoneParent == null || InferenceZonesParent == null || MimicZonesParent == null || TelemimicZonesParent == null)
+            {
+                Debug.LogError("A Zones Parent Objects are null");
+            }
+            else{
+                Debug.Log("Zones Parent Objects Found");
+            }
+
+            //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
             //Find Parent Object to Store Our Items in.
             Elements = GameObject.Find("Elements");

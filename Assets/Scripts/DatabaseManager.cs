@@ -158,11 +158,11 @@ namespace CompasXR.Core
             * Method is used to trigger the OnDestroy Event.
             * It is designed to trigger the event and send the data to the respective classes.
             */
-            dbReferenceUsersCurrentSteps.Child(SystemInfo.deviceUniqueIdentifier).RemoveValueAsync();
-            BuildingPlanDataItem.steps.Clear();
-            BuildingPlanDataItem.PriorityTreeDictionary.Clear();
-            UserCurrentStepDict.Clear();
-            AssemblyDataDict.Clear();
+            // dbReferenceUsersCurrentSteps.Child(SystemInfo.deviceUniqueIdentifier).RemoveValueAsync();
+            // BuildingPlanDataItem.steps.Clear();
+            // BuildingPlanDataItem.PriorityTreeDictionary.Clear();
+            // UserCurrentStepDict.Clear();
+            // AssemblyDataDict.Clear();
             RemoveListners();
         }
 

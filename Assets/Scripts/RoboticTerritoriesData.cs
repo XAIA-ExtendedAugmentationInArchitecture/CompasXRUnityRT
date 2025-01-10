@@ -41,6 +41,9 @@ namespace CompasXR.RoboticTerritories.Data
         public string Name { get; set; }
         public Box Box { get; set; }
         public GameObject ZoneObject { get; set; }
+        public Material ZoneMaterial { get; set; }
+        public Material ZoneMaterialTransparent { get; set; }
+
         public static Zone FromData(string Name, Dictionary<string, object> jsonDataDict)
         {
             Zone zone = new Zone();
@@ -57,10 +60,8 @@ namespace CompasXR.RoboticTerritories.Data
         }
         public GameObject CreateZoneObject()
         {
-            GameObject zoneObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            zoneObject.name = Name;
-            zoneObject.transform.position = new Vector3(Box.frame.point[0], Box.frame.point[1], Box.frame.point[2]);
-            zoneObject.transform.localScale = new Vector3(Box.xsize, Box.ysize, Box.zsize);    
+            GameObject zoneObject = Box.CreateBoxObject();
+            zoneObject.name = Name;    
             return zoneObject;
         }
 
@@ -103,6 +104,42 @@ namespace CompasXR.RoboticTerritories.Data
             GameObject boxObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
             boxObject.transform.localScale = new Vector3(xsize, ysize, zsize);
             ObjectInstantiaion.InstantiateObjectFromRightHandFrameData(boxObject, frame.point, frame.xaxis, frame.yaxis, false, false);            
+            return boxObject;
+        }
+
+        public GameObject CreateBoxObject()
+        {
+            /*
+            * Method is used to instantiate the object from the right hand frame data
+            * based on the point, x-axis, y-axis, and z-axis data.
+            * This method serves as a simplified version of the placeElement method. And only requires a frame.
+            * It loads the object, instantiates it at the correct place and then destroys the loaded object.
+            */
+            GameObject boxObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            boxObject.name = "Box";
+            boxObject.transform.position = Vector3.zero;
+            boxObject.transform.rotation = Quaternion.identity;
+            boxObject.transform.localScale = new Vector3(xsize, zsize, ysize);
+            
+            Vector3 positionData = ObjectTransformations.GetPositionFromRightHand(frame.point);
+            ObjectTransformations.Rotation rotationData = ObjectTransformations.GetRotationFromRightHand(frame.xaxis, frame.yaxis);
+            Quaternion rotationQuaternion;
+
+            rotationQuaternion = ObjectTransformations.GetQuaternionFromFrameDataForUnityObject(rotationData);
+            if(rotationQuaternion == null)
+            {
+                Debug.LogError("placeElement: Cannot assign object rotation because it is null");
+            }
+
+            //ADD Collider to the object            
+            BoxCollider boxCollider = boxObject.AddComponent<BoxCollider>();
+            Vector3 boxColliderSize = new Vector3(boxCollider.size.x*1.1f, boxCollider.size.y*1.2f, boxCollider.size.z*1.2f);
+            boxCollider.size = boxColliderSize;
+
+            //Assign the position and rotation to the object
+            boxObject.transform.position = positionData;
+            boxObject.transform.rotation = rotationQuaternion;
+            
             return boxObject;
         }
     }
