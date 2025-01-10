@@ -16,6 +16,7 @@ using CompasXR.AppSettings;
 using CompasXR.Robots;
 using CompasXR.Robots.MqttData;
 using Unity.VisualScripting;
+using CompasXR.RoboticTerritories.Data;
 
 namespace CompasXR.UI
 {
@@ -173,13 +174,28 @@ namespace CompasXR.UI
         public bool IDTagIsOffset = false;
         public bool PriorityTagIsOffset = false;
 
+        //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
+        public GameObject RoboticTerritoriesCanvasItems;
+        public GameObject ZonesParentGlobal;
+        public TMP_Text CurrentModeTextObject;
+
+        public List<string> ZoneMenuItems = new List<string> {"None", "Inference", "Mimic", "Telemimic"};
+        public string CurrentZone = "None";
+        public int CurrentZoneIndex = 0;
+        public GameObject NextZoneButtonObject;
+        public GameObject PreviousZoneButtonObject;
+        public GameObject RoboticTerritoriesConstantUIObjects;
+
+        //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
+
         /////////////////////////////////// Monobehaviour Methods ///////////////////////////////////////////////////////////        
         void Start()
         {
             /*
             * Start : Method is used to initialize the UI elements and set up the UI Object & Script Dependencies on start.
             */
-            OnAwakeInitilization();
+            // OnAwakeInitilization();
+            OnAwakeInitilizationRoboticTerritories();
         }
         void Update()
         {
@@ -190,6 +206,161 @@ namespace CompasXR.UI
         }
 
         /////////////////////////////////// UI Control & OnStart methods ////////////////////////////////////////////////////
+
+
+        //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
+        private void OnAwakeInitilizationRoboticTerritories()
+        {
+            /*
+            * OnAwakeInitilization : Method is used to initialize the UI elements and set up the 
+            * UI Objects, Script Dependencies, & set up relationships on start.
+            */
+
+            //Find Other Scripts
+            databaseManager = GameObject.Find("DatabaseManager").GetComponent<DatabaseManager>();
+            instantiateObjects = GameObject.Find("Instantiate").GetComponent<InstantiateObjects>();
+            eventManager = GameObject.Find("EventManager").GetComponent<EventManager>();
+            mqttTrajectoryManager = GameObject.Find("MQTTTrajectoryManager").GetComponent<MqttTrajectoryManager>();
+            trajectoryVisualizer = GameObject.Find("TrajectoryVisualizer").GetComponent<TrajectoryVisualizer>();
+            rosConnectionManager = GameObject.Find("RosManager").GetComponent<RosConnectionManager>();
+            scrollSearchManager = GameObject.Find("ScrollSearchManager").GetComponent<ScrollSearchManager>();
+
+            //Find Global use GameObjects
+            ZonesParentGlobal = GameObject.Find("ZonesParent");
+            QRMarkers = GameObject.Find("QRMarkers");
+            CanvasObject = GameObject.Find("Canvas");
+
+            //Find OnScreeen Message Prefabs
+            RoboticTerritoriesCanvasItems = CanvasObject.FindObject("RoboticTerritories");
+            MessagesParent = RoboticTerritoriesCanvasItems.FindObject("OnScreenMessages");
+            OnScreenErrorMessagePrefab = MessagesParent.FindObject("Prefabs").FindObject("OnScreenErrorMessagePrefab");
+            OnScreenInfoMessagePrefab = MessagesParent.FindObject("Prefabs").FindObject("OnScreenInfoMessagePrefab");
+
+
+
+            //Set Zone Visualization Menu Items on Start
+            SetZoneMenuItemsOnStart();
+
+            //Set robotic items on start
+            // SetRoboticMenuItemsOnStart();
+
+            //Set Correction Items on Start
+            // SetCorrectionMenuItemsOnStart();
+
+        }
+
+        public void SetZoneMenuItemsOnStart()
+        {
+            //Find Zone Menu Objects
+            CurrentModeTextObject = RoboticTerritoriesCanvasItems.FindObject("ConstantUIPanel").FindObject("ZonePanel").FindObject("ZoneText").GetComponent<TMP_Text>();
+
+            //Find the Menu Buttons
+            RoboticTerritoriesConstantUIObjects = RoboticTerritoriesCanvasItems.FindObject("ConstantUIPanel"); 
+            // NextZoneButtonObject = RoboticTerritoriesCanvasItems.FindObject("ConstantUIPanel").FindObject("NextZoneButton");
+            // PreviousZoneButtonObject = RoboticTerritoriesCanvasItems.FindObject("ConstantUIPanel").FindObject("PreviousZoneButton");
+
+            UserInterface.FindButtonandSetOnClickAction(RoboticTerritoriesConstantUIObjects, ref NextZoneButtonObject, "NextZoneButton", NextZoneButton);
+            UserInterface.FindButtonandSetOnClickAction(RoboticTerritoriesConstantUIObjects, ref PreviousZoneButtonObject, "PreviousZoneButton", PreviousZoneButton);
+
+        }
+
+        public void NextZoneButton()
+        {
+            /*
+            * Method is used to move to the next zone in the project zones.
+            */
+            if(CurrentZoneIndex < ZoneMenuItems.Count - 1)
+            {
+                CurrentZoneIndex++;
+                CurrentZone = ZoneMenuItems[CurrentZoneIndex];
+                CurrentModeTextObject.text = CurrentZone;
+                databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex; //TODO: THIS NEEDS TO REMAIN THE SAME AS THE OTHER ONE
+                ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
+            }
+            else
+            {
+                Debug.LogWarning("NextZoneButton: Current Zone Index is at the max value.");
+            }
+        }
+
+        public void PreviousZoneButton()
+        {
+            /*
+            * Method is used to move to the previous zone in the project zones.
+            */
+            if (CurrentZoneIndex > 0)
+            {
+                CurrentZoneIndex--;
+                CurrentZone = ZoneMenuItems[CurrentZoneIndex];
+                CurrentModeTextObject.text = CurrentZone;
+                databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex;
+                ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
+            }
+            else
+            {
+                Debug.LogWarning("PreviousZoneButton: Current Zone Index is at the min value.");
+            }
+        }
+
+        public void ColorZonesBasedOnCurrentMode(ProjectZones.CurrentZoneMode cuttentMode)
+        {
+            /*
+            * Method is used to color the zones based on the current mode.
+            */
+
+            switch (cuttentMode)
+            {
+                case ProjectZones.CurrentZoneMode.None:
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.MimicZones, false);
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.InferenceZones, false);
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.TelemimicZones, false);
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.BoundaryZone, false);
+                    break;
+                case ProjectZones.CurrentZoneMode.Inference:
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.MimicZones, false);
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.InferenceZones, true);
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.TelemimicZones, false);
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.BoundaryZone, false);
+                    break;
+                case ProjectZones.CurrentZoneMode.Mimic:
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.MimicZones, true);
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.InferenceZones, false);
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.TelemimicZones, false);
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.BoundaryZone, false);
+                    break;
+                case ProjectZones.CurrentZoneMode.Telemimic:
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.MimicZones, false);
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.InferenceZones, false);
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.TelemimicZones, true);
+                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.BoundaryZone, false);
+                    break;
+                default:
+                    Debug.LogWarning("ColorZonesBasedOnCurrentMode: Current Zone Mode is not set.");
+                    break;
+            }
+            
+        }
+
+        public void ColorZoneBasedOnActivity(Dictionary<string, Zone> zoneDict, bool isActive)
+        {
+            /*
+            * Method is used to color the zones based on the activity.
+            */
+            foreach (KeyValuePair<string, Zone> zone in zoneDict)
+            {
+                if (isActive)
+                {
+                    zone.Value.ZoneObject.GetComponent<MeshRenderer>().material = zone.Value.ZoneActiveMaterial;
+                }
+                else
+                {
+                    zone.Value.ZoneObject.GetComponent<MeshRenderer>().material = zone.Value.ZoneInactiveMaterial;
+                }
+            }
+        }
+
+        //TODO: RoboticTerritories Testing ///////////////////////////////////////////////////////////////////////////////////
+      
         private void OnAwakeInitilization()
         {
             /*

@@ -155,8 +155,9 @@ namespace CompasXR.Core
         {
             Debug.Log($"PlaceZone: {zone.Name} In parent Object: {ParentObject}");
             GameObject zoneObject = zone.CreateZoneObject();
+            zone.ZoneObject = zoneObject;
             zoneObject.transform.SetParent(ParentObject.transform, false);
-            zoneObject.GetComponent<Renderer>().material = zone.ZoneActiveMaterial;
+            zoneObject.GetComponent<Renderer>().material = zone.ZoneInactiveMaterial;
 
         }
 

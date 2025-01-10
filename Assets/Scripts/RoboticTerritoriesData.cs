@@ -14,6 +14,8 @@ namespace CompasXR.RoboticTerritories.Data
 
     public class ProjectZones
     {
+        
+        public CurrentZoneMode CurrentZone { get; set; }
         public Dictionary<string, Zone> MimicZones { get; set; }
         public Dictionary<string, Zone> InferenceZones { get; set; }
         public Dictionary<string, Zone> TelemimicZones { get; set; }
@@ -25,6 +27,7 @@ namespace CompasXR.RoboticTerritories.Data
             InferenceZones = new Dictionary<string, Zone>();
             TelemimicZones = new Dictionary<string, Zone>();
             BoundaryZone = new Dictionary<string, Zone>();
+            CurrentZone = CurrentZoneMode.None;
         }
 
         public void Clear()
@@ -33,6 +36,13 @@ namespace CompasXR.RoboticTerritories.Data
             InferenceZones.Clear();
             TelemimicZones.Clear();
             BoundaryZone.Clear();
+        }
+        public enum CurrentZoneMode
+        {
+            None,
+            Inference,
+            Mimic,
+            Telemimic,
         }
     }
 
