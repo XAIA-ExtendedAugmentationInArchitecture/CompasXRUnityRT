@@ -163,7 +163,7 @@ namespace CompasXR.Core
             // BuildingPlanDataItem.PriorityTreeDictionary.Clear();
             // UserCurrentStepDict.Clear();
             // AssemblyDataDict.Clear();
-            RemoveListners();
+            // RemoveListners();
         }
 
     /////////////////////// FETCH AND PUSH DATA /////////////////////////////////
@@ -511,19 +511,19 @@ namespace CompasXR.Core
             * Method is used to add event listeners to the Firebase Realtime Database Events.
             * It is designed to listen for changes in the database and trigger events to update the data.
             */
-            dbReferenceSteps.ChildAdded += OnStepsChildAdded;
-            dbReferenceSteps.ChildChanged += OnStepsChildChanged;
-            dbReferenceSteps.ChildRemoved += OnStepsChildRemoved;
+            // dbReferenceSteps.ChildAdded += OnStepsChildAdded;
+            // dbReferenceSteps.ChildChanged += OnStepsChildChanged;
+            // dbReferenceSteps.ChildRemoved += OnStepsChildRemoved;
             
-            dbReferenceUsersCurrentSteps.ChildAdded += OnUserChildAdded; 
-            dbReferenceUsersCurrentSteps.ChildChanged += OnUserChildChanged;
-            dbReferenceUsersCurrentSteps.ChildRemoved += OnUserChildRemoved;
+            // dbReferenceUsersCurrentSteps.ChildAdded += OnUserChildAdded; 
+            // dbReferenceUsersCurrentSteps.ChildChanged += OnUserChildChanged;
+            // dbReferenceUsersCurrentSteps.ChildRemoved += OnUserChildRemoved;
 
-            dbReferenceLastBuiltIndex.ValueChanged += OnLastBuiltIndexChanged;
+            // dbReferenceLastBuiltIndex.ValueChanged += OnLastBuiltIndexChanged;
 
-            dbRefrenceProject.ChildAdded += OnProjectInfoChangedUpdate;
-            dbRefrenceProject.ChildChanged += OnProjectInfoChangedUpdate;
-            dbRefrenceProject.ChildRemoved += OnProjectInfoChangedUpdate;
+            // dbRefrenceProject.ChildAdded += OnProjectInfoChangedUpdate;
+            // dbRefrenceProject.ChildChanged += OnProjectInfoChangedUpdate;
+            // dbRefrenceProject.ChildRemoved += OnProjectInfoChangedUpdate;
         }
         public void RemoveListners()
         {        
@@ -531,19 +531,19 @@ namespace CompasXR.Core
             * Method is used to remove event listeners to the Firebase Realtime Database Events.
             * It is used on restart and other methods in which I cause resubscription to new references.
             */
-            dbReferenceSteps.ChildAdded += OnStepsChildAdded;
-            dbReferenceSteps.ChildChanged += OnStepsChildChanged;
-            dbReferenceSteps.ChildRemoved += OnStepsChildRemoved;
+            // dbReferenceSteps.ChildAdded += OnStepsChildAdded;
+            // dbReferenceSteps.ChildChanged += OnStepsChildChanged;
+            // dbReferenceSteps.ChildRemoved += OnStepsChildRemoved;
             
-            dbReferenceUsersCurrentSteps.ChildAdded += OnUserChildAdded; 
-            dbReferenceUsersCurrentSteps.ChildChanged += OnUserChildChanged;
-            dbReferenceUsersCurrentSteps.ChildRemoved += OnUserChildRemoved;
+            // dbReferenceUsersCurrentSteps.ChildAdded += OnUserChildAdded; 
+            // dbReferenceUsersCurrentSteps.ChildChanged += OnUserChildChanged;
+            // dbReferenceUsersCurrentSteps.ChildRemoved += OnUserChildRemoved;
 
-            dbReferenceLastBuiltIndex.ValueChanged += OnLastBuiltIndexChanged;
+            // dbReferenceLastBuiltIndex.ValueChanged += OnLastBuiltIndexChanged;
 
-            dbRefrenceProject.ChildAdded += OnProjectInfoChangedUpdate;
-            dbRefrenceProject.ChildChanged += OnProjectInfoChangedUpdate;
-            dbRefrenceProject.ChildRemoved += OnProjectInfoChangedUpdate;
+            // dbRefrenceProject.ChildAdded += OnProjectInfoChangedUpdate;
+            // dbRefrenceProject.ChildChanged += OnProjectInfoChangedUpdate;
+            // dbRefrenceProject.ChildRemoved += OnProjectInfoChangedUpdate;
         }
         public void OnStepsChildAdded(object sender, Firebase.Database.ChildChangedEventArgs args) 
         {

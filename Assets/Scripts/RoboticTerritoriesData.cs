@@ -42,7 +42,6 @@ namespace CompasXR.RoboticTerritories.Data
         public Box Box { get; set; }
         public GameObject ZoneObject { get; set; }
         public Material ZoneMaterial { get; set; }
-        public Material ZoneMaterialTransparent { get; set; }
 
         public static Zone FromData(string Name, Dictionary<string, object> jsonDataDict)
         {

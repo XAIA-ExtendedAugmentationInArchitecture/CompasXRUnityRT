@@ -41,7 +41,6 @@ namespace CompasXR.Core
         public Material SearchedObjectMaterial;
         public Material ActiveRobotMaterial;
         public Material InactiveRobotMaterial;
-        public Material OutlineMaterial;
 
         //Parent Objects
         public GameObject QRMarkers; 
@@ -66,12 +65,19 @@ namespace CompasXR.Core
 
         Dictionary<string, GameObject> ZonesParentObjectsDict = new Dictionary<string, GameObject>();
 
-        GameObject ZonesParentObject;
-        GameObject BoundaryZoneParent;
-        GameObject InferenceZonesParent;
-        GameObject MimicZonesParent;
-        GameObject TelemimicZonesParent;
+        public GameObject ZonesParentObject;
+        public GameObject BoundaryZoneParent;
+        public GameObject InferenceZonesParent;
+        public GameObject MimicZonesParent;
+        public GameObject TelemimicZonesParent;
 
+
+        //Materials for Zones        
+        public Material HumanZoneMaterial;
+        public Material RobotZoneMaterial;
+        public Material CollaborationZoneMaterial;
+        public Material PickZoneMaterial;
+        public Material OutlineMaterial;
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -150,6 +156,7 @@ namespace CompasXR.Core
             zoneObject.GetComponent<Renderer>().material = material;
 
         }
+
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
         {
@@ -182,6 +189,20 @@ namespace CompasXR.Core
             ZonesParentObjectsDict.Add("InferenceZonesParent", InferenceZonesParent);
             ZonesParentObjectsDict.Add("MimicZonesParent", MimicZonesParent);
             ZonesParentObjectsDict.Add("TelemimicZonesParent", TelemimicZonesParent);
+
+            //Finding Materials
+            HumanZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("HumanZone").GetComponentInChildren<Renderer>().material;
+            RobotZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("RobotZone").GetComponentInChildren<Renderer>().material;
+            CollaborationZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("CollaborationZone").GetComponentInChildren<Renderer>().material;
+            PickZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("PickZone").GetComponentInChildren<Renderer>().material;
+
+            if(HumanZoneMaterial == null || RobotZoneMaterial == null || CollaborationZoneMaterial == null || PickZoneMaterial == null)
+            {
+                Debug.LogError("A Zone Material is null");
+            }
+            else{
+                Debug.Log("Zone Materials Found");
+            }
 
             if(BoundaryZoneParent == null || InferenceZonesParent == null || MimicZonesParent == null || TelemimicZonesParent == null)
             {
