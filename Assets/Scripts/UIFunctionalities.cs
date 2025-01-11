@@ -247,7 +247,6 @@ namespace CompasXR.UI
             //Set Correction Items on Start
             SetCorrectionMenuItemsOnStart();
         }
-
         public void SetRoboticMenuItemsOnStart()
         {
             /*
@@ -277,7 +276,6 @@ namespace CompasXR.UI
             }
             UserInterface.FindToggleandSetOnValueChangedAction(RobotSelectionControlObjects, ref SetActiveRobotToggleObject, "SetActiveRobotToggle", RoboticTerritoriesSetActiveRobotToggleMethod);
         }
-
         public void SetCorrectionMenuItemsOnStart()
         {
             /*
@@ -296,7 +294,6 @@ namespace CompasXR.UI
             value => { if (value) UserInterface.PrintStringOnClick("Correction Button Clicked"); });
 
         }
-
         public void RoboticTerritoriesSetActiveRobotToggleMethod(Toggle toggle)
         {
             /*
@@ -436,7 +433,6 @@ namespace CompasXR.UI
         }
 
         //TODO: RoboticTerritories Testing ///////////////////////////////////////////////////////////////////////////////////
-      
         private void OnAwakeInitilization()
         {
             /*
@@ -456,7 +452,7 @@ namespace CompasXR.UI
             //Find Global use GameObjects
             Elements = GameObject.Find("Elements");
             QRMarkers = GameObject.Find("QRMarkers");
-            CanvasObject = GameObject.Find("Canvas");
+            CanvasObject = GameObject.Find("Canvas").FindObject("CompasXR");
             UserObjects = GameObject.Find("ActiveUserObjects");     
 
             //Find AR and system management items
@@ -465,7 +461,7 @@ namespace CompasXR.UI
             currentOperatingSystem = OperatingSystemManager.GetCurrentOS();
 
             //Find Constant UI Pannel
-            ConstantUIPanelObjects = GameObject.Find("ConstantUIPanel");
+            ConstantUIPanelObjects = CanvasObject.FindObject("ConstantUIPanel");
         
             //Set up UI Objects and buttons on start
             SetPrimaryUIItemsOnStart();
