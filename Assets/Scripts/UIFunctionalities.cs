@@ -17,6 +17,7 @@ using CompasXR.Robots;
 using CompasXR.Robots.MqttData;
 using Unity.VisualScripting;
 using CompasXR.RoboticTerritories.Data;
+// using Vuforia;
 
 namespace CompasXR.UI
 {
@@ -185,6 +186,7 @@ namespace CompasXR.UI
         public GameObject NextZoneButtonObject;
         public GameObject PreviousZoneButtonObject;
         public GameObject RoboticTerritoriesConstantUIObjects;
+        public GameObject CorrectionButtonObject;
 
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
 
@@ -236,19 +238,97 @@ namespace CompasXR.UI
             OnScreenErrorMessagePrefab = MessagesParent.FindObject("Prefabs").FindObject("OnScreenErrorMessagePrefab");
             OnScreenInfoMessagePrefab = MessagesParent.FindObject("Prefabs").FindObject("OnScreenInfoMessagePrefab");
 
-
-
             //Set Zone Visualization Menu Items on Start
             SetZoneMenuItemsOnStart();
 
             //Set robotic items on start
-            // SetRoboticMenuItemsOnStart();
+            SetRoboticMenuItemsOnStart();
 
             //Set Correction Items on Start
-            // SetCorrectionMenuItemsOnStart();
+            SetCorrectionMenuItemsOnStart();
+        }
+
+        public void SetRoboticMenuItemsOnStart()
+        {
+            /*
+            * Method is used to set up the Robotic Menu UI elements on start.
+            * Robotic Menu UI elements constitute the UI elements that are used to control the robotic functionalities
+            * of the application.
+            */
+
+            //Find Objects for active robot selection
+            RobotSelectionControlObjects = GameObject.Find("RobotSelectionControls");
+            RobotSelectionDropdownObject = RobotSelectionControlObjects.FindObject("RobotSelectionDropdown");
+            RobotSelectionDropdown = RobotSelectionDropdownObject.GetComponent<TMP_Dropdown>();
+            List<TMP_Dropdown.OptionData> robotOptions = UserInterface.SetDropDownOptionsFromStringList(RobotSelectionDropdown ,trajectoryVisualizer.RobotPreFabList);
+            RobotSelectionDropdown.onValueChanged.AddListener(RobotSelectionDropdownValueChanged);
+            if(RobotSelectionControlObjects == null)
+            {
+                Debug.Log("Robot Selection Control Objects is null.");
+
+            }
+            else if (RobotSelectionDropdownObject == null)
+            {
+                Debug.Log("Robot Selection Dropdown Object is null.");
+            }
+            else
+            {
+                RobotSelectionDropdown.options = robotOptions;
+            }
+            UserInterface.FindToggleandSetOnValueChangedAction(RobotSelectionControlObjects, ref SetActiveRobotToggleObject, "SetActiveRobotToggle", RoboticTerritoriesSetActiveRobotToggleMethod);
+        }
+
+        public void SetCorrectionMenuItemsOnStart()
+        {
+            /*
+            * Method is used to set up the Correction Menu UI elements on start.
+            * Correction Menu UI elements constitute the UI elements that are used to control the correction functionalities
+            * of the application.
+            */
+
+            CorrectionButtonObject = RoboticTerritoriesCanvasItems.FindObject("CorrectionButton");
+
+            //Find Correction Menu Objects
+            UserInterface.FindToggleandSetOnValueChangedAction(
+            RoboticTerritoriesCanvasItems,
+            ref CorrectionButtonObject,
+            "CorrectionButton",
+            value => { if (value) UserInterface.PrintStringOnClick("Correction Button Clicked"); });
 
         }
 
+        public void RoboticTerritoriesSetActiveRobotToggleMethod(Toggle toggle)
+        {
+            /*
+            * Method is used to set the active robot based on the toggle value.
+            * Additionally it controls UI elements based on the toggle value.
+            */
+            if(toggle!=null && toggle.isOn)
+            {
+                Debug.Log($"SettingActiveRobotButtonMethod: Setting Active Robot based on input {RobotSelectionDropdown.options[RobotSelectionDropdown.value].text}");
+                string robotName = RobotSelectionDropdown.options[RobotSelectionDropdown.value].text;
+                // bool visibility = false;
+                // if(CurrentStep != null && RobotToggleObject.GetComponent<Toggle>().isOn)
+                // {
+                //     if(databaseManager.BuildingPlanDataItem.steps[CurrentStep].data.actor == "ROBOT")
+                //     {
+                //         visibility = true;
+                //     }
+                // }
+                trajectoryVisualizer.SetActiveRobotFromDropdown(robotName, true, toggle.isOn); //TODO: Changed this bool.
+                SetActiveRobotToggleObject.FindObject("Image").SetActive(true);
+            }
+            else
+            {
+                Debug.Log("SettingActiveRobotButtonMethod: Destroying Current Active Robot");
+                if(trajectoryVisualizer.ActiveRobotObjects.transform.childCount > 0)
+                {
+                    trajectoryVisualizer.DestroyActiveRobotObjects();
+                }
+                mqttTrajectoryManager.serviceManager.ActiveRobotName = null;
+                SetActiveRobotToggleObject.FindObject("Image").SetActive(false);           
+            }
+        }
         public void SetZoneMenuItemsOnStart()
         {
             //Find Zone Menu Objects
@@ -520,27 +600,6 @@ namespace CompasXR.UI
             UserInterface.FindButtonandSetOnClickAction(ReviewTrajectoryObjects, ref RejectTrajectoryButtonObject, "RejectTrajectoryButton", RejectTrajectoryButtonMethod);
             UserInterface.FindSliderandSetOnValueChangeAction(ReviewTrajectoryObjects, ref TrajectoryReviewSliderObject, ref TrajectoryReviewSlider, "TrajectoryReviewSlider", TrajectorySliderReviewMethod);
             UserInterface.FindButtonandSetOnClickAction(TrajectoryControlObjects, ref ExecuteTrajectoryButtonObject, "ExecuteTrajectoryButton", ExecuteTrajectoryButtonMethod);
-
-            //Find Objects for active robot selection
-            RobotSelectionControlObjects = GameObject.Find("RobotSelectionControls");
-            RobotSelectionDropdownObject = RobotSelectionControlObjects.FindObject("RobotSelectionDropdown");
-            RobotSelectionDropdown = RobotSelectionDropdownObject.GetComponent<TMP_Dropdown>();
-            List<TMP_Dropdown.OptionData> robotOptions = UserInterface.SetDropDownOptionsFromStringList(RobotSelectionDropdown ,trajectoryVisualizer.RobotPreFabList);
-            RobotSelectionDropdown.onValueChanged.AddListener(RobotSelectionDropdownValueChanged);
-            if(RobotSelectionControlObjects == null)
-            {
-                Debug.Log("Robot Selection Control Objects is null.");
-
-            }
-            else if (RobotSelectionDropdownObject == null)
-            {
-                Debug.Log("Robot Selection Dropdown Object is null.");
-            }
-            else
-            {
-                RobotSelectionDropdown.options = robotOptions;
-            }
-            UserInterface.FindToggleandSetOnValueChangedAction(RobotSelectionControlObjects, ref SetActiveRobotToggleObject, "SetActiveRobotToggle", SetActiveRobotToggleMethod);
         }
         public void SetOcclusionFromOS(ref AROcclusionManager occlusionManager, CompasXR.Systems.OperatingSystem currentOperatingSystem)
         {
