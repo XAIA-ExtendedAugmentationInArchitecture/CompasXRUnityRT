@@ -73,12 +73,16 @@ namespace CompasXR.Core
         public GameObject TelemimicZonesParent;
 
 
-        //Materials for Zones        
+        //Materials for Zones
         public Material HumanZoneMaterial;
         public Material RobotZoneMaterial;
         public Material CollaborationZoneMaterial;
         public Material PickZoneMaterial;
         public Material ZonesOutlineMaterial;
+
+        //Events
+        public delegate void InitialZonesCreated(object source, EventArgs e);
+        public event InitialZonesCreated InitialZonesPlaced;
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -218,6 +222,14 @@ namespace CompasXR.Core
                 }
             }
             // Debug.Log("ZonesMaterials: Set Zones Materials " + JsonConvert.SerializeObject(databaseManager.ProjectZones));
+        }
+
+        protected virtual void OnInitialZonesPlaced() //TODO: Call after plazing zones
+        {
+            /*
+            * Method is used to raise the event when the initial objects are placed
+            */
+            InitialZonesPlaced(this, EventArgs.Empty);
         }
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
