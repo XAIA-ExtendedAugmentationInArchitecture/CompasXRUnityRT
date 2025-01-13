@@ -12,6 +12,7 @@ using CompasXR.AppSettings;
 using CompasXR.RoboticTerritories.Data;
 using Newtonsoft.Json;
 
+
 namespace CompasXR.Core
 {
     /*
@@ -101,10 +102,105 @@ namespace CompasXR.Core
             * Method is used to handle the event when the database is initialized
             */
             Debug.Log("OnZonesRecived: Zones Received");
-            SetZonesMaterials(); //TODO: This is stupid, but will hopefully work before the other one is finished
-            PlaceZones(e.Zones, ZonesParentObjectsDict);
+            // SetZonesMaterials(); //TODO: This is stupid, but will hopefully work before the other one is finished
+            PlaceAllProjectZones(e.Zones, ZonesParentObjectsDict);
         }
-        public void PlaceZones(ProjectZones projectZones, Dictionary<string, GameObject> parentObjects)
+        
+        public void OnModeZonesUpdate(object source, ModeZonesUpdateEventArgs e)
+        {
+            /*
+            * Method is used to handle the event when the database is initialized
+            */
+            Debug.Log($"OnModeZonesUpdate: Zones Changed for {e.Key}");
+            
+            if(e.Zones.Count > 0)
+            {
+                InstantiateChangedZones(e.Zones, e.Key);
+            }
+            else
+            {
+                Debug.LogWarning("OnModeZonesUpdate: Zones Dict is empty");
+            }
+        }
+        public void InstantiateChangedZones(Dictionary<string, Zone> ZonesDict, string zoneKey)
+        {
+            Debug.Log($"InstantiateChangedKeys: {zoneKey} with the information from the ZonesDict {JsonConvert.SerializeObject(ZonesDict)}");
+            switch (zoneKey)
+            {   
+                case "tele_mimic_zone":
+                    GameObject teleMimicParent = ZonesParentObjectsDict["TelemimicZonesParent"];
+                    ObjectInstantiaion.DestroyChildrenOfGameObject(teleMimicParent);
+                    PlaceModeZones(ZonesDict, teleMimicParent);
+                    break;
+                case "mimic_zones":
+                    GameObject mimicParent = ZonesParentObjectsDict["MimicZonesParent"];
+                    ObjectInstantiaion.DestroyChildrenOfGameObject(mimicParent);
+                    PlaceModeZones(ZonesDict, mimicParent);
+                    break;
+                case "inference_zones":
+                    GameObject inferenceParent = ZonesParentObjectsDict["InferenceZonesParent"];
+                    ObjectInstantiaion.DestroyChildrenOfGameObject(inferenceParent);
+                    PlaceModeZones(ZonesDict, inferenceParent);                    
+                    break;
+                case "boundary_zone":
+                    GameObject boundaryParent = ZonesParentObjectsDict["BoundaryZoneParent"];
+                    ObjectInstantiaion.DestroyChildrenOfGameObject(boundaryParent);
+                    PlaceModeZones(ZonesDict, boundaryParent);
+                    break;
+                default:
+                    Debug.LogWarning($"InstantiateChangedKeys: Invalid Zone Type for key '{zoneKey}'. Not changing the key.");
+                    break;
+            }
+
+            //Color all zones based on the current mode
+            UIFunctionalities.ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
+
+        }
+        public void PlaceModeZones(Dictionary<string, Zone> ModeZone, GameObject ParentObject)
+        {
+            /*
+            * Method is used to place the zones in the AR space
+            */            
+            if (ModeZone != null)
+            {
+                Debug.Log("PlaceZones: Placing Zones");
+                foreach (KeyValuePair<string, Zone> entry in ModeZone)
+                {
+                    if (entry.Value != null)
+                    {
+                        PlaceZoneItem(entry.Value, ParentObject);
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogWarning("PlaceZones: Project Zones is null");
+            }
+        }
+
+        public void DestroyZoneObjects(Dictionary<string, Zone> ZonesDict)
+        {
+            /*
+            * Method is used to destroy the zone objects in the AR space
+            */
+            if (ZonesDict != null)
+            {
+                Debug.Log("DestroyZones: Destroying Zones");
+                foreach (KeyValuePair<string, Zone> entry in ZonesDict)
+                {
+                    if (entry.Value != null)
+                    {
+                        Destroy(entry.Value.ZoneObject);
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogWarning("DestroyZones: Zones Dict is null");
+            }
+        }
+
+        public void PlaceAllProjectZones(ProjectZones projectZones, Dictionary<string, GameObject> parentObjects, bool isInitial = true)
         {
             /*
             * Method is used to place the zones in the AR space
@@ -117,7 +213,7 @@ namespace CompasXR.Core
                     if (entry.Value != null)
                     {
                         GameObject parentObject = parentObjects["BoundaryZoneParent"];
-                        PlaceZone(entry.Value, parentObject);
+                        PlaceZoneItem(entry.Value, parentObject);
                     }
                 }
                 
@@ -126,7 +222,7 @@ namespace CompasXR.Core
                     if (entry.Value != null)
                     {
                         GameObject parentObject = parentObjects["InferenceZonesParent"];
-                        PlaceZone(entry.Value, parentObject);
+                        PlaceZoneItem(entry.Value, parentObject);
                     }
                 }
 
@@ -135,7 +231,7 @@ namespace CompasXR.Core
                     if (entry.Value != null)
                     {
                         GameObject parentObject = parentObjects["MimicZonesParent"];
-                        PlaceZone(entry.Value, parentObject);
+                        PlaceZoneItem(entry.Value, parentObject);
                     }
                 }
 
@@ -144,87 +240,129 @@ namespace CompasXR.Core
                     if (entry.Value != null)
                     {
                         GameObject parentObject = parentObjects["TelemimicZonesParent"];
-                        PlaceZone(entry.Value, parentObject);
+                        PlaceZoneItem(entry.Value, parentObject);
                     }
                 }
-
                 UIFunctionalities.ColorZonesBasedOnCurrentMode(projectZones.CurrentZone);
+
+                //Event trigger for the first time through placing the zones.
+                if(isInitial)
+                {
+                    OnInitialZonesPlaced();
+                }
             }
             else
             {
                 Debug.LogWarning("PlaceZones: Project Zones is null");
             }
         }
-        public void PlaceZone(Zone zone, GameObject ParentObject) //TODO: THIS NEEDS TO BE A MATERIAL DICT.
+        public void PlaceZoneItem(Zone zone, GameObject ParentObject) //TODO: THIS NEEDS TO BE A MATERIAL DICT.
         {
             Debug.Log($"PlaceZone: {zone.Name} In parent Object: {ParentObject}");
             GameObject zoneObject = zone.CreateZoneObject();
+            SetIndividualZoneMaterial(zone);
             zone.ZoneObject = zoneObject;
             zoneObject.transform.SetParent(ParentObject.transform, false);
-            // zoneObject.GetComponent<Renderer>().material = zone.ZoneInactiveMaterial;
-
         }
-        public void SetZonesMaterials() //TODO: This is stupid, but works lol
+        // public void SetZonesMaterials() //TODO: This is stupid, but works lol
+        // {
+        //     //This is a dumb method, but it is just used to coordinate the zones materials on start
+        //     Dictionary<string, Zone> boundaryZone = databaseManager.ProjectZones.BoundaryZone;
+        //     Dictionary<string, Zone> inferenceZones = databaseManager.ProjectZones.InferenceZones;
+        //     Dictionary<string, Zone> mimicZones = databaseManager.ProjectZones.MimicZones;
+        //     Dictionary<string, Zone> telemimicZones = databaseManager.ProjectZones.TelemimicZones;
+
+        //     foreach (KeyValuePair<string, Zone> entry in boundaryZone)
+        //     {
+        //         entry.Value.ZoneActiveMaterial = ZonesOutlineMaterial;
+        //         entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+        //     }
+        //     foreach (KeyValuePair<string, Zone> entry in inferenceZones)
+        //     {
+        //         if(entry.Key == "collaboration_zone")
+        //         {
+        //             entry.Value.ZoneActiveMaterial = CollaborationZoneMaterial;
+        //             entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+        //         }
+        //         else if(entry.Key == "pick_zone")
+        //         {
+        //             entry.Value.ZoneActiveMaterial = PickZoneMaterial;
+        //             entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+        //         }
+        //         else
+        //         {
+        //             entry.Value.ZoneActiveMaterial = HumanZoneMaterial;
+        //             entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+        //         }
+        //     }
+        //     foreach (KeyValuePair<string, Zone> entry in mimicZones)
+        //     {
+        //         if(entry.Key == "human_zone")
+        //         {
+        //             entry.Value.ZoneActiveMaterial = HumanZoneMaterial;
+        //             entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+        //         }
+        //         else
+        //         {
+        //             entry.Value.ZoneActiveMaterial = RobotZoneMaterial;
+        //             entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+        //         }
+        //     }
+        //     foreach (KeyValuePair<string, Zone> entry in telemimicZones)
+        //     {
+        //         if(entry.Key == "human_zone")
+        //         {
+        //             entry.Value.ZoneActiveMaterial = HumanZoneMaterial;
+        //             entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+        //         }
+        //         else
+        //         {
+        //             entry.Value.ZoneActiveMaterial = RobotZoneMaterial;
+        //             entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
+        //         }
+        //     }
+        //     // Debug.Log("ZonesMaterials: Set Zones Materials " + JsonConvert.SerializeObject(databaseManager.ProjectZones));
+        // }
+
+        public void SetIndividualZoneMaterial(Zone zone)
         {
-            //This is a dumb method, but it is just used to coordinate the zones materials on start
-            Dictionary<string, Zone> boundaryZone = databaseManager.ProjectZones.BoundaryZone;
-            Dictionary<string, Zone> inferenceZones = databaseManager.ProjectZones.InferenceZones;
-            Dictionary<string, Zone> mimicZones = databaseManager.ProjectZones.MimicZones;
-            Dictionary<string, Zone> telemimicZones = databaseManager.ProjectZones.TelemimicZones;
-
-            foreach (KeyValuePair<string, Zone> entry in boundaryZone)
-            {
-                entry.Value.ZoneActiveMaterial = ZonesOutlineMaterial;
-                entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-            }
-            foreach (KeyValuePair<string, Zone> entry in inferenceZones)
-            {
-                if(entry.Key == "collaboration_zone")
-                {
-                    entry.Value.ZoneActiveMaterial = CollaborationZoneMaterial;
-                    entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-                }
-                else if(entry.Key == "pick_zone")
-                {
-                    entry.Value.ZoneActiveMaterial = PickZoneMaterial;
-                    entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-                }
-                else
-                {
-                    entry.Value.ZoneActiveMaterial = HumanZoneMaterial;
-                    entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-                }
-            }
-            foreach (KeyValuePair<string, Zone> entry in mimicZones)
-            {
-                if(entry.Key == "human_zone")
-                {
-                    entry.Value.ZoneActiveMaterial = HumanZoneMaterial;
-                    entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-                }
-                else
-                {
-                    entry.Value.ZoneActiveMaterial = RobotZoneMaterial;
-                    entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-                }
-            }
-            foreach (KeyValuePair<string, Zone> entry in telemimicZones)
-            {
-                if(entry.Key == "human_zone")
-                {
-                    entry.Value.ZoneActiveMaterial = HumanZoneMaterial;
-                    entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-                }
-                else
-                {
-                    entry.Value.ZoneActiveMaterial = RobotZoneMaterial;
-                    entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-                }
-            }
-            // Debug.Log("ZonesMaterials: Set Zones Materials " + JsonConvert.SerializeObject(databaseManager.ProjectZones));
+            Debug.Log("I AM HERE");
+            Debug.Log("THIS IS THE ZONE NAME: " + zone.Name);
+            switch (zone.Name)
+            {   
+                case "tele_mimic_zone":
+                    Debug.Log("SetIndividualZoneMaterial: TeleMimic Zone");
+                    Debug.Log($"SetIndividualZoneMaterial: TeleMimic Zone Material: {RobotZoneMaterial}");
+                    Debug.Log($"SetIndividualZoneMaterial: TeleMimic Zone Material: {ZonesOutlineMaterial}");
+                    zone.ZoneActiveMaterial = RobotZoneMaterial;
+                    zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    break;
+                case "human_zone":
+                    zone.ZoneActiveMaterial = HumanZoneMaterial;
+                    zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    break;
+                case "robot_zone":
+                    zone.ZoneActiveMaterial = RobotZoneMaterial;
+                    zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    break;
+                case "collaboration_zone":
+                    zone.ZoneActiveMaterial = CollaborationZoneMaterial;
+                    zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    break;
+                case "pick_zone":
+                        zone.ZoneActiveMaterial = PickZoneMaterial;
+                        zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    break;
+                case "boundary_zone":
+                    zone.ZoneActiveMaterial = ZonesOutlineMaterial;
+                    zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    break;
+                default:
+                    Debug.LogWarning($"SetIndividualZoneMaterial: Couldn't Set material for '{zone.Name}'");
+                    break;
+            }        
         }
-
-        protected virtual void OnInitialZonesPlaced() //TODO: Call after plazing zones
+        protected virtual void OnInitialZonesPlaced()
         {
             /*
             * Method is used to raise the event when the initial objects are placed
@@ -1397,6 +1535,17 @@ namespace CompasXR.Core
             else
             {
                 Debug.LogWarning( $"DestroyGameObjectByName: Could Not find Object with key: {gameObjectName}");
+            }
+        }
+
+        public static void DestroyChildrenOfGameObject(GameObject gameObject)
+        {
+            /*
+            * Destroy the children of the gameobject
+            */
+            foreach (Transform child in gameObject.transform)
+            {
+                GameObject.Destroy(child.gameObject);
             }
         }
     }

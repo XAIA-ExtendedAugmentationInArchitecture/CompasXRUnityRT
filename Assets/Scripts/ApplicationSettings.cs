@@ -13,7 +13,6 @@
         [System.Serializable]
         public class ApplicationSettings
         {
-
             /*
             * CompasXR.AppSettings Namespace contains all classes related to direct control of 
             * internal app functionalities and methods.

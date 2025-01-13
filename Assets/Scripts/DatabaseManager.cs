@@ -11,12 +11,15 @@ using System.IO;
 using UnityEngine.Networking;
 using System.Linq;
 using CompasXR.UI;
+using CompasXR.Core;
 using CompasXR.Core.Data;
 using CompasXR.AppSettings;
 using CompasXR.Database.FirebaseManagment;
 using Unity.IO.LowLevel.Unsafe;
 using CompasXR.RoboticTerritories.Data;
 using UnityEngine.InputSystem.Interactions;
+using Unity.VisualScripting;
+using CompasXR.Core.Extentions;
 
 namespace CompasXR.Core
 {
@@ -62,6 +65,7 @@ namespace CompasXR.Core
         public string Key { get; set; }
     }
 
+    //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
     public class ZonesInfoReceivedEventArgs : EventArgs
     {
         /*
@@ -70,6 +74,18 @@ namespace CompasXR.Core
         */
         public ProjectZones Zones { get; set; }
     }
+
+    public class ModeZonesUpdateEventArgs : EventArgs
+    {
+        /*
+        * ModeZonesUpdateEventArgs : Class inherits from EventArgs &
+        * it is used to send the ModeZonesUpdate Class on events.
+        */
+        public Dictionary<string, Zone> Zones { get; set; }
+        public string Key { get; set; }
+    }
+
+    //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
     public class ApplicationSettingsEventArgs : EventArgs
     {
@@ -92,6 +108,22 @@ namespace CompasXR.Core
         // TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         public DatabaseReference dbReferenceZones;
         public ProjectZones ProjectZones = new ProjectZones();
+
+        //EVENTS        
+        public delegate void ZonesReceivedEventHandler(object source, ZonesInfoReceivedEventArgs e);
+        public event ZonesReceivedEventHandler ZonesInfoReceived;
+
+        public delegate void UpdateZonesDatatDict(object source, ModeZonesUpdateEventArgs e); 
+        public event UpdateZonesDatatDict ModeZonesUpdate;
+
+        public InstantiateObjects instantiateObjects;
+
+        //TODO: Needed to add materials here because they are stored in the class structure itself. It is dumb but will work for now.
+        public Material HumanZoneMaterial;
+        public Material RobotZoneMaterial;
+        public Material CollaborationZoneMaterial;
+        public Material PickZoneMaterial;
+        public Material ZonesOutlineMaterial;
 
         // TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -130,10 +162,6 @@ namespace CompasXR.Core
         
         public delegate void UpdateUserInfoEventHandler(object source, UserInfoDataItemsDictEventArgs e);
         public event UpdateUserInfoEventHandler UserInfoUpdate;
-
-        
-        public delegate void ZonesReceivedEventHandler(object source, ZonesInfoReceivedEventArgs e);
-        public event ZonesReceivedEventHandler ZonesInfoReceived;
 
         //Other Scripts
         public UIFunctionalities UIFunctionalities;
@@ -174,6 +202,13 @@ namespace CompasXR.Core
             */
             FirebaseDatabase.DefaultInstance.SetPersistenceEnabled(false);
             UIFunctionalities = GameObject.Find("UIFunctionalities").GetComponent<UIFunctionalities>();
+
+            //TODO: This is dumb, but it has to happen here because it the only place that it makes sense for assigning materials in the class structure
+            HumanZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("HumanZone").GetComponentInChildren<Renderer>().material;
+            RobotZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("RobotZone").GetComponentInChildren<Renderer>().material;
+            CollaborationZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("CollaborationZone").GetComponentInChildren<Renderer>().material;
+            PickZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("PickZone").GetComponentInChildren<Renderer>().material;
+            ZonesOutlineMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("OutlineMaterial").GetComponentInChildren<Renderer>().material;
         }
         public async void FetchSettingsData(DatabaseReference settings_reference)
         {
@@ -197,6 +232,71 @@ namespace CompasXR.Core
         }    
         
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+
+        public void SetIndividualZoneMaterial(string ZoneKey, Zone zone)
+        {
+            switch (ZoneKey)
+            {   
+                case "tele_mimic_zone":
+                    if(zone.Name == "tele_mimic_zone")
+                    {
+                        zone.ZoneActiveMaterial = RobotZoneMaterial;
+                        zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"SetIndividualZoneMaterial: Invalid Zone Name {zone.Name} for Telemimic Zones");
+                    }
+                    break;
+                case "mimic_zones":
+                    if(zone.Name == "human_zone")
+                    {
+                        zone.ZoneActiveMaterial = HumanZoneMaterial;
+                        zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    }
+                    else if(zone.Name == "robot_zone")
+                    {
+                        zone.ZoneActiveMaterial = RobotZoneMaterial;
+                        zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"SetIndividualZoneMaterial: Invalid Zone Name {zone.Name} for Mimic Zones");
+                    }
+                    break;
+                case "inference_zones":
+                    if(zone.Name == "collaboration_zone")
+                    {
+                        zone.ZoneActiveMaterial = CollaborationZoneMaterial;
+                        zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    }
+                    else if(zone.Name == "pick_zone")
+                    {
+                        zone.ZoneActiveMaterial = PickZoneMaterial;
+                        zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"SetIndividualZoneMaterial: Invalid Zone Name {zone.Name} for Inference Zones");
+                    }
+                    break;
+                case "boundary_zone":
+                    if(zone.Name == "boundary_zone")
+                    {
+                        zone.ZoneActiveMaterial = ZonesOutlineMaterial;
+                        zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"SetIndividualZoneMaterial: Invalid Zone Name {zone.Name} for Boundary Zones");
+                    }
+                    break;
+                default:
+                    Debug.LogWarning($"SetIndividualZoneMaterial: Invalid Zone Type for key '{ZoneKey}'. Not changing the key.");
+                    break;
+            }        
+        }
+
         public async void FetchRoboticTerritoriesData(object source, ApplicationSettingsEventArgs e)
         {
             /*
@@ -221,44 +321,71 @@ namespace CompasXR.Core
 
             foreach (DataSnapshot childSnapshot in snapshot.Children)
             {
-
-                string ZoneKey = childSnapshot.Key;
-                Dictionary<string, Zone> ZonesDict = new Dictionary<string, Zone>();
-
-                foreach (DataSnapshot zoneSnapshot in childSnapshot.Children)
+                Dictionary<string, Zone> modeDict = DeserilizeModeZones(childSnapshot, Zones);
+                if (modeDict.Count == 0)
                 {
-                    string zoneKey = zoneSnapshot.Key;
-                    var json_data = zoneSnapshot.GetValue(true);
-                    Zone zone_data = Zone.Parse(zoneKey, json_data);
-                    ZonesDict.Add(zoneKey, zone_data);
+                    Debug.LogWarning($"DeserializeZoneDataSnapshot: No Zones were added to the dictionary for key {childSnapshot.Key}.");
                 }
-
-                switch (ZoneKey)
-                {   
-                    case "tele_mimic_zone":
-                        Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
-                        Zones.TelemimicZones = ZonesDict;
-                        break;
-                    case "mimic_zones":
-                        Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
-                        Zones.MimicZones = ZonesDict;
-                        break;
-                    case "inference_zones":
-                        Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
-                        Zones.InferenceZones = ZonesDict;
-                        break;
-                    case "boundary_zone":
-                        Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
-                        Zones.BoundaryZone = ZonesDict;
-                        break;
-                    default:
-                        Debug.LogWarning($"DeserializeZoneDataSnapshot: Invalid Zone Type for key '{ZoneKey}'. Not added to the dictionary.");
-                        break;
-                }
-                Debug.Log($"DeserializeZoneDataSnapshot: The number of zones in the Zone {ZoneKey} is {ZonesDict.Count}");
             }
 
             OnZonesReceived(ProjectZones);
+        }
+        public Dictionary<string, Zone> DeserilizeModeZones(DataSnapshot childSnapshot, ProjectZones Zones)
+        {      
+            /*
+            * Method is used to deserialize the Zone data from the Firebase Realtime Database.
+            * It is designed to take a snapshot of the Zone data reference and iterate through them parsing the information for the individual modes.
+            */
+            string ZoneKey = childSnapshot.Key;
+            Dictionary<string, Zone> ZonesDict = new Dictionary<string, Zone>();
+
+            foreach (DataSnapshot zoneSnapshot in childSnapshot.Children)
+            {
+                string zoneKey = zoneSnapshot.Key;
+                var json_data = zoneSnapshot.GetValue(true);
+                Zone zone_data = Zone.Parse(zoneKey, json_data);
+                // SetIndividualZoneMaterial(zoneKey, zone_data);
+                ZonesDict.Add(zoneKey, zone_data);
+            }
+
+            switch (ZoneKey)
+            {   
+                case "tele_mimic_zone":
+                    if(Zones.TelemimicZones.Count > 0)
+                    {
+                        Zones.TelemimicZones.Clear();
+                    }
+                    Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
+                    Zones.TelemimicZones = ZonesDict;
+                    return Zones.TelemimicZones;
+                case "mimic_zones":
+                    if(Zones.MimicZones.Count > 0)
+                    {
+                        Zones.MimicZones.Clear();
+                    }
+                    Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
+                    Zones.MimicZones = ZonesDict;
+                    return Zones.MimicZones;
+                case "inference_zones":
+                    if(Zones.InferenceZones.Count > 0)
+                    {
+                        Zones.InferenceZones.Clear();
+                    }
+                    Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
+                    Zones.InferenceZones = ZonesDict;
+                    return Zones.InferenceZones;
+                case "boundary_zone":
+                    if(Zones.BoundaryZone.Count > 0)
+                    {
+                        Zones.BoundaryZone.Clear();
+                    }
+                    Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
+                    Zones.BoundaryZone = ZonesDict;
+                    return Zones.BoundaryZone;
+                default:
+                    Debug.LogWarning($"DeserializeZoneDataSnapshot: Invalid Zone Type for key '{ZoneKey}'. Not added to the dictionary.");
+                    return null;
+            }
         }
         public void PrintZonesDict(ProjectZones zones)
         {
@@ -266,6 +393,73 @@ namespace CompasXR.Core
             Debug.Log($"Inference Zones: {JsonConvert.SerializeObject(zones.InferenceZones)}");
             Debug.Log($"Telemimic Zones: {JsonConvert.SerializeObject(zones.TelemimicZones)}");
             Debug.Log($"Boundary Zones: {JsonConvert.SerializeObject(zones.BoundaryZone)}");
+        }
+        public void AddListenersRoboticTerritories(object source, EventArgs args)
+        {          
+            /*
+            * Method is used to add event listeners to the Firebase Realtime Database Events.
+            * It is designed to listen for changes in the database and trigger events to update the data.
+            */
+            Debug.Log("AddListenersRoboticTerritories: Adding Listeners to the Firebase Realtime Database");
+            dbReferenceZones.ChildAdded += OnZonesInformationChanged;
+            dbReferenceZones.ChildChanged += OnZonesInformationChanged;
+            dbReferenceZones.ChildRemoved += OnZonesInformationChanged;
+        }
+        public void OnZonesInformationChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
+        {
+
+            if (args.DatabaseError != null) {
+            Debug.LogError($"OnZonesChanged: Database error: {args.DatabaseError}");
+            return;
+            }
+
+            if (args.Snapshot == null) {
+                Debug.LogWarning("OnZonesChanged: Snapshot is null. Ignoring the child change.");
+                return;
+            }
+
+            string key = args.Snapshot.Key;
+            var childSnapshot = args.Snapshot.GetValue(true);
+
+            if (childSnapshot != null && key != null)
+            {
+                Dictionary<string, Zone> modesDict = DeserilizeModeZones(args.Snapshot, ProjectZones);
+                if (modesDict.Count > 0)
+                {
+                    OnZonesUpdate(modesDict, key);
+                }
+                else
+                {
+                    Debug.LogWarning("OnZonesChanged: No Zones were added to the dictionary. Ignoring the child change.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("OnZonesChanged: Snapshot or key is null. Ignoring the child change.");
+            }
+        }
+
+        //EVENTS
+        protected virtual void OnZonesReceived(ProjectZones ProjectZones)
+        {
+            /*
+            * Method is used to trigger the Zones Received Event.
+            * It is designed to trigger the event and send the Zones to the respective classes.
+            */
+            UnityEngine.Assertions.Assert.IsNotNull(ZonesInfoReceived, "Database dict is null!");
+            Debug.Log("ZonesReceived: Sending Zones to the respective classes");
+            ZonesInfoReceived(this, new ZonesInfoReceivedEventArgs() {Zones = ProjectZones});
+
+        }
+        protected virtual void OnZonesUpdate(Dictionary<string, Zone> ModeZonesDict,string key)
+        {
+            /*
+            * Method is used to trigger the Zones Update Event.
+            * It is designed to trigger the event and send the Zones to the respective classes.
+            */
+            UnityEngine.Assertions.Assert.IsNotNull(ModeZonesUpdate, "Modes dict is null!");
+            Debug.Log("ZonesUpdate: Sending Zones to the respective classes");
+            ModeZonesUpdate(this, new ModeZonesUpdateEventArgs() {Zones = ModeZonesDict, Key = key});
         }
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
@@ -1019,17 +1213,6 @@ namespace CompasXR.Core
         }
 
         //TODO: Robotic Territories Testing////////////////////////////////////////////////////////////////////////////////////////////
-        protected virtual void OnZonesReceived(ProjectZones ProjectZones)
-        {
-            /*
-            * Method is used to trigger the Zones Received Event.
-            * It is designed to trigger the event and send the Zones to the respective classes.
-            */
-            UnityEngine.Assertions.Assert.IsNotNull(ZonesInfoReceived, "Database dict is null!");
-            Debug.Log("ZonesReceived: Sending Zones to the respective classes");
-            ZonesInfoReceived(this, new ZonesInfoReceivedEventArgs() {Zones = ProjectZones});
-
-        }
 
         //TODO: Robotic Territories Testing////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -381,7 +381,7 @@ namespace CompasXR.UI
             /*
             * Method is used to color the zones based on the current mode.
             */
-
+            Debug.Log($"ColorZonesBasedOnCurrentMode: Coloring Zones based on the current mode {cuttentMode}");
             switch (cuttentMode)
             {
                 case ProjectZones.CurrentZoneMode.None:
