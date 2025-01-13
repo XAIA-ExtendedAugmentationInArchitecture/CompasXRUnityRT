@@ -28,6 +28,11 @@ namespace CompasXR.Core
         private GameObject ObjectLengthsTags;
         private GameObject ActiveRobotObjects;
 
+        //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
+        private GameObject ZonesGlobalParent;
+
+        //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
+
         //Public Scripts
         public InstantiateObjects instantiateObjects;
         public UIFunctionalities uiFunctionalities;
@@ -48,6 +53,87 @@ namespace CompasXR.Core
             * and is used to initialize the required variables and objects.
             */
 
+            // //Find Other scripts in the scene
+            // instantiateObjects = GameObject.Find("Instantiate").GetComponent<InstantiateObjects>();
+            // uiFunctionalities = GameObject.Find("UIFunctionalities").GetComponent<UIFunctionalities>();
+            // databaseManager = GameObject.Find("DatabaseManager").GetComponent<DatabaseManager>();
+            
+            // //Find GameObjects that need to be transformed
+            // Elements = GameObject.Find("Elements");
+            // UserObjects = GameObject.Find("ActiveUserObjects");
+            // ObjectLengthsTags = GameObject.Find("ObjectLengthsTags");
+            // ActiveRobotObjects = GameObject.Find("ActiveRobotObjects");
+
+            OnStartInitilizationRoboticTerritories();
+
+        }
+        void Update()
+        {
+
+            /*
+            * The Update Method is called once per frame and is used to update the
+            * position of the objects in the scene based on the QR code data.
+            */
+
+            // if (QRCodeDataDict.Count > 0 && Elements != null)
+            // {
+            //     pos = Vector3.zero;
+
+            //     foreach (string key in QRCodeDataDict.Keys)
+            //     {
+            //         GameObject qrObject = GameObject.Find("Marker_" + key);              
+
+            //         if (qrObject != null && qrObject.transform.position != Vector3.zero)
+            //         {
+            //             if(qrObject.name != lastQrName)
+            //             {
+            //                 GameObject lastQrObject = GameObject.Find(lastQrName);
+
+            //                 if (lastQrObject != null)
+            //                 {
+            //                     lastQrObject.transform.position = Vector3.zero;
+            //                     lastQrObject.transform.rotation = Quaternion.identity;
+            //                 }
+
+            //                 lastQrName = qrObject.name;
+            //             }
+                        
+            //             ObjectTransformations.TranslateGameObjectByImageTarget(Elements, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
+            //             ObjectTransformations.TranslateGameObjectByImageTarget(UserObjects, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
+            //             ObjectTransformations.TranslateGameObjectByImageTarget(ObjectLengthsTags, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
+            //             ObjectTransformations.TranslateGameObjectByImageTarget(ActiveRobotObjects, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
+
+            //             //Update position of line objects in the scene
+            //             if (uiFunctionalities.ObjectLengthsToggleObject.GetComponent<Toggle>().isOn)
+            //             {
+            //                 instantiateObjects.UpdateObjectLengthsLines(uiFunctionalities.CurrentStep, instantiateObjects.ObjectLengthsTags.FindObject("P1Tag"), instantiateObjects.ObjectLengthsTags.FindObject("P2Tag"));
+            //             }
+            //         }
+            //     }
+            // }
+
+            PositioningUpdateMethodRoboticTerritories(ref QRCodeDataDict, ref ZonesGlobalParent);
+
+        }
+
+        //////////////////////////// Event Methods /////////////////////////////////////
+        public void OnTrackingInformationReceived(object source, TrackingDataDictEventArgs e)
+        {
+            /*
+            * Method is used to update the QRCodeDataDict
+            * with the data received from the QR code tracking event.
+            */
+            Debug.Log("OnTrackingInformationReceived: Number of QR codes stored as a dict= " + e.QRCodeDataDict.Count);
+            QRCodeDataDict = e.QRCodeDataDict;
+        }
+
+        public void OnStartInitilization()
+        {
+            /*
+            * The Start Method is called before the first frame update
+            * and is used to initialize the required variables and objects.
+            */
+
             //Find Other scripts in the scene
             instantiateObjects = GameObject.Find("Instantiate").GetComponent<InstantiateObjects>();
             uiFunctionalities = GameObject.Find("UIFunctionalities").GetComponent<UIFunctionalities>();
@@ -57,11 +143,11 @@ namespace CompasXR.Core
             Elements = GameObject.Find("Elements");
             UserObjects = GameObject.Find("ActiveUserObjects");
             ObjectLengthsTags = GameObject.Find("ObjectLengthsTags");
-            ActiveRobotObjects = GameObject.Find("ActiveRobotObjects");
+            ActiveRobotObjects = GameObject.Find("ActiveRobotObjects");        
         }
-        void Update()
-        {
 
+        public void PositioningUpdateMethod(ref Dictionary<string, Node> QRCodeDataDict, GameObject ParentObject)
+        {
             /*
             * The Update Method is called once per frame and is used to update the
             * position of the objects in the scene based on the QR code data.
@@ -103,18 +189,60 @@ namespace CompasXR.Core
                     }
                 }
             }
-
         }
 
-        //////////////////////////// Event Methods /////////////////////////////////////
-        public void OnTrackingInformationReceived(object source, TrackingDataDictEventArgs e)
+        //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
+        public void OnStartInitilizationRoboticTerritories()
         {
             /*
-            * Method is used to update the QRCodeDataDict
-            * with the data received from the QR code tracking event.
+            * The Start Method is called before the first frame update
+            * and is used to initialize the required variables and objects.
             */
-            Debug.Log("OnTrackingInformationReceived: Number of QR codes stored as a dict= " + e.QRCodeDataDict.Count);
-            QRCodeDataDict = e.QRCodeDataDict;
+
+            //Find Other scripts in the scene
+            instantiateObjects = GameObject.Find("Instantiate").GetComponent<InstantiateObjects>();
+            uiFunctionalities = GameObject.Find("UIFunctionalities").GetComponent<UIFunctionalities>();
+            databaseManager = GameObject.Find("DatabaseManager").GetComponent<DatabaseManager>();
+            
+            //Find GameObjects that need to be transformed
+            ZonesGlobalParent = GameObject.Find("ZonesParent");
+            ActiveRobotObjects = GameObject.Find("ActiveRobotObjects");        
+        }
+
+        public void PositioningUpdateMethodRoboticTerritories(ref Dictionary<string, Node> QRCodeDataDict,ref GameObject KeyParentObject)
+        {
+            /*
+            * The Update Method is called once per frame and is used to update the
+            * position of the objects in the scene based on the QR code data.
+            */
+
+            if (QRCodeDataDict.Count > 0 && KeyParentObject != null)
+            {
+                pos = Vector3.zero;
+
+                foreach (string key in QRCodeDataDict.Keys)
+                {
+                    GameObject qrObject = GameObject.Find("Marker_" + key);              
+
+                    if (qrObject != null && qrObject.transform.position != Vector3.zero)
+                    {
+                        if(qrObject.name != lastQrName)
+                        {
+                            GameObject lastQrObject = GameObject.Find(lastQrName);
+
+                            if (lastQrObject != null)
+                            {
+                                lastQrObject.transform.position = Vector3.zero;
+                                lastQrObject.transform.rotation = Quaternion.identity;
+                            }
+
+                            lastQrName = qrObject.name;
+                        }
+                        ObjectTransformations.TranslateGameObjectByImageTarget(KeyParentObject, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
+                        ObjectTransformations.TranslateGameObjectByImageTarget(ActiveRobotObjects, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
+                    }
+                }
+            }
         }
     }
 }

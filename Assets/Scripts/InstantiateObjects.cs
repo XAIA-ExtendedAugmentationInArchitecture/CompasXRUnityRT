@@ -66,7 +66,6 @@ namespace CompasXR.Core
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
         Dictionary<string, GameObject> ZonesParentObjectsDict = new Dictionary<string, GameObject>();
-
         public GameObject ZonesParentObject;
         public GameObject BoundaryZoneParent;
         public GameObject InferenceZonesParent;
@@ -144,6 +143,8 @@ namespace CompasXR.Core
                         PlaceZone(entry.Value, parentObject);
                     }
                 }
+
+                UIFunctionalities.ColorZonesBasedOnCurrentMode(projectZones.CurrentZone);
             }
             else
             {
@@ -156,7 +157,7 @@ namespace CompasXR.Core
             GameObject zoneObject = zone.CreateZoneObject();
             zone.ZoneObject = zoneObject;
             zoneObject.transform.SetParent(ParentObject.transform, false);
-            zoneObject.GetComponent<Renderer>().material = zone.ZoneInactiveMaterial;
+            // zoneObject.GetComponent<Renderer>().material = zone.ZoneInactiveMaterial;
 
         }
         public void SetZonesMaterials() //TODO: This is stupid, but works lol

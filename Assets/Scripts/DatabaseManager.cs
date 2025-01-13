@@ -95,7 +95,6 @@ namespace CompasXR.Core
 
         // TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
-
         // Firebase database references
         public DatabaseReference dbReferenceAssembly;
         public DatabaseReference dbReferenceBuildingPlan;

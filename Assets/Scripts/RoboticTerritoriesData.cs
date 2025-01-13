@@ -10,8 +10,6 @@ namespace CompasXR.RoboticTerritories.Data
 {   
     /*
     */
-    //TODO: FIX BOX INSTANTIATION.
-
     public class ProjectZones
     {
         
