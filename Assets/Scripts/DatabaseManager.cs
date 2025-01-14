@@ -193,8 +193,9 @@ namespace CompasXR.Core
             // AssemblyDataDict.Clear();
             // RemoveListners();
 
-            RemoveListnersRoboticTerritories();
             ProjectZones.Clear();
+            RemoveListnersRoboticTerritories();
+
         }
 
     /////////////////////// FETCH AND PUSH DATA /////////////////////////////////

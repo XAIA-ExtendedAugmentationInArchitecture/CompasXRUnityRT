@@ -104,8 +104,7 @@ namespace CompasXR.Core
             Debug.Log("OnZonesRecived: Zones Received");
             // SetZonesMaterials(); //TODO: This is stupid, but will hopefully work before the other one is finished
             PlaceAllProjectZones(e.Zones, ZonesParentObjectsDict);
-        }
-        
+        }  
         public void OnModeZonesUpdate(object source, ModeZonesUpdateEventArgs e)
         {
             /*
@@ -177,7 +176,6 @@ namespace CompasXR.Core
                 Debug.LogWarning("PlaceZones: Project Zones is null");
             }
         }
-
         public void DestroyZoneObjects(Dictionary<string, Zone> ZonesDict)
         {
             /*
@@ -199,7 +197,6 @@ namespace CompasXR.Core
                 Debug.LogWarning("DestroyZones: Zones Dict is null");
             }
         }
-
         public void PlaceAllProjectZones(ProjectZones projectZones, Dictionary<string, GameObject> parentObjects, bool isInitial = true)
         {
             /*
@@ -264,7 +261,6 @@ namespace CompasXR.Core
             zone.ZoneObject = zoneObject;
             zoneObject.transform.SetParent(ParentObject.transform, false);
         }
-
         public void SetIndividualZoneMaterial(Zone zone)
         {
             switch (zone.Name)
