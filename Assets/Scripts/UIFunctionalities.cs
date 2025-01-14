@@ -352,6 +352,8 @@ namespace CompasXR.UI
                 CurrentModeTextObject.text = CurrentZone;
                 databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex; //TODO: THIS NEEDS TO REMAIN THE SAME AS THE OTHER ONE
                 ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
+                Debug.Log($"NextZoneButton: Attempting to push data to database {CurrentZone}");
+                DataHandlers.PushStringDataToDatabaseReference(databaseManager.dbReferenceCurrentMode, JsonConvert.SerializeObject(CurrentZone));
             }
             else
             {
@@ -370,6 +372,8 @@ namespace CompasXR.UI
                 CurrentModeTextObject.text = CurrentZone;
                 databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex;
                 ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
+                Debug.Log($"PreviousZoneButton: Attempting to push data to database {CurrentZone}");
+                DataHandlers.PushStringDataToDatabaseReference(databaseManager.dbReferenceCurrentMode, JsonConvert.SerializeObject(CurrentZone));
             }
             else
             {

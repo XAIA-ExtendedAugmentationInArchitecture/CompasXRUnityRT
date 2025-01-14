@@ -107,6 +107,7 @@ namespace CompasXR.Core
         
         // TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         public DatabaseReference dbReferenceZones;
+        public DatabaseReference dbReferenceCurrentMode;
         public ProjectZones ProjectZones = new ProjectZones();
 
         //EVENTS        
@@ -118,12 +119,12 @@ namespace CompasXR.Core
 
         public InstantiateObjects instantiateObjects;
 
-        //TODO: Needed to add materials here because they are stored in the class structure itself. It is dumb but will work for now.
-        public Material HumanZoneMaterial;
-        public Material RobotZoneMaterial;
-        public Material CollaborationZoneMaterial;
-        public Material PickZoneMaterial;
-        public Material ZonesOutlineMaterial;
+        // //TODO: Needed to add materials here because they are stored in the class structure itself. It is dumb but will work for now.
+        // public Material HumanZoneMaterial;
+        // public Material RobotZoneMaterial;
+        // public Material CollaborationZoneMaterial;
+        // public Material PickZoneMaterial;
+        // public Material ZonesOutlineMaterial;
 
         // TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -191,6 +192,9 @@ namespace CompasXR.Core
             // UserCurrentStepDict.Clear();
             // AssemblyDataDict.Clear();
             // RemoveListners();
+
+            RemoveListnersRoboticTerritories();
+            ProjectZones.Clear();
         }
 
     /////////////////////// FETCH AND PUSH DATA /////////////////////////////////
@@ -204,11 +208,11 @@ namespace CompasXR.Core
             UIFunctionalities = GameObject.Find("UIFunctionalities").GetComponent<UIFunctionalities>();
 
             //TODO: This is dumb, but it has to happen here because it the only place that it makes sense for assigning materials in the class structure
-            HumanZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("HumanZone").GetComponentInChildren<Renderer>().material;
-            RobotZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("RobotZone").GetComponentInChildren<Renderer>().material;
-            CollaborationZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("CollaborationZone").GetComponentInChildren<Renderer>().material;
-            PickZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("PickZone").GetComponentInChildren<Renderer>().material;
-            ZonesOutlineMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("OutlineMaterial").GetComponentInChildren<Renderer>().material;
+            // HumanZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("HumanZone").GetComponentInChildren<Renderer>().material;
+            // RobotZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("RobotZone").GetComponentInChildren<Renderer>().material;
+            // CollaborationZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("CollaborationZone").GetComponentInChildren<Renderer>().material;
+            // PickZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("PickZone").GetComponentInChildren<Renderer>().material;
+            // ZonesOutlineMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("OutlineMaterial").GetComponentInChildren<Renderer>().material;
         }
         public async void FetchSettingsData(DatabaseReference settings_reference)
         {
@@ -232,71 +236,6 @@ namespace CompasXR.Core
         }    
         
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
-
-        public void SetIndividualZoneMaterial(string ZoneKey, Zone zone)
-        {
-            switch (ZoneKey)
-            {   
-                case "tele_mimic_zone":
-                    if(zone.Name == "tele_mimic_zone")
-                    {
-                        zone.ZoneActiveMaterial = RobotZoneMaterial;
-                        zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"SetIndividualZoneMaterial: Invalid Zone Name {zone.Name} for Telemimic Zones");
-                    }
-                    break;
-                case "mimic_zones":
-                    if(zone.Name == "human_zone")
-                    {
-                        zone.ZoneActiveMaterial = HumanZoneMaterial;
-                        zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
-                    }
-                    else if(zone.Name == "robot_zone")
-                    {
-                        zone.ZoneActiveMaterial = RobotZoneMaterial;
-                        zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"SetIndividualZoneMaterial: Invalid Zone Name {zone.Name} for Mimic Zones");
-                    }
-                    break;
-                case "inference_zones":
-                    if(zone.Name == "collaboration_zone")
-                    {
-                        zone.ZoneActiveMaterial = CollaborationZoneMaterial;
-                        zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
-                    }
-                    else if(zone.Name == "pick_zone")
-                    {
-                        zone.ZoneActiveMaterial = PickZoneMaterial;
-                        zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"SetIndividualZoneMaterial: Invalid Zone Name {zone.Name} for Inference Zones");
-                    }
-                    break;
-                case "boundary_zone":
-                    if(zone.Name == "boundary_zone")
-                    {
-                        zone.ZoneActiveMaterial = ZonesOutlineMaterial;
-                        zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"SetIndividualZoneMaterial: Invalid Zone Name {zone.Name} for Boundary Zones");
-                    }
-                    break;
-                default:
-                    Debug.LogWarning($"SetIndividualZoneMaterial: Invalid Zone Type for key '{ZoneKey}'. Not changing the key.");
-                    break;
-            }        
-        }
-
         public async void FetchRoboticTerritoriesData(object source, ApplicationSettingsEventArgs e)
         {
             /*
@@ -306,6 +245,7 @@ namespace CompasXR.Core
             dbRefrenceProject = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name);
             dbReferenceZones = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("zones");
             dbReferenceQRCodes = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("QRFrames").Child("graph").Child("node");
+            dbReferenceCurrentMode = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("CurrentMode");
 
             await FetchRTDDatawithEventHandler(dbReferenceQRCodes, snapshot => DeserializeAssemblyDataSnapshot(snapshot, QRCodeDataDict), "TrackingDict");
             await DataHandlers.FetchDataFromDatabaseReference(dbReferenceZones, snapshot => DeserializeZoneDataSnapshot(snapshot, ProjectZones));
@@ -404,6 +344,29 @@ namespace CompasXR.Core
             dbReferenceZones.ChildAdded += OnZonesInformationChanged;
             dbReferenceZones.ChildChanged += OnZonesInformationChanged;
             dbReferenceZones.ChildRemoved += OnZonesInformationChanged;
+
+            dbReferenceQRCodes.ChildAdded += OnQRCodesInformationChanged;
+            dbReferenceQRCodes.ChildChanged += OnQRCodesInformationChanged;
+            dbReferenceQRCodes.ChildRemoved += OnQRCodesInformationChanged;
+
+
+        }
+
+        //Event Listners
+        public void RemoveListnersRoboticTerritories()
+        {
+            /*
+            * Method is used to remove event listeners to the Firebase Realtime Database Events.
+            * It is designed to stop listening for changes in the database.
+            */
+            Debug.Log("RemoveListnersRoboticTerritories: Removing Listeners to the Firebase Realtime Database");
+            dbReferenceZones.ChildAdded -= OnZonesInformationChanged;
+            dbReferenceZones.ChildChanged -= OnZonesInformationChanged;
+            dbReferenceZones.ChildRemoved -= OnZonesInformationChanged;
+
+            dbReferenceQRCodes.ChildAdded -= OnQRCodesInformationChanged;
+            dbReferenceQRCodes.ChildChanged -= OnQRCodesInformationChanged;
+            dbReferenceQRCodes.ChildRemoved -= OnQRCodesInformationChanged;
         }
         public void OnZonesInformationChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
         {
@@ -460,6 +423,31 @@ namespace CompasXR.Core
             UnityEngine.Assertions.Assert.IsNotNull(ModeZonesUpdate, "Modes dict is null!");
             Debug.Log("ZonesUpdate: Sending Zones to the respective classes");
             ModeZonesUpdate(this, new ModeZonesUpdateEventArgs() {Zones = ModeZonesDict, Key = key});
+        }
+        protected async void OnQRCodesInformationChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
+        {
+            if (args.DatabaseError != null) {
+                Debug.LogError($"OnQRCodesChanged: Database error: {args.DatabaseError}");
+                return;
+            }
+
+            if (args.Snapshot == null) {
+                Debug.LogWarning("OnQRCodesChanged: Snapshot is null. Ignoring the child change.");
+                return;
+            }
+
+            string key = args.Snapshot.Key;
+            var childSnapshot = args.Snapshot.GetValue(true);
+
+            if (childSnapshot != null && key != null)
+            {
+                Debug.Log("OnProjectInfoChangedUpdate: QRFrames Changed");
+                await FetchRTDDatawithEventHandler(dbReferenceQRCodes, snapshot => DeserializeAssemblyDataSnapshot(snapshot, QRCodeDataDict), "TrackingDict");
+            }
+            else
+            {
+                Debug.LogWarning("OnQRCodesChanged: Snapshot or key is null. Ignoring the child change.");
+            }
         }
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
@@ -1212,10 +1200,6 @@ namespace CompasXR.Core
             ApplicationSettingUpdate(this, new ApplicationSettingsEventArgs(){Settings = settings});
         }
 
-        //TODO: Robotic Territories Testing////////////////////////////////////////////////////////////////////////////////////////////
-
-        //TODO: Robotic Territories Testing////////////////////////////////////////////////////////////////////////////////////////////
-
     }
 
     public static class DataHandlers
@@ -1277,6 +1261,8 @@ namespace CompasXR.Core
             /*
             * Method is used to push a string data to the Firebase Realtime Database databaseReference.
             */
+            Debug.Log($"PushStringDataToDatabaseReference: Pushing data to the database reference {data}");
+            Debug.Log($"PushStringDataToDatabaseReference: Pushing data of type {data.GetType()} to the database reference {data}");
             databaseReference.SetRawJsonValueAsync(data);
         }
         public static string PrintDataFromDatabaseRefrerence(DatabaseReference databaseReference)

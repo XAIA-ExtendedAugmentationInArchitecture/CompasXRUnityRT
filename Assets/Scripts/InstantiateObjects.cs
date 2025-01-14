@@ -256,7 +256,7 @@ namespace CompasXR.Core
                 Debug.LogWarning("PlaceZones: Project Zones is null");
             }
         }
-        public void PlaceZoneItem(Zone zone, GameObject ParentObject) //TODO: THIS NEEDS TO BE A MATERIAL DICT.
+        public void PlaceZoneItem(Zone zone, GameObject ParentObject)
         {
             Debug.Log($"PlaceZone: {zone.Name} In parent Object: {ParentObject}");
             GameObject zoneObject = zone.CreateZoneObject();
@@ -264,76 +264,12 @@ namespace CompasXR.Core
             zone.ZoneObject = zoneObject;
             zoneObject.transform.SetParent(ParentObject.transform, false);
         }
-        // public void SetZonesMaterials() //TODO: This is stupid, but works lol
-        // {
-        //     //This is a dumb method, but it is just used to coordinate the zones materials on start
-        //     Dictionary<string, Zone> boundaryZone = databaseManager.ProjectZones.BoundaryZone;
-        //     Dictionary<string, Zone> inferenceZones = databaseManager.ProjectZones.InferenceZones;
-        //     Dictionary<string, Zone> mimicZones = databaseManager.ProjectZones.MimicZones;
-        //     Dictionary<string, Zone> telemimicZones = databaseManager.ProjectZones.TelemimicZones;
-
-        //     foreach (KeyValuePair<string, Zone> entry in boundaryZone)
-        //     {
-        //         entry.Value.ZoneActiveMaterial = ZonesOutlineMaterial;
-        //         entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-        //     }
-        //     foreach (KeyValuePair<string, Zone> entry in inferenceZones)
-        //     {
-        //         if(entry.Key == "collaboration_zone")
-        //         {
-        //             entry.Value.ZoneActiveMaterial = CollaborationZoneMaterial;
-        //             entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-        //         }
-        //         else if(entry.Key == "pick_zone")
-        //         {
-        //             entry.Value.ZoneActiveMaterial = PickZoneMaterial;
-        //             entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-        //         }
-        //         else
-        //         {
-        //             entry.Value.ZoneActiveMaterial = HumanZoneMaterial;
-        //             entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-        //         }
-        //     }
-        //     foreach (KeyValuePair<string, Zone> entry in mimicZones)
-        //     {
-        //         if(entry.Key == "human_zone")
-        //         {
-        //             entry.Value.ZoneActiveMaterial = HumanZoneMaterial;
-        //             entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-        //         }
-        //         else
-        //         {
-        //             entry.Value.ZoneActiveMaterial = RobotZoneMaterial;
-        //             entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-        //         }
-        //     }
-        //     foreach (KeyValuePair<string, Zone> entry in telemimicZones)
-        //     {
-        //         if(entry.Key == "human_zone")
-        //         {
-        //             entry.Value.ZoneActiveMaterial = HumanZoneMaterial;
-        //             entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-        //         }
-        //         else
-        //         {
-        //             entry.Value.ZoneActiveMaterial = RobotZoneMaterial;
-        //             entry.Value.ZoneInactiveMaterial = ZonesOutlineMaterial;
-        //         }
-        //     }
-        //     // Debug.Log("ZonesMaterials: Set Zones Materials " + JsonConvert.SerializeObject(databaseManager.ProjectZones));
-        // }
 
         public void SetIndividualZoneMaterial(Zone zone)
         {
-            Debug.Log("I AM HERE");
-            Debug.Log("THIS IS THE ZONE NAME: " + zone.Name);
             switch (zone.Name)
             {   
                 case "tele_mimic_zone":
-                    Debug.Log("SetIndividualZoneMaterial: TeleMimic Zone");
-                    Debug.Log($"SetIndividualZoneMaterial: TeleMimic Zone Material: {RobotZoneMaterial}");
-                    Debug.Log($"SetIndividualZoneMaterial: TeleMimic Zone Material: {ZonesOutlineMaterial}");
                     zone.ZoneActiveMaterial = RobotZoneMaterial;
                     zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
                     break;
