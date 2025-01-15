@@ -79,7 +79,7 @@ namespace CompasXR.Core
         public Material RobotZoneMaterial;
         public Material CollaborationZoneMaterial;
         public Material PickZoneMaterial;
-        public Material ZonesOutlineMaterial;
+        public Material BoundaryMaterial;
 
         //Events
         public delegate void InitialZonesCreated(object source, EventArgs e);
@@ -267,27 +267,27 @@ namespace CompasXR.Core
             {   
                 case "tele_mimic_zone":
                     zone.ZoneActiveMaterial = RobotZoneMaterial;
-                    zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    zone.ZoneInactiveMaterial = BoundaryMaterial;
                     break;
                 case "human_zone":
                     zone.ZoneActiveMaterial = HumanZoneMaterial;
-                    zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    zone.ZoneInactiveMaterial = BoundaryMaterial;
                     break;
                 case "robot_zone":
                     zone.ZoneActiveMaterial = RobotZoneMaterial;
-                    zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    zone.ZoneInactiveMaterial = BoundaryMaterial;
                     break;
                 case "collaboration_zone":
                     zone.ZoneActiveMaterial = CollaborationZoneMaterial;
-                    zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    zone.ZoneInactiveMaterial = BoundaryMaterial;
                     break;
                 case "pick_zone":
                         zone.ZoneActiveMaterial = PickZoneMaterial;
-                        zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                        zone.ZoneInactiveMaterial = BoundaryMaterial;
                     break;
                 case "boundary_zone":
-                    zone.ZoneActiveMaterial = ZonesOutlineMaterial;
-                    zone.ZoneInactiveMaterial = ZonesOutlineMaterial;
+                    zone.ZoneActiveMaterial = BoundaryMaterial;
+                    zone.ZoneInactiveMaterial = BoundaryMaterial;
                     break;
                 default:
                     Debug.LogWarning($"SetIndividualZoneMaterial: Couldn't Set material for '{zone.Name}'");
@@ -340,7 +340,7 @@ namespace CompasXR.Core
             RobotZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("RobotZone").GetComponentInChildren<Renderer>().material;
             CollaborationZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("CollaborationZone").GetComponentInChildren<Renderer>().material;
             PickZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("PickZone").GetComponentInChildren<Renderer>().material;
-            ZonesOutlineMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("OutlineMaterial").GetComponentInChildren<Renderer>().material;
+            BoundaryMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("BoundaryMaterial").GetComponentInChildren<Renderer>().material;
 
             if(HumanZoneMaterial == null || RobotZoneMaterial == null || CollaborationZoneMaterial == null || PickZoneMaterial == null)
             {
