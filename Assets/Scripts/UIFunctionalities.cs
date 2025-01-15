@@ -152,6 +152,7 @@ namespace CompasXR.UI
         public GameObject UserObjects;
 
         //AR Camera and Touch GameObjects & Occlusion Objects
+        public GameObject arCameraObject;
         public Camera arCamera;
         private GameObject activeGameObject;
         private GameObject temporaryObject; 
@@ -199,6 +200,9 @@ namespace CompasXR.UI
         public GameObject MimicTrajectoryReviewSliderObject;
         public Slider MimicTrajectoryReviewSlider;
 
+        //Mimic OnScreen Messages
+        public GameObject MimicSetPointOutsideOfHumanZone;
+
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////// Monobehaviour Methods ///////////////////////////////////////////////////////////        
@@ -242,6 +246,11 @@ namespace CompasXR.UI
             ZonesParentGlobal = GameObject.Find("ZonesParent");
             QRMarkers = GameObject.Find("QRMarkers");
             CanvasObject = GameObject.Find("Canvas");
+
+            //Find AR and system management items
+            arCamera = GameObject.Find("XR Origin").FindObject("Camera Offset").FindObject("Main Camera").GetComponent<Camera>();
+            rayManager = FindObjectOfType<ARRaycastManager>();
+            currentOperatingSystem = OperatingSystemManager.GetCurrentOS();
 
             //Find OnScreeen Message Prefabs
             RoboticTerritoriesCanvasItems = CanvasObject.FindObject("RoboticTerritories");
@@ -358,100 +367,34 @@ namespace CompasXR.UI
             MimicControlsSetPointsUIObjects = MimicControlsObject.FindObject("SetPointsUI");
             MimicControlsReviewAndExecuteTrajectoryUIObjects = MimicControlsObject.FindObject("ReviewAndExecuteTrajectoryUI");
 
-            
-            if(MimicControlsSetPointsUIObjects == null)
-            {
-                Debug.Log("MIMICUITESTING: MimicControlsSetPointsUIObjects is null.");
-            }
-            else if(MimicControlsObject == null)
-            {
-                Debug.Log("MIMICUITESTING: MimicControlsSetPointsUIObjects is null.");
-            }
-            else if(MimicControlsReviewAndExecuteTrajectoryUIObjects == null)
-            {
-                Debug.Log("MIMICUITESTING: MimicControlsReviewAndExecuteTrajectoryUIObjects is null.");
-            }
-            else
-            {
-                Debug.Log("MIMICUITESTING: MimicControlsSetPointsUIObjects and MimicControlsReviewAndExecuteTrajectoryUIObjects are not null.");
-            }
-
             //Find SetPointsButton Objects
             UserInterface.FindButtonandSetOnClickAction(
             MimicControlsSetPointsUIObjects,
             ref MimicSetPointsButtonObject,
-            "SetPointButton", () => UserInterface.PrintStringOnClick("MimicControls: SetPointsButton Clicked"));
-            if(MimicSetPointsButtonObject == null)
-            {
-                Debug.Log("MIMICUITESTING: MimicSetPointsButtonObject is null.");
-            }
-            else
-            {
-                Debug.Log("MIMICUITESTING: MimicSetPointsButtonObject is not null.");
-            }
+            "SetPointButton", SetMimicPoint);
 
             //Find UndoPointsButton Objects
             UserInterface.FindButtonandSetOnClickAction(
             MimicControlsSetPointsUIObjects,
             ref MimicControlsUndoPointButtonObject,
             "UndoPointButton", () => UserInterface.PrintStringOnClick("MimicControls: UndoPointButtonClicked Clicked"));
-            if(MimicControlsUndoPointButtonObject == null)
-            {
-                Debug.Log("MIMICUITESTING: MimicControlsUndoPointButtonObject is null.");
-            }
-            else
-            {
-                Debug.Log("MIMICUITESTING: MimicControlsUndoPointButtonObject is not null.");
-            }
 
             //Find UndoPointsButton Objects
             UserInterface.FindButtonandSetOnClickAction(
             MimicControlsSetPointsUIObjects,
             ref MimicRequestTrajectoryButtonObject,
             "RequestTrajectoryButton", () => UserInterface.PrintStringOnClick("MimicControls: RequestingTrajectoryButton Clicked"));
-            if(MimicRequestTrajectoryButtonObject == null)
-            {
-                Debug.Log("MIMICUITESTING: MimicRequestTrajectoryButtonObject is null.");
-            }
-            else
-            {
-                Debug.Log("MIMICUITESTING: MimicRequestTrajectoryButtonObject is not null.");
-            }
 
             //Find Execute Button Objects
             UserInterface.FindButtonandSetOnClickAction(
             MimicControlsReviewAndExecuteTrajectoryUIObjects,
             ref MimicExecuteTrajectoryButtonObject,
             "ExecuteTrajectoryButton", () => UserInterface.PrintStringOnClick("MimicControls: ExecuteTrajectoryButton Clicked"));
-            if(MimicExecuteTrajectoryButtonObject == null)
-            {
-                Debug.Log("MIMICUITESTING: MimicExecuteTrajectoryButtonObject is null.");
-            }
-            else
-            {
-                Debug.Log("MIMICUITESTING: MimicExecuteTrajectoryButtonObject is not null.");
-            }
 
             //Find Slider Objects
             UserInterface.FindSliderandSetOnValueChangeAction(
             MimicControlsReviewAndExecuteTrajectoryUIObjects, ref MimicTrajectoryReviewSliderObject,
             ref MimicTrajectoryReviewSlider, "TrajectoryReviewSlider", value => UserInterface.PrintStringOnClick($"MimicControls: TrajectoryReviewSlider used {value}"));
-            if(MimicTrajectoryReviewSliderObject == null)
-            {
-                Debug.Log("MIMICUITESTING: MimicTrajectoryReviewSliderObject is null.");
-            }
-            else
-            {
-                Debug.Log("MIMICUITESTING: MimicTrajectoryReviewSliderObject is not null.");
-            }
-            if(MimicTrajectoryReviewSlider == null)
-            {
-                Debug.Log("MIMICUITESTING: MimicTrajectoryReviewSlider is null.");
-            }
-            else
-            {
-                Debug.Log("MIMICUITESTING: MimicTrajectoryReviewSlider is not null.");
-            }
         }
         public void NextZoneButton()
         {
@@ -551,6 +494,48 @@ namespace CompasXR.UI
             }
         }
 
+        public void SetMimicPoint()
+        {
+            /*
+            * Method is used to set the mimic point based on the human and robot zone objects.
+            */
+            Debug.Log("SetMimicPoint: Setting Mimic Point based on Human and Robot Zone Objects.");
+            Debug.Log("SetMimicPoint: Mimic Zone Objects: " +databaseManager.ProjectZones.MimicZones + "Type of Mimic Zones: " + databaseManager.ProjectZones.MimicZones.GetType());
+    
+            // Retrieve the dictionary
+            var mimicZones = databaseManager.ProjectZones.MimicZones;
+
+            // Check for the "human_zone" key
+            if (mimicZones.TryGetValue("human_zone", out Zone humanZone))
+            {
+                Debug.Log("SetMimicPoint: Found Human Zone: " + humanZone);
+                Debug.Log("SetMimicPoint: Human Zone Object: " + humanZone.ZoneObject.GetType());
+                GameObject humanZoneObject = humanZone.ZoneObject;
+                Vector3 cameraPositionObject = arCamera.transform.position;
+                
+                if(ObjectInstantiaion.IsPositionWithinObject(humanZoneObject, cameraPositionObject))
+                {
+                    Debug.Log("SetMimicPoint: Camera Position is within the Human Zone Object.");
+                    Vector3 position = cameraPositionObject;
+                    Quaternion rotation = arCamera.transform.rotation;
+                    float radius = 0.1f;
+                    Color color = Color.yellow;
+                    name = "MimicPoint";
+                    instantiateObjects.CreateSphereAtPositionAndRotation(position, rotation, radius, color, name);
+                }
+                else
+                {
+                    Debug.Log("SetMimicPoint: Camera Position is not within the Human Zone Object.");
+                    string message = "WARNING: This Point cannot be set because it is not within the human editing zone.";
+                    UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenInfoMessagePrefab, ref MimicSetPointOutsideOfHumanZone, "MimicPointOutsideOfBounds", MessagesParent, message, "RequestTrajectoryButtonMethod: Transaction Lock Active Warning.");
+
+                }
+            }
+            else
+            {
+                Debug.LogError("SetMimicPoint: 'human_zone' key not found in MimicZones.");
+            }
+            }
         //UI Control Methods
         public void SetUIObjectsFromCurrentMode(ProjectZones.CurrentZoneMode mode)
         {
@@ -596,6 +581,7 @@ namespace CompasXR.UI
             MimicTrajectoryReviewSliderObject.GetComponentInChildren<Slider>().interactable = reviewInteractive;
         }
 
+
         
         //TODO: RoboticTerritories Testing ///////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
@@ -621,6 +607,7 @@ namespace CompasXR.UI
             UserObjects = GameObject.Find("ActiveUserObjects");     
 
             //Find AR and system management items
+            arCameraObject = GameObject.Find("XR Origin").FindObject("Camera Offset").FindObject("Main Camera");
             arCamera = GameObject.Find("XR Origin").FindObject("Camera Offset").FindObject("Main Camera").GetComponent<Camera>();
             rayManager = FindObjectOfType<ARRaycastManager>();
             currentOperatingSystem = OperatingSystemManager.GetCurrentOS();

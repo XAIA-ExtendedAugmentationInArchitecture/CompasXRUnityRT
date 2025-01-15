@@ -994,6 +994,27 @@ namespace CompasXR.Core
             }
             return sphere;
         }
+        public GameObject CreateSphereAtPositionAndRotation(Vector3 position, Quaternion rotation, float radius, Color color, string name=null, GameObject parentObject=null)
+        {
+            /*
+            * Method is used to create a sphere object in the AR space
+            * based on the position, radius, and color.
+            */
+            GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            sphere.transform.position = position;
+            sphere.transform.rotation = rotation;
+            sphere.transform.localScale = new Vector3(radius, radius, radius);
+            sphere.GetComponent<Renderer>().material.color = color;
+            if (name != null)
+            {
+                sphere.name = name;
+            }
+            if (parentObject != null)
+            {
+                sphere.transform.SetParent(parentObject.transform);
+            }
+            return sphere;
+        }
         public void DestroyChildrenWithOutGeometryName(GameObject gameObject)
         {
             /*
@@ -1469,7 +1490,6 @@ namespace CompasXR.Core
                 Debug.LogWarning( $"DestroyGameObjectByName: Could Not find Object with key: {gameObjectName}");
             }
         }
-
         public static void DestroyChildrenOfGameObject(GameObject gameObject)
         {
             /*
@@ -1478,6 +1498,28 @@ namespace CompasXR.Core
             foreach (Transform child in gameObject.transform)
             {
                 GameObject.Destroy(child.gameObject);
+            }
+        }
+
+        //TODO: RoboticTerritories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        public static bool IsPositionWithinObject(GameObject targetObject, Vector3 positionToCheck)
+        {
+            if (targetObject == null)
+            {
+                Debug.LogError("IsPositionWithinObject: Target object is null.");
+                return false;
+            }
+
+            Collider collider = targetObject.GetComponent<Collider>();
+            if (collider != null)
+            {
+                // Check if the position is within the collider's bounds
+                return collider.bounds.Contains(positionToCheck);
+            }
+            else
+            {
+                Debug.LogError($"The target object {targetObject.name} does not have a collider.");
+                return false;
             }
         }
     }
