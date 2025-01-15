@@ -188,6 +188,17 @@ namespace CompasXR.UI
         public GameObject RoboticTerritoriesConstantUIObjects;
         public GameObject CorrectionButtonObject;
 
+        //Mimic Controls
+        public GameObject MimicControlsSetPointsUIObjects;
+        public GameObject MimicSetPointsButtonObject;
+        public GameObject MimicControlsUndoPointButtonObject;
+        public GameObject MimicRequestTrajectoryButtonObject;
+
+        public GameObject MimicControlsReviewAndExecuteTrajectoryUIObjects;
+        public GameObject MimicExecuteTrajectoryButtonObject;
+        public GameObject MimicTrajectoryReviewSliderObject;
+        public Slider MimicTrajectoryReviewSlider;
+
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////// Monobehaviour Methods ///////////////////////////////////////////////////////////        
@@ -243,6 +254,9 @@ namespace CompasXR.UI
 
             //Set robotic items on start
             SetRoboticMenuItemsOnStart();
+
+            //Set Mimic Controls on start
+            SetMimicControlsOnStart();
 
             //Set Correction Items on Start
             SetCorrectionMenuItemsOnStart();
@@ -333,12 +347,111 @@ namespace CompasXR.UI
 
             //Find the Menu Buttons
             RoboticTerritoriesConstantUIObjects = RoboticTerritoriesCanvasItems.FindObject("ConstantUIPanel"); 
-            // NextZoneButtonObject = RoboticTerritoriesCanvasItems.FindObject("ConstantUIPanel").FindObject("NextZoneButton");
-            // PreviousZoneButtonObject = RoboticTerritoriesCanvasItems.FindObject("ConstantUIPanel").FindObject("PreviousZoneButton");
-
             UserInterface.FindButtonandSetOnClickAction(RoboticTerritoriesConstantUIObjects, ref NextZoneButtonObject, "NextZoneButton", NextZoneButton);
             UserInterface.FindButtonandSetOnClickAction(RoboticTerritoriesConstantUIObjects, ref PreviousZoneButtonObject, "PreviousZoneButton", PreviousZoneButton);
 
+        }
+        public void SetMimicControlsOnStart()
+        {
+            //Find Mimic Control Objects
+            GameObject MimicControlsObject = RoboticTerritoriesCanvasItems.FindObject("MimicControls");
+            MimicControlsSetPointsUIObjects = MimicControlsObject.FindObject("SetPointsUI");
+            MimicControlsReviewAndExecuteTrajectoryUIObjects = MimicControlsObject.FindObject("ReviewAndExecuteTrajectoryUI");
+
+            
+            if(MimicControlsSetPointsUIObjects == null)
+            {
+                Debug.Log("MIMICUITESTING: MimicControlsSetPointsUIObjects is null.");
+            }
+            else if(MimicControlsObject == null)
+            {
+                Debug.Log("MIMICUITESTING: MimicControlsSetPointsUIObjects is null.");
+            }
+            else if(MimicControlsReviewAndExecuteTrajectoryUIObjects == null)
+            {
+                Debug.Log("MIMICUITESTING: MimicControlsReviewAndExecuteTrajectoryUIObjects is null.");
+            }
+            else
+            {
+                Debug.Log("MIMICUITESTING: MimicControlsSetPointsUIObjects and MimicControlsReviewAndExecuteTrajectoryUIObjects are not null.");
+            }
+
+            //Find SetPointsButton Objects
+            UserInterface.FindButtonandSetOnClickAction(
+            MimicControlsSetPointsUIObjects,
+            ref MimicSetPointsButtonObject,
+            "SetPointButton", () => UserInterface.PrintStringOnClick("MimicControls: SetPointsButton Clicked"));
+            if(MimicSetPointsButtonObject == null)
+            {
+                Debug.Log("MIMICUITESTING: MimicSetPointsButtonObject is null.");
+            }
+            else
+            {
+                Debug.Log("MIMICUITESTING: MimicSetPointsButtonObject is not null.");
+            }
+
+            //Find UndoPointsButton Objects
+            UserInterface.FindButtonandSetOnClickAction(
+            MimicControlsSetPointsUIObjects,
+            ref MimicControlsUndoPointButtonObject,
+            "UndoPointButton", () => UserInterface.PrintStringOnClick("MimicControls: UndoPointButtonClicked Clicked"));
+            if(MimicControlsUndoPointButtonObject == null)
+            {
+                Debug.Log("MIMICUITESTING: MimicControlsUndoPointButtonObject is null.");
+            }
+            else
+            {
+                Debug.Log("MIMICUITESTING: MimicControlsUndoPointButtonObject is not null.");
+            }
+
+            //Find UndoPointsButton Objects
+            UserInterface.FindButtonandSetOnClickAction(
+            MimicControlsSetPointsUIObjects,
+            ref MimicRequestTrajectoryButtonObject,
+            "RequestTrajectoryButton", () => UserInterface.PrintStringOnClick("MimicControls: RequestingTrajectoryButton Clicked"));
+            if(MimicRequestTrajectoryButtonObject == null)
+            {
+                Debug.Log("MIMICUITESTING: MimicRequestTrajectoryButtonObject is null.");
+            }
+            else
+            {
+                Debug.Log("MIMICUITESTING: MimicRequestTrajectoryButtonObject is not null.");
+            }
+
+            //Find Execute Button Objects
+            UserInterface.FindButtonandSetOnClickAction(
+            MimicControlsReviewAndExecuteTrajectoryUIObjects,
+            ref MimicExecuteTrajectoryButtonObject,
+            "ExecuteTrajectoryButton", () => UserInterface.PrintStringOnClick("MimicControls: ExecuteTrajectoryButton Clicked"));
+            if(MimicExecuteTrajectoryButtonObject == null)
+            {
+                Debug.Log("MIMICUITESTING: MimicExecuteTrajectoryButtonObject is null.");
+            }
+            else
+            {
+                Debug.Log("MIMICUITESTING: MimicExecuteTrajectoryButtonObject is not null.");
+            }
+
+            //Find Slider Objects
+            UserInterface.FindSliderandSetOnValueChangeAction(
+            MimicControlsReviewAndExecuteTrajectoryUIObjects, ref MimicTrajectoryReviewSliderObject,
+            ref MimicTrajectoryReviewSlider, "TrajectoryReviewSlider", value => UserInterface.PrintStringOnClick($"MimicControls: TrajectoryReviewSlider used {value}"));
+            if(MimicTrajectoryReviewSliderObject == null)
+            {
+                Debug.Log("MIMICUITESTING: MimicTrajectoryReviewSliderObject is null.");
+            }
+            else
+            {
+                Debug.Log("MIMICUITESTING: MimicTrajectoryReviewSliderObject is not null.");
+            }
+            if(MimicTrajectoryReviewSlider == null)
+            {
+                Debug.Log("MIMICUITESTING: MimicTrajectoryReviewSlider is null.");
+            }
+            else
+            {
+                Debug.Log("MIMICUITESTING: MimicTrajectoryReviewSlider is not null.");
+            }
         }
         public void NextZoneButton()
         {
@@ -352,6 +465,7 @@ namespace CompasXR.UI
                 CurrentModeTextObject.text = CurrentZone;
                 databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex; //TODO: THIS NEEDS TO REMAIN THE SAME AS THE OTHER ONE
                 ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
+                SetUIObjectsFromCurrentMode(databaseManager.ProjectZones.CurrentZone);
                 Debug.Log($"NextZoneButton: Attempting to push data to database {CurrentZone}");
                 DataHandlers.PushStringDataToDatabaseReference(databaseManager.dbReferenceCurrentMode, JsonConvert.SerializeObject(CurrentZone));
             }
@@ -372,6 +486,7 @@ namespace CompasXR.UI
                 CurrentModeTextObject.text = CurrentZone;
                 databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex;
                 ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
+                SetUIObjectsFromCurrentMode(databaseManager.ProjectZones.CurrentZone);
                 Debug.Log($"PreviousZoneButton: Attempting to push data to database {CurrentZone}");
                 DataHandlers.PushStringDataToDatabaseReference(databaseManager.dbReferenceCurrentMode, JsonConvert.SerializeObject(CurrentZone));
             }
@@ -436,6 +551,52 @@ namespace CompasXR.UI
             }
         }
 
+        //UI Control Methods
+        public void SetUIObjectsFromCurrentMode(ProjectZones.CurrentZoneMode mode)
+        {
+            /*
+            * Method is used to set the UI objects based on the current mode.
+            */
+            switch (mode)
+            {
+                case ProjectZones.CurrentZoneMode.None:
+                    Debug.Log("SetUIObjectsFromCurrentMode: Setting UI Objects for None Mode.");
+                    SetMimicControlsActivity(false, false, false, false, false);
+                    break;
+                case ProjectZones.CurrentZoneMode.Inference:
+                    Debug.Log("SetUIObjectsFromCurrentMode: Setting UI Objects for Inference Mode.");
+                    SetMimicControlsActivity(false, false, false, false, false);
+                    break;
+                case ProjectZones.CurrentZoneMode.Mimic:
+                    SetMimicControlsActivity(true, true, true, false, false);
+                    Debug.Log("SetUIObjectsFromCurrentMode: Setting Active Controls for Mimic Mode.");
+                    break;
+                case ProjectZones.CurrentZoneMode.Telemimic:
+                    SetMimicControlsActivity(false, false, false, false, false);
+                    Debug.Log("SetUIObjectsFromCurrentMode: Setting Active Controls for Telemimic Mode.");
+                    break;
+                default:
+                    SetMimicControlsActivity(false, false, false, false, false);
+                    Debug.LogWarning("SetUIObjectsFromCurrentMode: Current Zone Mode is not set.");
+                    break;
+            }
+        }
+        public void SetMimicControlsActivity(bool setControlsActive, bool setControlsInteractive, bool requestInteractable, bool reviewActive, bool reviewInteractive)
+        {
+            /*
+            * Method is used to set the Mimic Controls activity based on the input.
+            */
+            MimicControlsSetPointsUIObjects.SetActive(setControlsActive);
+            MimicSetPointsButtonObject.GetComponentInChildren<Button>().interactable = setControlsInteractive;
+            MimicControlsUndoPointButtonObject.GetComponentInChildren<Button>().interactable = setControlsInteractive;
+            MimicRequestTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = requestInteractable;
+
+            MimicControlsReviewAndExecuteTrajectoryUIObjects.SetActive(reviewActive);
+            MimicExecuteTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = reviewInteractive;
+            MimicTrajectoryReviewSliderObject.GetComponentInChildren<Slider>().interactable = reviewInteractive;
+        }
+
+        
         //TODO: RoboticTerritories Testing ///////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
         {
