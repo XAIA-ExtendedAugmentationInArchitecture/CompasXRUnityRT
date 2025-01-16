@@ -30,6 +30,7 @@ namespace CompasXR.Core
 
         //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
         private GameObject ZonesGlobalParent;
+        private GameObject ZonesARPrefabObjects;
 
         //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -157,8 +158,9 @@ namespace CompasXR.Core
             //Find GameObjects that need to be transformed
             ZonesGlobalParent = GameObject.Find("ZonesParent");
             ActiveRobotObjects = GameObject.Find("ActiveRobotObjects");        
+            ZonesARPrefabObjects = GameObject.Find("ZonesARPrefabs");        
         }
-        public void PositioningUpdateMethodRoboticTerritories(ref Dictionary<string, Node> QRCodeDataDict,ref GameObject KeyParentObject)
+        public void PositioningUpdateMethodRoboticTerritories(ref Dictionary<string, Node> QRCodeDataDict, ref GameObject KeyParentObject)
         {
             /*
             * The Update Method is called once per frame and is used to update the
@@ -189,6 +191,7 @@ namespace CompasXR.Core
                         }
                         ObjectTransformations.TranslateGameObjectByImageTarget(KeyParentObject, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
                         ObjectTransformations.TranslateGameObjectByImageTarget(ActiveRobotObjects, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
+                        ObjectTransformations.TranslateGameObjectByImageTarget(ZonesARPrefabObjects, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
                     }
                 }
             }

@@ -73,6 +73,9 @@ namespace CompasXR.Core
         public GameObject MimicZonesParent;
         public GameObject TelemimicZonesParent;
 
+        //AR Camera and Object
+        public GameObject cameraPositionObject;
+        public Camera arCamera;
 
         //Materials for Zones
         public Material HumanZoneMaterial;
@@ -80,6 +83,19 @@ namespace CompasXR.Core
         public Material CollaborationZoneMaterial;
         public Material PickZoneMaterial;
         public Material BoundaryMaterial;
+
+        //Mimic GameObjects
+        public GameObject MimicHumanObjects;
+        public GameObject MimicHumanPointsParent;
+        public GameObject MimicHumanLine;
+        public GameObject MimicRobotObjects;
+        public GameObject MimicRobotPointsParent;
+        public GameObject MimicRobotLine;
+        public List<GameObject> MimicHumanPoints = new List<GameObject>();
+        public List<GameObject> MimicRobotPoints = new List<GameObject>();
+
+        //Zones AR Prefabs
+        public GameObject ZonesARPrefabObjects;
 
         //Events
         public delegate void InitialZonesCreated(object source, EventArgs e);
@@ -302,6 +318,72 @@ namespace CompasXR.Core
             InitialZonesPlaced(this, EventArgs.Empty);
         }
 
+        public void CreateMimicPoints(GameObject humanZone, GameObject robotZone, ref List<GameObject> humanPoints, ref List<GameObject> robotPoints, GameObject humanLine, GameObject robotLine, GameObject humanParent, GameObject robotParent)
+        {
+            /*
+            * Method is used to create the mimic points in the AR space
+            */
+            Vector3 position = cameraPositionObject.transform.position;
+            Quaternion rotation = arCamera.transform.rotation;
+            float radius = 0.1f;
+            Color color = Color.yellow;
+            name = "MimicPoint";
+            GameObject humanPoint = CreateSphereAtPositionAndRotation(position, rotation, radius, color, name);
+            humanPoint.transform.SetParent(humanParent.transform, true); //TODO: I think this should be true.
+            humanPoints.Add(humanPoint);
+
+            //TODO: Insert Logic to Mirror the Point to the Robot Zone and Create point there.
+
+            if (humanPoints.Count > 0 )//&& robotPoints.Count > 0)
+            {
+                Debug.Log("CreateMimicPoints: Creating Mimic Points");
+                DrawLineFromGameObjectList(humanPoints, humanLine, Color.yellow, 0.01f); //TODO: FIX THIS... DOUBLE CHECK AGAINST OTHER CODE
+
+            }
+            else
+            {
+                Debug.LogWarning("CreateMimicPoints: Human or Robot Positions are empty");
+            }
+        }
+
+        public void DrawLineFromGameObjectList(List<GameObject> pointsList, GameObject lineObject, Color color, float lineWidth)
+        {
+            /*
+            * Method is used to draw a line in the AR space
+            */
+
+            LineRenderer lineRenderer = lineObject.GetComponentInChildren<LineRenderer>();
+            if (lineRenderer == null)
+            {
+                Debug.LogWarning("DrawLineFromGameObjectList: LineRenderer is null");
+            }
+
+            lineRenderer.startColor = color;
+            lineRenderer.endColor = color;
+            lineRenderer.startWidth = lineWidth;
+            lineRenderer.endWidth = lineWidth;
+
+            if (pointsList.Count > 0)
+            {
+                for (int i = 0; i < pointsList.Count; i++)
+                {
+                    GameObject point = pointsList[i];
+                    if (point != null)
+                    {
+                        Vector3 center = ObjectTransformations.FindGameObjectCenter(point);
+                        lineRenderer.SetPosition(i, center);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("DrawLineFromGameObjectList: Point is null");
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogWarning("DrawLineFromGameObjectList: Points are empty");
+            }
+        }
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
         {
@@ -324,6 +406,7 @@ namespace CompasXR.Core
 
             //Find Parent Objects
             ZonesParentObject = GameObject.Find("ZonesParent");
+            ZonesARPrefabObjects = GameObject.Find("ZonesARPrefabs");
 
             BoundaryZoneParent = ZonesParentObject.FindObject("BoundaryZoneParent");
             InferenceZonesParent = ZonesParentObject.FindObject("InferenceZonesParent");
@@ -342,22 +425,18 @@ namespace CompasXR.Core
             PickZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("PickZone").GetComponentInChildren<Renderer>().material;
             BoundaryMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("BoundaryMaterial").GetComponentInChildren<Renderer>().material;
 
-            if(HumanZoneMaterial == null || RobotZoneMaterial == null || CollaborationZoneMaterial == null || PickZoneMaterial == null)
-            {
-                Debug.LogError("A Zone Material is null");
-            }
-            else
-            {
-                Debug.Log("Zone Materials Found");
-            }
+            //FindObjects for Mimic Controls
+            MimicHumanObjects = ZonesARPrefabObjects.FindObject("HumanObjects");
+            MimicHumanPointsParent = MimicHumanObjects.FindObject("Points");
+            MimicHumanLine = MimicHumanObjects.FindObject("HumanLine");
+            MimicRobotObjects = ZonesARPrefabObjects.FindObject("RobotObjects");
+            MimicRobotPointsParent = MimicRobotObjects.FindObject("Points");
+            MimicRobotLine = MimicRobotObjects.FindObject("RobotLine");
 
-            if(BoundaryZoneParent == null || InferenceZonesParent == null || MimicZonesParent == null || TelemimicZonesParent == null)
-            {
-                Debug.LogError("A Zones Parent Objects are null");
-            }
-            else{
-                Debug.Log("Zones Parent Objects Found");
-            }
+            //Find AR and system management items
+            cameraPositionObject = GameObject.Find("XR Origin").FindObject("Camera Offset").FindObject("Main Camera");
+            arCamera = GameObject.Find("XR Origin").FindObject("Camera Offset").FindObject("Main Camera").GetComponent<Camera>();
+
 
             //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
