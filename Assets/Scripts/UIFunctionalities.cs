@@ -545,6 +545,9 @@ namespace CompasXR.UI
                     if(ObjectInstantiaion.IsPositionWithinObject(humanZoneObject, cameraPositionObject)) //TODO: Write method to create mimic points etc.
                     {
                         Debug.Log("SetMimicPoint: Camera Position is within the Human Zone Object.");
+                        //Set Lines active and Points active
+                        instantiateObjects.MimicHumanObjects.SetActive(true);
+                        instantiateObjects.MimicRobotObjects.SetActive(true);
                         instantiateObjects.CreateMimicPoints(humanZoneObject, robotZoneObject, ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, instantiateObjects.MimicHumanLine, instantiateObjects.MimicRobotLine, instantiateObjects.MimicHumanPointsParent, instantiateObjects.MimicRobotPointsParent);
 
                     }

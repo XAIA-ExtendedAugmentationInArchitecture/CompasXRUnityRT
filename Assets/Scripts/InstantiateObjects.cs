@@ -109,6 +109,19 @@ namespace CompasXR.Core
             OnAwakeInitilization();
         }
 
+        public void Update()
+        {
+            //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+
+            //TODO: Update the position of the Mimic Lines if they are on.
+            if(databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
+            {
+                UpdateLinePositionsByGameObjectPositionsList(MimicHumanPoints, MimicHumanLine);
+            }
+
+            //TODO: Update the position of the Robot lines if they are on.
+        }
+
     /////////////////////////////// INSTANTIATE OBJECTS //////////////////////////////////////////
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
@@ -317,7 +330,6 @@ namespace CompasXR.Core
             */
             InitialZonesPlaced(this, EventArgs.Empty);
         }
-
         public void CreateMimicPoints(GameObject humanZone, GameObject robotZone, ref List<GameObject> humanPoints, ref List<GameObject> robotPoints, GameObject humanLine, GameObject robotLine, GameObject humanParent, GameObject robotParent)
         {
             /*
@@ -326,18 +338,26 @@ namespace CompasXR.Core
             Vector3 position = cameraPositionObject.transform.position;
             Quaternion rotation = arCamera.transform.rotation;
             float radius = 0.1f;
-            Color color = Color.yellow;
-            name = "MimicPoint";
+            // Color color = Color.yellow;
+            Color color = new Color(1.0f, 1.0f, 0.0f, 1.0f);
+            Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
+            name = $"{humanPoints.Count}_MimicPoint";
             GameObject humanPoint = CreateSphereAtPositionAndRotation(position, rotation, radius, color, name);
-            humanPoint.transform.SetParent(humanParent.transform, true); //TODO: I think this should be true.
+            humanPoint.transform.SetParent(humanParent.transform, true);
             humanPoints.Add(humanPoint);
 
             //TODO: Insert Logic to Mirror the Point to the Robot Zone and Create point there.
+            Vector3 mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, position);
+
+            // Create the mirrored point in the robot zone
+            GameObject robotPoint = CreateSphereAtPositionAndRotation(mappedRobotPosition, rotation, radius, robotColor, $"{robotPoints.Count}_MimicPoint");
+            robotPoint.transform.SetParent(robotParent.transform, true);
+            robotPoints.Add(robotPoint);
 
             if (humanPoints.Count > 0 )//&& robotPoints.Count > 0)
             {
                 Debug.Log("CreateMimicPoints: Creating Mimic Points");
-                DrawLineFromGameObjectList(humanPoints, humanLine, Color.yellow, 0.01f); //TODO: FIX THIS... DOUBLE CHECK AGAINST OTHER CODE
+                DrawLineFromGameObjectList(humanPoints, humanLine, color, 0.01f); //TODO: FIX THIS... DOUBLE CHECK AGAINST OTHER CODE
 
             }
             else
@@ -345,6 +365,49 @@ namespace CompasXR.Core
                 Debug.LogWarning("CreateMimicPoints: Human or Robot Positions are empty");
             }
         }
+
+        public static Vector3 MapPointBetweenBoxes(GameObject sourceBox, GameObject targetBox, Vector3 pointPosition)
+        {
+            if (sourceBox == null || targetBox == null)
+            {
+                Debug.LogError("MapPointBetweenBoxes: One or both GameObjects are null.");
+                return Vector3.zero;
+            }
+
+            BoxCollider sourceCollider = sourceBox.GetComponent<BoxCollider>();
+            BoxCollider targetCollider = targetBox.GetComponent<BoxCollider>();
+
+            if (sourceCollider == null || targetCollider == null)
+            {
+                Debug.LogError("MapPointBetweenBoxes: One or both GameObjects are missing a BoxCollider.");
+                return Vector3.zero;
+            }
+
+            // Convert world position to local position inside the source box
+            Vector3 localPosition = sourceBox.transform.InverseTransformPoint(pointPosition);
+
+            // Normalize the position within the source box (-0.5 to 0.5 relative to the box size)
+            Vector3 normalizedPosition = new Vector3(
+                (localPosition.x - sourceCollider.center.x) / sourceCollider.size.x,
+                (localPosition.y - sourceCollider.center.y) / sourceCollider.size.y,
+                (localPosition.z - sourceCollider.center.z) / sourceCollider.size.z
+            );
+
+            // Scale the normalized position using the target box's size
+            Vector3 targetLocalPosition = new Vector3(
+                targetCollider.center.x + (normalizedPosition.x * targetCollider.size.x),
+                targetCollider.center.y + (normalizedPosition.y * targetCollider.size.y),
+                targetCollider.center.z + (normalizedPosition.z * targetCollider.size.z)
+            );
+
+            // Convert back to world space for the new mapped position
+            Vector3 mappedWorldPosition = targetBox.transform.TransformPoint(targetLocalPosition);
+
+            Debug.Log($"MapPointBetweenBoxes: Mapped {pointPosition} from {sourceBox.name} to {mappedWorldPosition} in {targetBox.name}");
+            
+            return mappedWorldPosition;
+        }
+
 
         public void DrawLineFromGameObjectList(List<GameObject> pointsList, GameObject lineObject, Color color, float lineWidth)
         {
@@ -362,28 +425,56 @@ namespace CompasXR.Core
             lineRenderer.endColor = color;
             lineRenderer.startWidth = lineWidth;
             lineRenderer.endWidth = lineWidth;
+            lineRenderer.useWorldSpace = true;
 
-            if (pointsList.Count > 0)
+            if (pointsList == null || pointsList.Count < 2)
             {
-                for (int i = 0; i < pointsList.Count; i++)
+                Debug.LogWarning("DrawLineFromGameObjectList: Not enough points to draw a line (need at least 2)");
+                return;
+            }
+
+            lineRenderer.positionCount = pointsList.Count;
+            for (int i = 0; i < pointsList.Count; i++)
+            {
+                GameObject point = pointsList[i];
+                if (point != null)
                 {
-                    GameObject point = pointsList[i];
-                    if (point != null)
-                    {
-                        Vector3 center = ObjectTransformations.FindGameObjectCenter(point);
-                        lineRenderer.SetPosition(i, center);
-                    }
-                    else
-                    {
-                        Debug.LogWarning("DrawLineFromGameObjectList: Point is null");
-                    }
+                    // Vector3 center = ObjectTransformations.FindGameObjectCenter(point);
+                    Vector3 position = point.transform.position;
+                    Vector3 localPosition = point.transform.localPosition;
+
+                    Debug.Log($"DrawLineFromGameObjectList: Drawing Line from {position} With a local position of {localPosition}");
+                    Debug.Log($"DrawLineFromGameObjectList: Drawing Line from {position}");
+                    lineRenderer.SetPosition(i, position);
+                }
+                else
+                {
+                    Debug.LogWarning("DrawLineFromGameObjectList: Point is null");
+                }
+            }
+        }
+        public void UpdateLinePositionsByGameObjectPositionsList(List<GameObject> posGameObjectList, GameObject lineObject)
+        {
+            /*
+            * Method is used to update the line positions in the AR space
+            * based on the list of gameobject positions.
+            */
+            LineRenderer lineRenderer = lineObject.GetComponent<LineRenderer>();
+            int listLength = posGameObjectList.Count;
+            if (listLength > 1)
+            {
+                lineRenderer.positionCount = listLength;
+                for (int i = 0; i < listLength; i++)
+                {
+                    lineRenderer.SetPosition(i, posGameObjectList[i].transform.position);
                 }
             }
             else
             {
-                Debug.LogWarning("DrawLineFromGameObjectList: Points are empty");
+                Debug.LogWarning("UpdateLinePositionsByGameObjectPositionsList: List length is 0.");
             }
         }
+
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
         {
@@ -1010,7 +1101,7 @@ namespace CompasXR.Core
             * Method is used to update the line positions in the AR space
             * based on the list of vector positions.
             */
-            LineRenderer lineRenderer = lineObject.GetComponent<LineRenderer>();
+            LineRenderer lineRenderer = lineObject.GetComponentInChildren<LineRenderer>();
             int listLength = posVectorList.Count;
             if (listLength > 1)
             {
