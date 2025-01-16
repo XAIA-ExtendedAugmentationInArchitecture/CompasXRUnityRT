@@ -592,8 +592,6 @@ namespace CompasXR.UI
             MimicExecuteTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = reviewInteractive;
             MimicTrajectoryReviewSliderObject.GetComponentInChildren<Slider>().interactable = reviewInteractive;
         }
-
-
         
         //TODO: RoboticTerritories Testing ///////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()

@@ -113,13 +113,12 @@ namespace CompasXR.Core
         {
             //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
-            //TODO: Update the position of the Mimic Lines if they are on.
+            //Update the position of the Mimic Lines if they are on.
             if(databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
             {
                 UpdateLinePositionsByGameObjectPositionsList(MimicHumanPoints, MimicHumanLine);
+                UpdateLinePositionsByGameObjectPositionsList(MimicRobotPoints, MimicRobotLine);
             }
-
-            //TODO: Update the position of the Robot lines if they are on.
         }
 
     /////////////////////////////// INSTANTIATE OBJECTS //////////////////////////////////////////
@@ -335,21 +334,19 @@ namespace CompasXR.Core
             /*
             * Method is used to create the mimic points in the AR space
             */
+
             Vector3 position = cameraPositionObject.transform.position;
             Quaternion rotation = arCamera.transform.rotation;
+
             float radius = 0.1f;
-            // Color color = Color.yellow;
             Color color = new Color(1.0f, 1.0f, 0.0f, 1.0f);
-            Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
-            name = $"{humanPoints.Count}_MimicPoint";
-            GameObject humanPoint = CreateSphereAtPositionAndRotation(position, rotation, radius, color, name);
+            GameObject humanPoint = CreateSphereAtPositionAndRotation(position, rotation, radius, color, $"{humanPoints.Count}_MimicPoint");
             humanPoint.transform.SetParent(humanParent.transform, true);
             humanPoints.Add(humanPoint);
 
-            //TODO: Insert Logic to Mirror the Point to the Robot Zone and Create point there.
+            //Logic to Mirror the Point to the Robot Zone and Create point there.
             Vector3 mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, position);
-
-            // Create the mirrored point in the robot zone
+            Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
             GameObject robotPoint = CreateSphereAtPositionAndRotation(mappedRobotPosition, rotation, radius, robotColor, $"{robotPoints.Count}_MimicPoint");
             robotPoint.transform.SetParent(robotParent.transform, true);
             robotPoints.Add(robotPoint);
@@ -358,13 +355,13 @@ namespace CompasXR.Core
             {
                 Debug.Log("CreateMimicPoints: Creating Mimic Points");
                 DrawLineFromGameObjectList(humanPoints, humanLine, color, 0.01f);
+                DrawLineFromGameObjectList(robotPoints, robotLine, robotColor, 0.01f);
             }
             else
             {
                 Debug.LogWarning("CreateMimicPoints: Human or Robot Positions are empty");
             }
         }
-
         public static Vector3 MapPointBetweenBoxes(GameObject sourceBox, GameObject targetBox, Vector3 pointPosition)
         {
             if (sourceBox == null || targetBox == null)
