@@ -503,30 +503,8 @@ namespace CompasXR.UI
             Debug.Log("SetMimicPoint: Setting Mimic Point based on Human and Robot Zone Objects.");
             Debug.Log("SetMimicPoint: Mimic Zone Objects: " +databaseManager.ProjectZones.MimicZones + "Type of Mimic Zones: " + databaseManager.ProjectZones.MimicZones.GetType());
     
-            // Retrieve the dictionary
             var mimicZones = databaseManager.ProjectZones.MimicZones;
 
-            // Check for the "human_zone" key
-            // if (mimicZones.TryGetValue("human_zone", out Zone humanZone))
-            // {
-            //     Debug.Log("SetMimicPoint: Found Human Zone: " + humanZone);
-            //     Debug.Log("SetMimicPoint: Human Zone Object: " + humanZone.ZoneObject.GetType());
-            //     GameObject humanZoneObject = humanZone.ZoneObject;
-            //     Vector3 cameraPositionObject = arCamera.transform.position;
-                
-            //     if(ObjectInstantiaion.IsPositionWithinObject(humanZoneObject, cameraPositionObject)) //TODO: Write method to create mimic points etc.
-            //     {
-            //         Debug.Log("SetMimicPoint: Camera Position is within the Human Zone Object.");
-
-            //     }
-            //     else
-            //     {
-            //         Debug.Log("SetMimicPoint: Camera Position is not within the Human Zone Object.");
-            //         string message = "WARNING: This Point cannot be set because it is not within the human editing zone.";
-            //         UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenInfoMessagePrefab, ref MimicSetPointOutsideOfHumanZone, "MimicPointOutsideOfBounds", MessagesParent, message, "RequestTrajectoryButtonMethod: Transaction Lock Active Warning.");
-
-            //     }
-            // }
             if (mimicZones.TryGetValue("human_zone", out Zone humanZone))
             {
                 if (mimicZones.TryGetValue("robot_zone", out Zone robotZone))
@@ -569,6 +547,7 @@ namespace CompasXR.UI
                 Debug.LogError("SetMimicPoint: 'human_zone' key not found in MimicZones.");
             }
         }
+
         //UI Control Methods
         public void SetUIObjectsFromCurrentMode(ProjectZones.CurrentZoneMode mode)
         {

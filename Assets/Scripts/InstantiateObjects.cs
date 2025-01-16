@@ -354,11 +354,10 @@ namespace CompasXR.Core
             robotPoint.transform.SetParent(robotParent.transform, true);
             robotPoints.Add(robotPoint);
 
-            if (humanPoints.Count > 0 )//&& robotPoints.Count > 0)
+            if (humanPoints.Count > 1 && robotPoints.Count > 1)
             {
                 Debug.Log("CreateMimicPoints: Creating Mimic Points");
-                DrawLineFromGameObjectList(humanPoints, humanLine, color, 0.01f); //TODO: FIX THIS... DOUBLE CHECK AGAINST OTHER CODE
-
+                DrawLineFromGameObjectList(humanPoints, humanLine, color, 0.01f);
             }
             else
             {
