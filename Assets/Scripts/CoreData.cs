@@ -423,6 +423,22 @@ namespace CompasXR.Core.Data
             return frame;
         }
 
+        //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
+        public static List<Frame> _parseFramesData(List<Dictionary<string, object>> framesData)
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            List<Frame> frames = new List<Frame>();
+            foreach (Dictionary<string, object> frameData in framesData)
+            {
+                frames.Add(Frame.Parse(JsonConvert.SerializeObject(frameData)));
+            }
+            return frames;
+        }
+
+        //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
+
     }
 
     /////////////// Classes For Building Plan Desearialization///////////////////
