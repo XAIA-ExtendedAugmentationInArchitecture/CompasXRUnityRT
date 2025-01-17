@@ -559,8 +559,7 @@ namespace CompasXR.Core
             }
         }
 
-
-    //TODO: THIS NEEDS TO BE CHECKED AND THOUGHT ABOUT FOR ROBOT SPACE CONVERSION
+    //TODO: THIS NEEDS TO BE CHECKED AND THOUGHT ABOUT FOR ROBOT SPACE CONVERSION. See Notes
     public static void MirrorPositionAndRotationAcrossBox(GameObject box, Vector3 pointPosition, Quaternion pointRotation, Vector3 mirrorDirection, out Vector3 mirroredPosition, out Quaternion mirroredRotation)
     {
         if (box == null)
