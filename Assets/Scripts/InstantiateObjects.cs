@@ -389,7 +389,8 @@ namespace CompasXR.Core
             */
 
             Vector3 position = cameraPositionObject.transform.position;
-            Quaternion rotation = arCamera.transform.rotation;
+            Quaternion currentRotation = arCamera.transform.rotation;
+            Quaternion rotation = MapCameraRotationToRobotEndEffector(cameraPositionObject); //TODO: Check this: THIS IS CORRECT.... I THINK.... BUT CHECK THE OTHER.
 
             float radius = 0.1f;
             Color color = new Color(1.0f, 1.0f, 0.0f, 1.0f);
@@ -398,13 +399,20 @@ namespace CompasXR.Core
             humanPoint.transform.SetParent(humanParent.transform, true);
             humanPoints.Add(humanPoint);
 
+            
+            //TODO: TESTING TRANSFORMATIONS
+            Quaternion mirroredRotationB = MirrorRotationAcrossCenter(humanZone.transform, rotation);
+            GameObject humanPointtest = CreateSphereAtPositionAndRotation(position, mirroredRotationB, radius, color, $"{humanPoints.Count}_MimicPoint_TEST");
+            humanPointtest.transform.SetParent(humanParent.transform, true);
+
+
             Vector3 mappedRobotPosition = Vector3.zero;
             Quaternion mappedRotation = Quaternion.identity;
             
             if(!Mirror)
             {
-                mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, position);
-                mappedRotation = rotation;
+                mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, position); //TODO: Check this
+                mappedRotation = rotation; //TODO: Check this
             }
             else
             {
@@ -581,6 +589,25 @@ namespace CompasXR.Core
                 Debug.Log("DestroyMimicZoneObjects: Mimic Points are empty");
             }
         }
+        public static Quaternion MapCameraRotationToRobotEndEffector(GameObject cameraObject)
+        {
+            if (cameraObject == null)
+            {
+                Debug.LogError("MapCameraRotationToRobotEndEffector: GameObject is null!");
+                return Quaternion.identity;
+            }
+
+            // Use the GameObject's local X-axis
+            Vector3 localXAxis = cameraObject.transform.right; 
+
+            // Create and apply the 90-degree rotation
+            Quaternion rotate90XLocal = Quaternion.AngleAxis(90, localXAxis);
+            Quaternion rotatedQuaternion = rotate90XLocal * cameraObject.transform.rotation;
+
+            Debug.Log($"MapCameraRotationToRobotEndEffector: Original Rotation {cameraObject.transform.rotation.eulerAngles} -> Rotated {rotatedQuaternion.eulerAngles}");
+
+            return rotatedQuaternion;
+        }
 
     //TODO: THIS NEEDS TO BE CHECKED AND THOUGHT ABOUT FOR ROBOT SPACE CONVERSION. See Notes
     public static void MirrorPositionAndRotationAcrossBox(GameObject box, Vector3 pointPosition, Quaternion pointRotation, Vector3 mirrorDirection, out Vector3 mirroredPosition, out Quaternion mirroredRotation)
@@ -622,6 +649,19 @@ namespace CompasXR.Core
         mirroredRotation = reflectionQuaternion * pointRotation; // Reflect the rotation
 
         Debug.Log($"MirrorPositionAndRotationAcrossBox: Mirrored {pointPosition} to {mirroredPosition} with rotation {mirroredRotation.eulerAngles} in {box.name} along {mirrorDirection}");
+    }
+
+    public static Quaternion MirrorRotationAcrossCenter(Transform centerTransform, Quaternion pointARotation)
+    {
+        // Step 1: Compute relative rotation of pointA to center
+        Quaternion relativeRotationA = Quaternion.Inverse(centerTransform.rotation) * pointARotation;
+
+        // Step 2: Invert the relative rotation and apply it back to the center
+        Quaternion mirroredRotationB = centerTransform.rotation * Quaternion.Inverse(relativeRotationA);
+
+        Debug.Log($"MirrorRotationAcrossCenter: Original Rotation {pointARotation.eulerAngles} -> Mirrored Rotation {mirroredRotationB.eulerAngles}");
+
+        return mirroredRotationB;
     }
 
         // public static void MirrorPositionAndRotationAcrossBox(GameObject box, Vector3 pointPosition, Quaternion pointRotation, Vector3 mirrorDirection, out Vector3 mirroredPosition, out Quaternion mirroredRotation)
