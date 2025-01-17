@@ -404,7 +404,29 @@ namespace CompasXR.Core
             return mappedWorldPosition;
         }
 
+        public void DestroyLastMimicPoint(ref List<GameObject> MimicHumanPoints, ref List<GameObject> MimicRobotPoints, ref GameObject MimicHumanLine, ref GameObject MimicRobotLine)
+        {
+            if (MimicHumanPoints.Count > 0 && MimicRobotPoints.Count > 0)
+            {
+                Debug.Log("DestroyLastMimicPoint: Destroying Last Mimic Point");
+                Debug.Log("DestroyLastMimicPoint: Human Points Count: " + MimicHumanPoints.Count);
+                Debug.Log("DestroyLastMimicPoint: Robot Points Count: " + MimicRobotPoints.Count);
 
+                Destroy(MimicHumanPoints[MimicHumanPoints.Count - 1]);
+                Destroy(MimicRobotPoints[MimicRobotPoints.Count - 1]);
+                MimicHumanPoints.RemoveAt(MimicHumanPoints.Count - 1);
+                MimicRobotPoints.RemoveAt(MimicRobotPoints.Count - 1);
+                
+                Color humanColor = new Color(1.0f, 1.0f, 0.0f, 1.0f);
+                Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
+                DrawLineFromGameObjectList(MimicHumanPoints, MimicHumanLine, humanColor, 0.01f);
+                DrawLineFromGameObjectList(MimicRobotPoints, MimicRobotLine, robotColor, 0.01f);
+            }
+            else
+            {
+                Debug.LogWarning("DestroyLastMimicPoint: Mimic Points are empty");
+            }
+        }
         public void DrawLineFromGameObjectList(List<GameObject> pointsList, GameObject lineObject, Color color, float lineWidth)
         {
             /*

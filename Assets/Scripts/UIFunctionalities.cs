@@ -373,13 +373,13 @@ namespace CompasXR.UI
             UserInterface.FindButtonandSetOnClickAction(
             MimicControlsSetPointsUIObjects,
             ref MimicSetPointsButtonObject,
-            "SetPointButton", SetMimicPoint);
+            "SetPointButton", SetMimicPointButtonMethod);
 
             //Find UndoPointsButton Objects
             UserInterface.FindButtonandSetOnClickAction(
             MimicControlsSetPointsUIObjects,
             ref MimicControlsUndoPointButtonObject,
-            "UndoPointButton", () => UserInterface.PrintStringOnClick("MimicControls: UndoPointButtonClicked Clicked"));
+            "UndoPointButton", UndoMimicPointButtonMethod);
 
             //Find UndoPointsButton Objects
             UserInterface.FindButtonandSetOnClickAction(
@@ -495,7 +495,7 @@ namespace CompasXR.UI
                 }
             }
         }
-        public void SetMimicPoint()
+        public void SetMimicPointButtonMethod()
         {
             /*
             * Method is used to set the mimic point based on the human and robot zone objects.
@@ -547,6 +547,21 @@ namespace CompasXR.UI
                 Debug.LogError("SetMimicPoint: 'human_zone' key not found in MimicZones.");
             }
         }
+        public void UndoMimicPointButtonMethod()
+        {
+            /*
+            * Method is used to undo the last set mimic point.
+            */
+            Debug.Log("UndoMimicPoint: Undoing Last Mimic Point.");
+            if(instantiateObjects.MimicHumanPoints.Count > 0 && instantiateObjects.MimicRobotPoints.Count > 0)
+            {
+                instantiateObjects.DestroyLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine);
+            }
+            else
+            {
+                Debug.LogWarning("UndoMimicPoint: No Mimic Points to Undo.");
+            }
+        }
 
         //UI Control Methods
         public void SetUIObjectsFromCurrentMode(ProjectZones.CurrentZoneMode mode)
@@ -592,7 +607,7 @@ namespace CompasXR.UI
             MimicExecuteTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = reviewInteractive;
             MimicTrajectoryReviewSliderObject.GetComponentInChildren<Slider>().interactable = reviewInteractive;
         }
-        
+
         //TODO: RoboticTerritories Testing ///////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
         {
@@ -638,7 +653,7 @@ namespace CompasXR.UI
             * Primary UI elements constitute the UI elements that are constantly on the screen
             * & control basic fundimental functionalities of the application.
             */
-            
+
             //Find OnScreen UI Objects
             UserInterface.FindButtonandSetOnClickAction(ConstantUIPanelObjects, ref NextGeometryButtonObject, "Next_Geometry", NextStepButton);
             UserInterface.FindButtonandSetOnClickAction(ConstantUIPanelObjects, ref PreviousGeometryButtonObject, "Previous_Geometry", PreviousStepButton);
