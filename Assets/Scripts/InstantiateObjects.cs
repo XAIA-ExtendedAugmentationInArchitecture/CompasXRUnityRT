@@ -403,7 +403,6 @@ namespace CompasXR.Core
             
             return mappedWorldPosition;
         }
-
         public void DestroyLastMimicPoint(ref List<GameObject> MimicHumanPoints, ref List<GameObject> MimicRobotPoints, ref GameObject MimicHumanLine, ref GameObject MimicRobotLine)
         {
             if (MimicHumanPoints.Count > 0 && MimicRobotPoints.Count > 0)
