@@ -195,6 +195,8 @@ namespace CompasXR.UI
         public GameObject MimicSetPointsButtonObject;
         public GameObject MimicControlsUndoPointButtonObject;
         public GameObject MimicRequestTrajectoryButtonObject;
+        public GameObject MimicMirrorToggleObject;
+        public Toggle MimicMirrorToggle;
 
         public GameObject MimicControlsReviewAndExecuteTrajectoryUIObjects;
         public GameObject MimicExecuteTrajectoryButtonObject;
@@ -397,6 +399,10 @@ namespace CompasXR.UI
             UserInterface.FindSliderandSetOnValueChangeAction(
             MimicControlsReviewAndExecuteTrajectoryUIObjects, ref MimicTrajectoryReviewSliderObject,
             ref MimicTrajectoryReviewSlider, "TrajectoryReviewSlider", value => UserInterface.PrintStringOnClick($"MimicControls: TrajectoryReviewSlider used {value}"));
+
+            //Set Mirror Toggle Object
+            MimicMirrorToggleObject = MimicControlsSetPointsUIObjects.FindObject("Mirror");
+            MimicMirrorToggle = MimicMirrorToggleObject.GetComponentInChildren<Toggle>();
         }
         public void NextZoneButton()
         {
@@ -526,7 +532,7 @@ namespace CompasXR.UI
                         //Set Lines active and Points active
                         instantiateObjects.MimicHumanObjects.SetActive(true);
                         instantiateObjects.MimicRobotObjects.SetActive(true);
-                        instantiateObjects.CreateMimicPoints(humanZoneObject, robotZoneObject, ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, instantiateObjects.MimicHumanLine, instantiateObjects.MimicRobotLine, instantiateObjects.MimicHumanPointsParent, instantiateObjects.MimicRobotPointsParent);
+                        instantiateObjects.CreateMimicPoints(humanZoneObject, robotZoneObject, ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, instantiateObjects.MimicHumanLine, instantiateObjects.MimicRobotLine, instantiateObjects.MimicHumanPointsParent, instantiateObjects.MimicRobotPointsParent, MimicMirrorToggle.isOn);
 
                     }
                     else
