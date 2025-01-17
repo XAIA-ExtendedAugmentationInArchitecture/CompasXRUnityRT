@@ -415,14 +415,46 @@ namespace CompasXR.UI
                 CurrentZone = ZoneMenuItems[CurrentZoneIndex];
                 CurrentModeTextObject.text = CurrentZone;
                 databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex; //TODO: THIS NEEDS TO REMAIN THE SAME AS THE OTHER ONE
+                
+                //Control Zone Coloring, UI Objects, and AR Objects
                 ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
                 SetUIObjectsFromCurrentMode(databaseManager.ProjectZones.CurrentZone);
+                ControlARZoneObjectsBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
+
                 Debug.Log($"NextZoneButton: Attempting to push data to database {CurrentZone}");
                 DataHandlers.PushStringDataToDatabaseReference(databaseManager.dbReferenceCurrentMode, JsonConvert.SerializeObject(CurrentZone));
             }
             else
             {
                 Debug.LogWarning("NextZoneButton: Current Zone Index is at the max value.");
+            }
+        }
+
+        public void ControlARZoneObjectsBasedOnCurrentMode(ProjectZones.CurrentZoneMode currentMode)
+        {
+            /*
+            * Method is used to control the AR Zone Objects based on the current mode.
+            */
+            Debug.Log($"ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects based on the current mode {currentMode}");
+            switch (currentMode)
+            {
+                case ProjectZones.CurrentZoneMode.None:
+                    Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for None Mode.");
+                    break;
+                case ProjectZones.CurrentZoneMode.Inference:
+                    instantiateObjects.DestroyMimicZoneObjects();
+                    Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Inference Mode.");
+                    break;
+                case ProjectZones.CurrentZoneMode.Mimic:
+                    Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Mimic Mode.");
+                    break;
+                case ProjectZones.CurrentZoneMode.Telemimic:
+                    instantiateObjects.DestroyMimicZoneObjects();
+                    Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Telemimic Mode.");
+                    break;
+                default:
+                    Debug.LogWarning("ControlARZoneObjectsBasedOnCurrentMode: Current Zone Mode is not set.");
+                    break;
             }
         }
         public void PreviousZoneButton()

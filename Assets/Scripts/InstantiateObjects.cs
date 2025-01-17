@@ -382,7 +382,6 @@ namespace CompasXR.Core
         //         Debug.LogWarning("CreateMimicPoints: Human or Robot Positions are empty");
         //     }
         // }
-
         public void CreateMimicPoints(GameObject humanZone, GameObject robotZone, ref List<GameObject> humanPoints, ref List<GameObject> robotPoints, GameObject humanLine, GameObject robotLine, GameObject humanParent, GameObject robotParent, bool Mirror=false)
         {
             /*
@@ -556,6 +555,30 @@ namespace CompasXR.Core
                     renderer.positionCount = 0;
                 }
                 Debug.LogWarning("UpdateLinePositionsByGameObjectPositionsList: List length is 0.");
+            }
+        }
+        public void DestroyMimicZoneObjects()
+        {
+            /*
+            * Method is used to destroy the mimic zone objects in the AR space
+            */
+            if (MimicHumanPoints.Count > 0 && MimicRobotPoints.Count > 0)
+            {
+                ObjectInstantiaion.DestroyChildrenOfGameObject(MimicHumanPointsParent);
+                ObjectInstantiaion.DestroyChildrenOfGameObject(MimicRobotPointsParent);
+
+                MimicHumanPoints.Clear();
+                MimicRobotPoints.Clear();
+
+                MimicHumanLine.GetComponentInChildren<LineRenderer>().positionCount = 0;
+                MimicRobotLine.GetComponentInChildren<LineRenderer>().positionCount = 0;
+
+                MimicHumanObjects.SetActive(false);
+                MimicRobotObjects.SetActive(false);
+            }
+            else
+            {
+                Debug.Log("DestroyMimicZoneObjects: Mimic Points are empty");
             }
         }
 
