@@ -389,8 +389,8 @@ namespace CompasXR.Core
             */
 
             Vector3 position = cameraPositionObject.transform.position;
-            Quaternion currentRotation = arCamera.transform.rotation;
-            Quaternion rotation = MapCameraRotationToRobotEndEffector(cameraPositionObject); //TODO: Check this: THIS IS CORRECT.... I THINK.... BUT CHECK THE OTHER.
+            Quaternion rotation = arCamera.transform.rotation;
+            // Quaternion rotation = MapCameraRotationToRobotEndEffector(cameraPositionObject); //TODO: Check this: THIS IS CORRECT.... I THINK.... BUT CHECK THE OTHER.
 
             float radius = 0.1f;
             Color color = new Color(1.0f, 1.0f, 0.0f, 1.0f);
@@ -400,7 +400,7 @@ namespace CompasXR.Core
             humanPoints.Add(humanPoint);
 
             
-            //TODO: TESTING TRANSFORMATIONS
+            //TODO: TESTING TRANSFORMATIONS //THIS IS ACTUALLY NOTHING REALLY.
             Quaternion mirroredRotationB = MirrorRotationAcrossCenter(humanZone.transform, rotation);
             GameObject humanPointtest = CreateSphereAtPositionAndRotation(position, mirroredRotationB, radius, color, $"{humanPoints.Count}_MimicPoint_TEST");
             humanPointtest.transform.SetParent(humanParent.transform, true);

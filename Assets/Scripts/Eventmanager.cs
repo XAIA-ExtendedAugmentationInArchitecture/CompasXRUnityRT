@@ -51,6 +51,7 @@ namespace CompasXR.Core
             //Establish Global Event Listeners
             checkFirebase.FirebaseInitialized += DBInitializedFetchSettings;
             databaseManager.ApplicationSettingUpdate += databaseManager.FetchRoboticTerritoriesData;
+            databaseManager.ApplicationSettingUpdate += mqttTrajectoryReceiver.SetRoboticTerritoriesTopics;
             databaseManager.TrackingDictReceived += qrLocalization.OnTrackingInformationReceived;
             databaseManager.ZonesInfoReceived += instantiateObjects.OnZonesReceived;
             instantiateObjects.InitialZonesPlaced += databaseManager.AddListenersRoboticTerritories;

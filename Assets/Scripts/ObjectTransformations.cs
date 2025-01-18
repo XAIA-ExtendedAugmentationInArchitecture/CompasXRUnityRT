@@ -207,6 +207,8 @@ namespace CompasXR.Core
                 }
             }
         }
+
+        //TODO: Robotic Territories Testing /////////////////////////////////////////////////////////////////////////////////////////////
         public static Frame ConvertGameObjectToRightHandFrameData(GameObject gameObject)
         {
             /*
@@ -220,6 +222,23 @@ namespace CompasXR.Core
             frame.yaxis = yaxisData;
             return frame;
         }
+        public static List<Frame> ConvertGameObjectListToRightHandFrameData(List<GameObject> gameObjectsList)
+        {
+            /*
+            * Method used to convert a list of GameObjects to a list of Frame data objects.
+            * The method takes a List of GameObjects and returns a List of Frame objects calculated from the objects position & rotation.
+            */
+            List<Frame> frameList = new List<Frame>();
+            foreach (GameObject gameObject in gameObjectsList)
+            {
+                Frame frame = ConvertGameObjectToRightHandFrameData(gameObject);
+                frameList.Add(frame);
+            }
+            return frameList;
+        }
+
+        //TODO: Robotic Territories Testing /////////////////////////////////////////////////////////////////////////////////////////////
+
         public static (float[], float[], float[]) FromUnityToRhinoConversion(GameObject gameObject)
         {
             /*

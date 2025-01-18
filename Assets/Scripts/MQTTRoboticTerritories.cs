@@ -24,7 +24,6 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         */
         public RTPublishers publishers { get; set; }
         public RTSubscribers subscribers { get; set; }
-
         public RoboticTerritoriesTopics(string projectName)
         {
             publishers = new RTPublishers(projectName);
@@ -129,7 +128,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
     }
     
     [System.Serializable]
-    public class MimicRequestMessage
+    public class MimicTrajectoryRequestMessage
     {
         /*
         * GetTrajectoryRequest : Class is used to manage the GetTrajectoryRequest message for Compas XR communication.
@@ -140,7 +139,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public List<Frame> HumanFrames { get; private set; }
         public List<Frame> RobotFrames { get; private set; }
         public string RobotName { get; private set; }
-        public MimicRequestMessage(List<Frame> humanFrames, List<Frame> robotFrames, string robotName, Header header=null)
+        public MimicTrajectoryRequestMessage(List<Frame> humanFrames, List<Frame> robotFrames, string robotName, Header header=null)
         {
             Header = header ?? new Header();
             HumanFrames = humanFrames;
@@ -187,7 +186,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             return frames;
         }
 
-        public static MimicRequestMessage Parse(string jsonString)
+        public static MimicTrajectoryRequestMessage Parse(string jsonString)
         {
             /*
             * Method is used to parse an instance of the class from a JSON string.
@@ -204,7 +203,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
 
             var robotName = jsonObject["robot_name"].ToString();
 
-            return new MimicRequestMessage(humanFrames, robotFrames, robotName, header);
+            return new MimicTrajectoryRequestMessage(humanFrames, robotFrames, robotName, header);
         }
     }
 }

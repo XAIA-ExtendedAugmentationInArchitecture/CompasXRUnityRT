@@ -11,6 +11,7 @@ using System.Threading;
 using CompasXR.Core;
 using CompasXR.UI;
 using CompasXR.Robots.MqttData;
+using CompasXR.Robots.MqttData.RoboticTerritories;
 
 namespace CompasXR.Robots
 {
@@ -49,18 +50,29 @@ namespace CompasXR.Robots
         public DatabaseManager databaseManager;
         public TrajectoryVisualizer trajectoryVisualizer;
 
+        //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////
+
+        public RoboticTerritoriesTopics roboticTerritoriesTopics;
+
+        //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////
+
         //////////////////////////////////////////// Monobehaviour Methods ////////////////////////////////////////////
         protected override void Start()
         {
             base.Start();
             // OnStartorRestartInitilization();
+            OnStartorRestartInitilizationRoboticTerritories();
         }
         protected override void Update()
         {
-            // base.Update();
+            base.Update();
         }
         public void OnDestroy()
         {
+            UnsubscribeFromRoboticTerritoriesTopics();
+            RemoveConnectionEventListnersRoboticTerritories();
+            Disconnect();
+
             // UnsubscribeFromCompasXRTopics();
             // RemoveConnectionEventListners();
             // Disconnect();
@@ -84,6 +96,66 @@ namespace CompasXR.Robots
         }
 
         //////////////////////////////////////////// Connection Managers ////////////////////////////////////////
+    
+        //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////
+        public void OnStartorRestartInitilizationRoboticTerritories(bool Restart = false)
+        {
+            /*
+            * Method is used to initialize the MQTT connection, find dependencies, and add listners
+            * for subscriptions on connected.
+            */
+            if (!Restart)
+            {
+                UIFunctionalities = GameObject.Find("UIFunctionalities").GetComponent<UIFunctionalities>();
+                databaseManager = GameObject.Find("DatabaseManager").GetComponent<DatabaseManager>();
+                trajectoryVisualizer = GameObject.Find("TrajectoryVisualizer").GetComponent<TrajectoryVisualizer>();
+            }
+            Connect();
+            AddConnectionEventListnersRoboticTerritories();
+        }
+        public void SetRoboticTerritoriesTopics(object source, ApplicationSettingsEventArgs e)
+        {
+            /*
+            * Method is used to set the custom Compas XR Topics based on the Application Settings.
+            * format: compas_xr/project_name/message_name
+            */
+            roboticTerritoriesTopics = new RoboticTerritoriesTopics(e.Settings.project_name);
+        }
+
+        public void AddConnectionEventListnersRoboticTerritories()
+        {
+            /*
+            * Method is used to add event listners for the MQTT connection options.
+            */
+            ConnectionSucceeded += SubscribeToRoboticTerritoriesTopics;
+            ConnectionFailed += UIFunctionalities.SignalMQTTConnectionFailed;
+        }
+        public void RemoveConnectionEventListnersRoboticTerritories()
+        {
+            /*
+            * Method is used to remove event listners for the MQTT connection options.
+            */
+            ConnectionSucceeded -= SubscribeToRoboticTerritoriesTopics;
+            ConnectionFailed -= UIFunctionalities.SignalMQTTConnectionFailed;
+        }
+        public void SubscribeToRoboticTerritoriesTopics()
+        {
+            /*
+            * Method is used to subscribe to the custom Compas XR Topics.
+            */
+            Debug.Log("MQTT: SubscribeToRoboticTerritoriesTopics: Subscribing to Robotic Territories Topics");
+            SubscribeToTopic(roboticTerritoriesTopics.subscribers.mimicResultTopic);
+        }
+        public void UnsubscribeFromRoboticTerritoriesTopics()
+        {
+            /*
+            * Method is used to unsubscribe from the custom Compas XR Topics.
+            */
+            UnsubscribeFromTopic(roboticTerritoriesTopics.subscribers.mimicResultTopic);
+        }
+
+        //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////
+
         protected override void OnConnected()
         {
             /*
@@ -91,11 +163,11 @@ namespace CompasXR.Robots
             */
             base.OnConnected();
             Debug.Log($"MQTT: Connected to broker: {brokerAddress} on Port: {brokerPort}.");
-            if (UIFunctionalities.CommunicationToggleObject.GetComponent<Toggle>().isOn)
-            {
-                UserInterface.SetUIObjectColor(UIFunctionalities.MqttConnectButtonObject, Color.green);
-                UIFunctionalities.UpdateConnectionStatusText(UIFunctionalities.MqttConnectionStatusObject, true);
-            }
+            // if (UIFunctionalities.CommunicationToggleObject.GetComponent<Toggle>().isOn)
+            // {
+            //     UserInterface.SetUIObjectColor(UIFunctionalities.MqttConnectButtonObject, Color.green);
+            //     UIFunctionalities.UpdateConnectionStatusText(UIFunctionalities.MqttConnectionStatusObject, true);
+            // }
         }
         protected override void OnDisconnected()
         {
@@ -104,10 +176,10 @@ namespace CompasXR.Robots
             */
             base.OnDisconnected();
             Debug.Log("MQTT: DISCONNECTED.");
-            if (UIFunctionalities.CommunicationToggleObject.GetComponent<Toggle>().isOn)
-            {
-                UIFunctionalities.UpdateConnectionStatusText(UIFunctionalities.MqttConnectionStatusObject, false);
-            }
+            // if (UIFunctionalities.CommunicationToggleObject.GetComponent<Toggle>().isOn)
+            // {
+            //     UIFunctionalities.UpdateConnectionStatusText(UIFunctionalities.MqttConnectionStatusObject, false);
+            // }
         }
         protected override void OnConnectionLost()
         {

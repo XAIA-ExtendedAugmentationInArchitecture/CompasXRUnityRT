@@ -17,6 +17,7 @@ using CompasXR.Robots;
 using CompasXR.Robots.MqttData;
 using Unity.VisualScripting;
 using CompasXR.RoboticTerritories.Data;
+using CompasXR.Robots.MqttData.RoboticTerritories;
 // using Vuforia;
 
 namespace CompasXR.UI
@@ -205,6 +206,7 @@ namespace CompasXR.UI
         
         //Mimic OnScreen Messages
         public GameObject MimicSetPointOutsideOfHumanZone;
+        public GameObject MimicPointsTooFewMessage;
 
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
 
@@ -387,7 +389,7 @@ namespace CompasXR.UI
             UserInterface.FindButtonandSetOnClickAction(
             MimicControlsSetPointsUIObjects,
             ref MimicRequestTrajectoryButtonObject,
-            "RequestTrajectoryButton", () => UserInterface.PrintStringOnClick("MimicControls: RequestingTrajectoryButton Clicked"));
+            "RequestTrajectoryButton", MimicRequestTrajectoryButtonMethod);
 
             //Find Execute Button Objects
             UserInterface.FindButtonandSetOnClickAction(
@@ -429,7 +431,6 @@ namespace CompasXR.UI
                 Debug.LogWarning("NextZoneButton: Current Zone Index is at the max value.");
             }
         }
-
         public void ControlARZoneObjectsBasedOnCurrentMode(ProjectZones.CurrentZoneMode currentMode)
         {
             /*
@@ -640,10 +641,42 @@ namespace CompasXR.UI
             MimicSetPointsButtonObject.GetComponentInChildren<Button>().interactable = setControlsInteractive;
             MimicControlsUndoPointButtonObject.GetComponentInChildren<Button>().interactable = setControlsInteractive;
             MimicRequestTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = requestInteractable;
+            MimicMirrorToggleObject.GetComponentInChildren<Toggle>().interactable = setControlsInteractive;
 
             MimicControlsReviewAndExecuteTrajectoryUIObjects.SetActive(reviewActive);
             MimicExecuteTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = reviewInteractive;
             MimicTrajectoryReviewSliderObject.GetComponentInChildren<Slider>().interactable = reviewInteractive;
+        }
+        public void MimicRequestTrajectoryButtonMethod()
+        {
+            Debug.Log($"MimicRequestTrajectoryButtonMethod: Requesting Trajectory for {instantiateObjects.MimicHumanPoints.Count} points.");
+
+            if (instantiateObjects.MimicHumanPoints.Count < 2)
+            {
+                Debug.Log("MimicRequestTrajectoryButton: There is not enough mimic points to request a trajectory");
+                string message = "WARNING: You need at least 2 points to request a trajectory for mimicry.";
+                UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref MimicPointsTooFewMessage, "MimicPointsTooFewMessage", MessagesParent, message, "MimicRequestTrajectoryButtonMethod: There is no enough mimic points.");
+                return;
+            }
+            else if (trajectoryVisualizer.ActiveRobot == null)
+            {
+                Debug.Log("MimicRequestTrajectoryButton: Active Robot is null");
+                string message = "WARNING: Active Robot is currently null. An active robot must be set before visulizing robotic information.";
+                UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref ActiveRobotIsNullWarningMessageObject, "ActiveRobotNullWarningMessage", MessagesParent, message, "MimicRequestTrajectoryButtonMethod: Active Robot is null.");
+                return;
+            }
+            else
+            {    
+                //TODO: Convert GameObjects List to Frames List
+                List<Frame> humanFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameData(instantiateObjects.MimicHumanPoints);
+                List<Frame> robotFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameData(instantiateObjects.MimicRobotPoints);
+
+                MimicTrajectoryRequestMessage requestMessage = new MimicTrajectoryRequestMessage(humanFrames, robotFrames, mqttTrajectoryManager.serviceManager.ActiveRobotName); //TODO: ROBOT NAME NEEDS TO BE CHANGED FOR SURE...
+                Debug.Log($"MimicRequestTrajectoryButton: Publishing Mimic request {JsonConvert.SerializeObject(requestMessage.GetData())} on topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic}");
+
+                mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic, requestMessage.GetData());
+                SetMimicControlsActivity(true, false, false, true, false);
+            }
         }
 
         //TODO: RoboticTerritories Testing ///////////////////////////////////////////////////////////////////////////////////
