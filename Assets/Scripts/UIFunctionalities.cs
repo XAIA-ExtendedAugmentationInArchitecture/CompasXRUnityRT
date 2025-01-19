@@ -668,8 +668,8 @@ namespace CompasXR.UI
             else
             {    
                 //TODO: Convert GameObjects List to Frames List
-                List<Frame> humanFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameData(instantiateObjects.MimicHumanPoints);
-                List<Frame> robotFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameData(instantiateObjects.MimicRobotPoints);
+                List<Frame> humanFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicHumanPoints, instantiateObjects.ZonesARPrefabObjects);
+                List<Frame> robotFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicRobotPoints, instantiateObjects.ZonesARPrefabObjects);
 
                 MimicTrajectoryRequestMessage requestMessage = new MimicTrajectoryRequestMessage(humanFrames, robotFrames, mqttTrajectoryManager.serviceManager.ActiveRobotName); //TODO: ROBOT NAME NEEDS TO BE CHANGED FOR SURE...
                 Debug.Log($"MimicRequestTrajectoryButton: Publishing Mimic request {JsonConvert.SerializeObject(requestMessage.GetData())} on topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic}");

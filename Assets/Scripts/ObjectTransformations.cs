@@ -209,20 +209,109 @@ namespace CompasXR.Core
         }
 
         //TODO: Robotic Territories Testing /////////////////////////////////////////////////////////////////////////////////////////////
-        public static Frame ConvertGameObjectToRightHandFrameData(GameObject gameObject)
+        public static float[] GetPositionFromLeftHandRoboticTerritories(GameObject gameObject, GameObject parentObjectTransformedbyQR) //TODO: This changed from the compasXR version
+        {
+            /*
+            * Method used to convert a GameObjects position from LeftHand to RightHand.
+            * The method takes a GameObject and returns a float array of the position.
+            */
+            // Vector3 objectPosition = gameObject.transform.localPosition; //TODO: Should this be local //TODO: THIS WORKS, BUT CHECK THE OTHER WAY FOR CONSISTENCY
+            Transform parentTransform = parentObjectTransformedbyQR.transform;
+            Vector3 objectPosition = parentTransform.InverseTransformPoint(gameObject.transform.position);
+
+            float [] objectPositionArray = new float[3] {objectPosition.x, objectPosition.y,  objectPosition.z};
+            float[] convertedPosition = new float [3] {objectPositionArray[0], objectPositionArray[2], objectPositionArray[1]};
+            return convertedPosition;
+        }
+
+        public static List<Frame> ConvertGameObjectListToRightHandFrameDataRoboticTerritories(List<GameObject> gameObjectsList, GameObject parentObjectTransformedbyQR) //TODO: This changed from the compasXR version
+        {
+            /*
+            * Method used to convert a list of GameObjects to a list of Frame data objects.
+            * The method takes a List of GameObjects and returns a List of Frame objects calculated from the objects position & rotation.
+            */
+            List<Frame> frameList = new List<Frame>();
+            foreach (GameObject gameObject in gameObjectsList)
+            {
+                Frame frame = ConvertGameObjectToRightHandFrameDataRoboticTerritories(gameObject, parentObjectTransformedbyQR);
+                frameList.Add(frame);
+            }
+            return frameList;
+        }
+        public static Frame ConvertGameObjectToRightHandFrameDataRoboticTerritories(GameObject gameObject, GameObject parentObjectTransformedbyQR) //TODO: This changed from the compasXR version
         {
             /*
             * Method used to convert a GameObject to a Frame data object.
             * The method takes a GameObject and returns a Frame object calculated from the objects position & rotation.
             */
-            (float[] pointData, float[] xaxisData, float[] yaxisData) = FromUnityToRhinoConversion(gameObject);
+            (float[] pointData, float[] xaxisData, float[] yaxisData) = FromUnityToRhinoConversionRoboticTerritories(gameObject, parentObjectTransformedbyQR);
             Frame frame = new Frame();
             frame.point = pointData;
             frame.xaxis = xaxisData;
             frame.yaxis = yaxisData;
             return frame;
         }
-        public static List<Frame> ConvertGameObjectListToRightHandFrameData(List<GameObject> gameObjectsList)
+
+        public static (float[], float[], float[]) FromUnityToRhinoConversionRoboticTerritories(GameObject gameObject, GameObject parentObjectTransformedbyQR) //TODO: This changed from the compasXR version
+        {
+            /*
+            * Method used to convert a GameObjects position and rotation from Unity to Rhino.
+            * The method takes a GameObject and returns three float arrays for the point, xaxis, and yaxis.
+            */
+            float[] position = GetPositionFromLeftHandRoboticTerritories(gameObject, parentObjectTransformedbyQR); //1. THIS CONVERTS THE POSITION, AND IS CORRECT.
+            Rotation rotation = GetRotationFromLeftHandRoboticTerritories(gameObject, parentObjectTransformedbyQR); //2. THIS GETS THE ROTATION OF THE OBJECT IN LEFT HAND SPACE, and I am not sure if it is correct
+            (float[] x_vecdata, float[] y_vecdata) = LeftHandToRightHand(rotation.x, rotation.z); //3. THE CONVERSION HAPPENS HERE.
+            return (position, x_vecdata, y_vecdata);
+        }
+        public static Rotation GetRotationFromLeftHandRoboticTerritories(GameObject gameObject, GameObject parentObjectTransformedbyQR) //TODO: This changed from the compasXR version
+        {
+            /*
+            * Method used to convert a GameObjects rotation from LeftHand to RightHand.
+            * The method takes a GameObject and returns a Rotation struct.
+            */
+            //TODO: TESTING THIS WITH THE PARENT OBJECT TRANSFORMED BY THE QR CODE
+            Transform parentTransform = parentObjectTransformedbyQR.transform;
+            Vector3 objectWorldZ = parentTransform.InverseTransformDirection(gameObject.transform.forward);
+            Vector3 objectWorldX = parentTransform.InverseTransformDirection(gameObject.transform.right);
+
+            //TODO: THIS WORKS BEFORE TRANSFORMING THE OBJECT BY THE QR CODE, BUT NOT AFTER.
+            // Vector3 objectWorldZ = gameObject.transform.forward;
+            // Vector3 objectWorldX = gameObject.transform.right;
+
+            //TODO: TESTING ////////////////////////////////////////////////////////////////////////
+            // Create first test cube and move it 1 meter in the object's world Z direction
+            GameObject testCubeZ = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            testCubeZ.transform.position = gameObject.transform.position + objectWorldZ * 0.1f;
+            testCubeZ.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+            testCubeZ.name = $"TestCubeZ_{gameObject.name}";
+
+            // Create second test cube and move it 1 meter in the object's world X direction
+            GameObject testCubeX = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            testCubeX.transform.position = gameObject.transform.position + objectWorldX * 0.1f;
+            testCubeX.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+            testCubeX.name = $"TestCubeX_{gameObject.name}";
+
+            //TODO: TESTING ////////////////////////////////////////////////////////////////////////
+
+
+            float[] x_vecdata = new float[3] {objectWorldX.x, objectWorldX.y, objectWorldX.z};
+            float[] z_vecdata = new float[3] {objectWorldZ.x, objectWorldZ.y, objectWorldZ.z};
+
+            Vector3 x_vec_left = new Vector3(x_vecdata[0], x_vecdata[1], x_vecdata[2]);
+            Vector3 z_vec_left  = new Vector3(z_vecdata[0], z_vecdata[1], z_vecdata[2]);
+            
+            Rotation rotationLH;
+            
+            rotationLH.x = x_vec_left;
+            rotationLH.y = Vector3.Cross(z_vec_left, x_vec_left); //TODO: CHECK FLIPPING THESE.
+            // rotationLH.y = Vector3.Cross(x_vec_left, z_vec_left); //TODO: CHECK FLIPPING THESE.
+            rotationLH.z = z_vec_left;
+            
+            return rotationLH;
+        }
+
+        //TODO: Robotic Territories Testing /////////////////////////////////////////////////////////////////////////////////////////////
+        public static List<Frame> ConvertGameObjectListToRightHandFrameData(List<GameObject> gameObjectsList) //TODO: This changed from the compasXR version
         {
             /*
             * Method used to convert a list of GameObjects to a list of Frame data objects.
@@ -236,18 +325,28 @@ namespace CompasXR.Core
             }
             return frameList;
         }
-
-        //TODO: Robotic Territories Testing /////////////////////////////////////////////////////////////////////////////////////////////
-
-        public static (float[], float[], float[]) FromUnityToRhinoConversion(GameObject gameObject)
+        public static Frame ConvertGameObjectToRightHandFrameData(GameObject gameObject) //TODO: This changed from the compasXR version
+        {
+            /*
+            * Method used to convert a GameObject to a Frame data object.
+            * The method takes a GameObject and returns a Frame object calculated from the objects position & rotation.
+            */
+            (float[] pointData, float[] xaxisData, float[] yaxisData) = FromUnityToRhinoConversion(gameObject);
+            Frame frame = new Frame();
+            frame.point = pointData;
+            frame.xaxis = xaxisData;
+            frame.yaxis = yaxisData;
+            return frame;
+        }
+        public static (float[], float[], float[]) FromUnityToRhinoConversion(GameObject gameObject) //TODO: This changed from the compasXR version
         {
             /*
             * Method used to convert a GameObjects position and rotation from Unity to Rhino.
             * The method takes a GameObject and returns three float arrays for the point, xaxis, and yaxis.
             */
-            float[] position = GetPositionFromLeftHand(gameObject);
-            Rotation rotation = GetRotationFromLeftHand(gameObject);
-            (float[] x_vecdata, float[] y_vecdata) = LeftHandToRightHand(rotation.x, rotation.z);
+            float[] position = GetPositionFromLeftHand(gameObject); //1. THIS CONVERTS THE POSITION, AND IS CORRECT.
+            Rotation rotation = GetRotationFromLeftHand(gameObject); //2. THIS GETS THE ROTATION OF THE OBJECT IN LEFT HAND SPACE, and I am not sure if it is correct
+            (float[] x_vecdata, float[] y_vecdata) = LeftHandToRightHand(rotation.x, rotation.z); //3. THE CONVERSION HAPPENS HERE.
             return (position, x_vecdata, y_vecdata);
         }
         public static float[] GetPositionFromLeftHand(GameObject gameObject)
@@ -256,12 +355,12 @@ namespace CompasXR.Core
             * Method used to convert a GameObjects position from LeftHand to RightHand.
             * The method takes a GameObject and returns a float array of the position.
             */
-            Vector3 objectPosition = gameObject.transform.position;
+            Vector3 objectPosition = gameObject.transform.position; //TODO: Should this be local
             float [] objectPositionArray = new float[3] {objectPosition.x, objectPosition.y,  objectPosition.z};
             float[] convertedPosition = new float [3] {objectPositionArray[0], objectPositionArray[2], objectPositionArray[1]};
             return convertedPosition;
         }
-        public static Rotation GetRotationFromLeftHand(GameObject gameObject)
+        public static Rotation GetRotationFromLeftHand(GameObject gameObject) //TODO: This changed from the compasXR version
         {
             /*
             * Method used to convert a GameObjects rotation from LeftHand to RightHand.
@@ -284,7 +383,7 @@ namespace CompasXR.Core
             
             return rotationLH;
         }
-        public static (float[], float[]) LeftHandToRightHand(Vector3 x_vec_left, Vector3 z_vec_left)
+        public static (float[], float[]) LeftHandToRightHand(Vector3 x_vec_left, Vector3 z_vec_left) //TODO: This changed from the compasXR version
         {        
             /*
             * Method used to convert LeftHand vectors to RightHand vectors.
