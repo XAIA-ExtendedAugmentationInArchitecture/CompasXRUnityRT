@@ -12,42 +12,82 @@ namespace CompasXR.Robots.Data
 
     public class Trajectory
     {
-        public List<Configuration> Configurations { get; set; }
+        public List<JointTrajectoryPoint> Configurations { get; set; }
         // public List<AttachedCollisionMeshes> AttachedCollisionMeshes { get; set; }
         public List<string> JointNames { get; set; }
-        public Configuration StartConfiguration { get; set; }
+        public JointTrajectoryPoint StartConfiguration { get; set; }
         public float PlanningTime { get; set; }
         public float Fraction { get; set; }
 
         //TODO: ADD THE REST OF THE SHIT.....
     }
 
-    public class Configuration
+    //TODO: THESE THINGS BELOW SHOULD BE DONE....
+    public class JointTrajectoryPoint : Configuration
     {
-        public List<float> JointValues { get; set; }
         public List<float> Accelerations { get; set; }
         public List<float> Velocities { get; set; }
-        public List<string> JointNames { get; set; }
         public List<float> Effort { get; set; }
-        public List<int> JointTypes { get; set; } //TODO: Does this make sense to make an ENUM?
-        public Configuration(
-            List<float> jointValues, 
-            List<string> jointNames, 
-            List<float> accelerations = null, 
-            List<float> velocities = null, 
-            List<float> effort = null, 
-            List<int> jointTypes = null)
-        {
-            JointValues = jointValues ?? throw new ArgumentNullException(nameof(jointValues));
-            JointNames = jointNames ?? throw new ArgumentNullException(nameof(jointNames));
 
-            // Ensuring optional lists default to empty lists instead of remaining null
+        public JointTrajectoryPoint(
+            List<float> jointValues,
+            List<string> jointNames,
+            List<float> accelerations = null,
+            List<float> velocities = null,
+            List<float> effort = null,
+            List<int> jointTypes = null
+        ) : base(jointValues, jointNames, jointTypes)
+        {
             Accelerations = accelerations ?? new List<float>();
             Velocities = velocities ?? new List<float>();
             Effort = effort ?? new List<float>();
-            JointTypes = jointTypes ?? new List<int>();
         }
-        public Dictionary<string, float> GetJointDict()
+
+        public new Dictionary<string, object> GetData()
+        {
+            var data = base.GetData();
+            data["accelerations"] = Accelerations;
+            data["velocities"] = Velocities;
+            data["effort"] = Effort;
+            return data;
+        }
+        public static new JointTrajectoryPoint Parse(string jsonData)
+        {
+            Dictionary<string, object> jsonDataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
+            return FromData(jsonDataDict);
+        }
+
+        public static new JointTrajectoryPoint FromData(Dictionary<string, object> jsonDataDict)
+        {
+            Configuration baseConfig = Configuration.FromData(jsonDataDict);
+
+            JointTrajectoryPoint jointTrajectoryPoint = new JointTrajectoryPoint(
+                baseConfig.JointValues, 
+                baseConfig.JointNames, 
+                jsonDataDict.ContainsKey("accelerations") ? ((List<object>)jsonDataDict["accelerations"]).Select(Convert.ToSingle).ToList() : null,
+                jsonDataDict.ContainsKey("velocities") ? ((List<object>)jsonDataDict["velocities"]).Select(Convert.ToSingle).ToList() : null,
+                jsonDataDict.ContainsKey("effort") ? ((List<object>)jsonDataDict["effort"]).Select(Convert.ToSingle).ToList() : null,
+                baseConfig.JointTypes
+            ); //TODO: CHECK THE PARSING HERE MIGHT RESULT IN ERRORS.
+            return jointTrajectoryPoint;
+        }
+    }
+
+    public class Configuration
+    {
+        public List<float> JointValues { get; set; }
+        public List<string> JointNames { get; set; }
+        public List<int> JointTypes { get; set; } //TODO: Does this make sense to make an ENUM?
+        public Dictionary<string, float> JointsDict { get; set; }
+        public Configuration(List<float> jointValues, List<string> jointNames, List<int> jointTypes = null)
+        {
+            JointValues = jointValues ?? throw new ArgumentNullException(nameof(jointValues));
+            JointNames = jointNames ?? throw new ArgumentNullException(nameof(jointNames));
+            JointTypes = jointTypes ?? new List<int>();
+            JointsDict = CreateJointDict();
+        }
+
+        private Dictionary<string, float> CreateJointDict()
         {
             Dictionary<string, float> jointDict = new Dictionary<string, float>();
 
@@ -74,57 +114,31 @@ namespace CompasXR.Robots.Data
         {
             List<float> jointValues = ((List<object>)jsonDataDict["joint_values"]).Select(Convert.ToSingle).ToList();
             List<string> jointNames = ((List<object>)jsonDataDict["joint_names"]).Select(obj => obj.ToString()).ToList();
+            List<int> jointTypes = new List<int>();            
 
-            Configuration configuration = new Configuration(jointValues, jointNames);
-
-            if (jsonDataDict.ContainsKey("accelerations"))
-            {
-                configuration.Accelerations = ((List<object>)jsonDataDict["accelerations"]).Select(Convert.ToSingle).ToList();
-            }
-            if (jsonDataDict.ContainsKey("velocities"))
-            {
-                configuration.Velocities = ((List<object>)jsonDataDict["velocities"]).Select(Convert.ToSingle).ToList();
-            }
-            if (jsonDataDict.ContainsKey("effort"))
-            {
-                configuration.Effort = ((List<object>)jsonDataDict["effort"]).Select(Convert.ToSingle).ToList();
-            }
             if (jsonDataDict.ContainsKey("joint_types"))
             {
-                configuration.JointTypes = ((List<object>)jsonDataDict["joint_types"]).Select(Convert.ToInt32).ToList();
+                jointTypes = ((List<object>)jsonDataDict["joint_types"]).Select(Convert.ToInt32).ToList(); //TODO: Does this make sense to make an ENUM?
             }
+            else
+            {
+                Debug.LogWarning("Joint types not found in configuration data. Setting to empty list.");
+            }
+
+            Configuration configuration = new Configuration(jointValues, jointNames, jointTypes);
 
             return configuration;
         }
-
         public Dictionary<string, object> GetData()
         {
             Dictionary<string, object> data = new Dictionary<string, object>
             {
                 { "joint_values", JointValues },
-                { "joint_names", JointNames }
+                { "joint_names", JointNames },
+                { "joint_types", JointTypes }
             };
-
-            if (Accelerations.Count > 0)
-            {
-                data["accelerations"] = Accelerations;
-            }
-            if (Velocities.Count > 0)
-            {
-                data["velocities"] = Velocities;
-            }
-            if (Effort.Count > 0)
-            {
-                data["effort"] = Effort;
-            }
-            if (JointTypes.Count > 0)
-            {
-                data["joint_types"] = JointTypes;
-            }
-
             return data;
         }
-
     }
 
 }
