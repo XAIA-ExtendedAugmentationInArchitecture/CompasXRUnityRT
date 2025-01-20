@@ -10,16 +10,68 @@ using UnityEngine;
 namespace CompasXR.Robots.Data
 {
 
-    public class Trajectory
+    public class Trajectory //TODO: Double check this class and make sure it is correct.
     {
-        public List<JointTrajectoryPoint> Configurations { get; set; }
+        public List<JointTrajectoryPoint> Points { get; set; }
         // public List<AttachedCollisionMeshes> AttachedCollisionMeshes { get; set; }
         public List<string> JointNames { get; set; }
-        public JointTrajectoryPoint StartConfiguration { get; set; }
-        public float PlanningTime { get; set; }
-        public float Fraction { get; set; }
+        public Configuration StartConfiguration { get; set; }
+        public float? PlanningTime { get; set; }
+        public float? Fraction { get; set; }
+        public Dictionary<string, object> Attributes { get; set; }
 
-        //TODO: ADD THE REST OF THE SHIT.....
+        public Trajectory(
+            List<JointTrajectoryPoint> points,
+            Configuration startConfiguration,
+            List<string> jointNames=null,
+            float? planningTime=null,
+            float? fraction=null,
+            Dictionary<string, object> attributes = null
+        )
+        {
+            Points = points ?? throw new ArgumentNullException(nameof(points));
+            StartConfiguration = startConfiguration ?? throw new ArgumentNullException(nameof(startConfiguration));
+            JointNames = jointNames ?? GetJointNames();
+            PlanningTime = planningTime;
+            Fraction = fraction;
+            Attributes = attributes ?? new Dictionary<string, object>();
+        }
+        private List<string> GetJointNames()
+        {
+            return Points.FirstOrDefault()?.JointNames ?? new List<string>();
+        }
+
+        public Dictionary<string, object> GetData()
+        {
+            Dictionary<string, object> data = new Dictionary<string, object>
+            {
+                { "points", Points.Select(point => point.GetData()).ToList() },
+                { "start_configuration", StartConfiguration.GetData() },
+                { "joint_names", JointNames },
+                { "planning_time", PlanningTime },
+                { "fraction", Fraction },
+                { "attributes", Attributes }
+            };
+            return data;
+        }
+
+        public static Trajectory Parse(string jsonData)
+        {
+            Dictionary<string, object> jsonDataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
+            return FromData(jsonDataDict);
+        }
+        public static Trajectory FromData(Dictionary<string, object> jsonDataDict)
+        {
+            //TODO: Test this and maybe make some exception loops.
+            List<JointTrajectoryPoint> points = ((List<object>)jsonDataDict["points"]).Select(obj => JointTrajectoryPoint.FromData((Dictionary<string, object>)obj)).ToList();
+            Configuration startConfiguration = Configuration.FromData((Dictionary<string, object>)jsonDataDict["start_configuration"]);
+            List<string> jointNames = jsonDataDict.ContainsKey("joint_names") ? ((List<object>)jsonDataDict["joint_names"]).Select(obj => obj.ToString()).ToList() : null;
+            float? planningTime = jsonDataDict.ContainsKey("planning_time") ? Convert.ToSingle(jsonDataDict["planning_time"]) : null;
+            float? fraction = jsonDataDict.ContainsKey("fraction") ? Convert.ToSingle(jsonDataDict["fraction"]) : null;
+            Dictionary<string, object> attributes = jsonDataDict.ContainsKey("attributes") ? (Dictionary<string, object>)jsonDataDict["attributes"] : null;
+            Trajectory trajectory = new Trajectory(points, startConfiguration, jointNames, planningTime, fraction, attributes);
+            return trajectory;
+        }
     }
 
     //TODO: THESE THINGS BELOW SHOULD BE DONE....

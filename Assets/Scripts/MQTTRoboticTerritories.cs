@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using RosSharp.Urdf;
 using CompasXR.Core.Data;
 using Google.MiniJSON;
+using CompasXR.Robots.Data;
 
 
 
@@ -206,4 +207,96 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             return new MimicTrajectoryRequestMessage(humanFrames, robotFrames, robotName, header);
         }
     }
+
+    [System.Serializable]
+    public class MimicTrajectoryResultMessage
+    {
+        /*
+        * GetTrajectoryRequest : Class is used to manage the GetTrajectoryRequest message for Compas XR communication.
+        * It is designed to store the element ID, robot name, and header for the message.
+        * It is sent to the CAD when a user requests a trajectory.
+        */
+        public Header Header { get; private set; }
+        public List<Trajectory> Trajectories { get; private set; }
+        public Frame RobotBaseFrame { get; private set; }
+        public List<JointTrajectoryPoint> CombinedTrajectoryPoints { get; private set; }
+        public string RobotName { get; private set; }
+        public MimicTrajectoryResultMessage(List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header=null)
+        {
+            Header = header ?? new Header();
+            Trajectories = trajectories;
+            CombinedTrajectoryPoints = _getCombinedTrajectoryPoints(trajectories);
+            RobotBaseFrame = robotBaseFrame;
+            RobotName = robotName;
+        }
+        public Dictionary<string, object> GetData()
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            return new Dictionary<string, object>
+            {
+                { "header", Header.GetData() },
+                { "trajectories", _getTrajectoriesData(Trajectories) },
+                { "robot_base_frame", RobotBaseFrame.GetData() },
+                { "robot_name", RobotName }
+            };
+        }
+        private List<JointTrajectoryPoint> _getCombinedTrajectoryPoints(List<Trajectory> Trajectories)
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            List<JointTrajectoryPoint> combinedTrajectoryPoints = new List<JointTrajectoryPoint>();
+            foreach (Trajectory trajectory in Trajectories)
+            {
+                combinedTrajectoryPoints.AddRange(trajectory.Points);
+            }
+            return combinedTrajectoryPoints;
+        }
+        private List<Dictionary<string, object>> _getTrajectoriesData(List<Trajectory> Trajectories)
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            List<Dictionary<string, object>> trajectoriesData = new List<Dictionary<string, object>>();
+            foreach (Trajectory trajectory in Trajectories)
+            {
+                trajectoriesData.Add(trajectory.GetData());
+            }
+            return trajectoriesData;
+        }
+
+        public static MimicTrajectoryResultMessage Parse(string jsonString)
+        {
+            /*
+            * Method is used to parse an instance of the class from a JSON string.
+            */
+
+            //Parse the header
+            var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+            var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
+            Header header = Header.Parse(headerInfo);
+
+            //Parse the trajectories
+            var trajectoriesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["trajectories"].ToString());
+            List<Trajectory> trajectories = new List<Trajectory>();
+            //TODO: Check this for errors.
+            foreach (Dictionary<string, object> trajectoryData in trajectoriesData)
+            {
+                trajectories.Add(Trajectory.FromData(trajectoryData));
+            }
+
+            //Parse the robot base frame
+            var robotBaseFrameData = JsonConvert.SerializeObject(jsonObject["robot_base_frame"]);
+            Frame robotBaseFrame = Frame.Parse(robotBaseFrameData);
+
+            //Parse the robot name
+            var robotName = jsonObject["robot_name"].ToString();
+
+            //TODO: Return the message
+            return new MimicTrajectoryResultMessage(trajectories, robotBaseFrame, robotName, header);
+        }
+    }
+
 }
