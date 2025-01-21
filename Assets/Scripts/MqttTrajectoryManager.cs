@@ -12,6 +12,7 @@ using CompasXR.Core;
 using CompasXR.UI;
 using CompasXR.Robots.MqttData;
 using CompasXR.Robots.MqttData.RoboticTerritories;
+using CompasXR.RoboticTerritories.Data;
 
 namespace CompasXR.Robots
 {
@@ -182,12 +183,66 @@ namespace CompasXR.Robots
                 Debug.LogWarning("MQTT: No message handler for topic: " + topic);
             }
         }
-
         public void MimicResultReceivedMessageHandler(MimicTrajectoryResultMessage mimicResultMessage)
         {
             Debug.Log("MQTT: MimicResultReceivedMessageHandler: Mimic Result Message Received");
             Debug.Log($"MQTT: MimicResultReceivedMessageHandler: Mimic Result Message Received with {mimicResultMessage.Trajectories.Count} trajectories and {mimicResultMessage.CombinedTrajectoryPoints.Count} points");
+        
+            if(databaseManager.ProjectZones.CurrentZone != ProjectZones.CurrentZoneMode.Mimic)
+            {
+                Debug.LogWarning("MQTT: MimicResultReceivedMessageHandler: Current Zone is not Mimic. No action taken.");
+                return;
+            }
+            else if(mimicResultMessage.Trajectories.Count <= 0)
+            {
+                Debug.LogWarning("MQTT: MimicResultReceivedMessageHandler: No Trajectories in the Mimic Result Message.");
+                string message = "WARNING: The robotic controler replied with a null Trajectory. Please edit points or rerequest.";
+                UIFunctionalities.SetMimicControlsActivity(true, true, true, false, false);
+                UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.TrajectoryNullWarningMessageObject, "TrajectoryNullWarningMessage", UIFunctionalities.MessagesParent, message, "MimicTrajectoryResultReceivedMessageHandler: Received trajectory is null");
+                return;
+            }
+            else if(mimicResultMessage.CombinedTrajectoryPoints.Count <= 0)
+            {
+                Debug.LogWarning("MQTT: MimicResultReceivedMessageHandler: Combined Trajectory points are empty in the Mimic Result Message.");
+                string message = "WARNING: The robotic controler replied with a null Trajectory. Please edit points or rerequest.";
+                UIFunctionalities.SetMimicControlsActivity(true, true, true, false, false);
+                UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.TrajectoryNullWarningMessageObject, "TrajectoryNullWarningMessage", UIFunctionalities.MessagesParent, message, "MimicTrajectoryResultReceivedMessageHandler: Received trajectory is null");
+                return;
+            }
+            else if(mimicResultMessage.RobotName != serviceManager.ActiveRobotName)  //TODO: THIS IS FROM COMPAS XR, BUT NEEDS TO BE THOUGHT ABOUT FOR ROBOT TERRITORIES
+            {
+                UIFunctionalities.SignalActiveRobotUpdateFromPlannerRoboticTerritories(
+                    mimicResultMessage.RobotName,
+                    serviceManager.ActiveRobotName,
+                    () => trajectoryVisualizer.InstantateRobotFromMimicMessage(
+                        mimicResultMessage,
+                        trajectoryVisualizer.ActiveRobot,
+                        trajectoryVisualizer.URDFLinkNames,
+                        trajectoryVisualizer.ActiveTrajectoryParentObject,
+                        true));
+
+                //Update Last Mimic Trajectory Result Message in the Service Manager
+                serviceManager.LastMimicTrajectoryResultMessage = mimicResultMessage; //TODO: This is a strategy from compas XR class, but needs to be cleaned up
+
+                Debug.Log("MQTT: : MimicResultReceivedMessageHandler : Robot Name in the message is not the same as the active robot name signaling on screen control.");
+                return;
+            }
+            else
+            {
+                //Update Last Mimic Trajectory Result Message in the Service Manager
+                serviceManager.LastMimicTrajectoryResultMessage = mimicResultMessage; //TODO: This is a strategy from compas XR class, but needs to be cleaned up
+
+                trajectoryVisualizer.InstantateRobotFromMimicMessage(
+                    mimicResultMessage,
+                    trajectoryVisualizer.ActiveRobot,
+                    trajectoryVisualizer.URDFLinkNames,
+                    trajectoryVisualizer.ActiveTrajectoryParentObject,
+                    true);
+                UIFunctionalities.SetMimicControlsActivity(true, false, false, true, true);
+                Debug.Log("MQTT: : MimicResultReceivedMessageHandler : Robot Name in the message is the same as the active robot name.");
+            }
         }
+
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////
 
         protected override void OnConnected()
@@ -456,6 +511,7 @@ namespace CompasXR.Robots
                         {
                             serviceManager.TrajectoryRequestTransactionLock = false;
 
+                
                             UIFunctionalities.SignalTrajectoryReviewRequest(
                                 getTrajectoryResultmessage.ElementID,
                                 getTrajectoryResultmessage.RobotName,

@@ -215,7 +215,6 @@ namespace CompasXR.Core
             * Method used to convert a GameObjects position from LeftHand to RightHand.
             * The method takes a GameObject and returns a float array of the position.
             */
-            // Vector3 objectPosition = gameObject.transform.localPosition; //TODO: Should this be local //TODO: THIS WORKS, BUT CHECK THE OTHER WAY FOR CONSISTENCY
             Transform parentTransform = parentObjectTransformedbyQR.transform;
             Vector3 objectPosition = parentTransform.InverseTransformPoint(gameObject.transform.position);
 
@@ -223,7 +222,6 @@ namespace CompasXR.Core
             float[] convertedPosition = new float [3] {objectPositionArray[0], objectPositionArray[2], objectPositionArray[1]};
             return convertedPosition;
         }
-
         public static List<Frame> ConvertGameObjectListToRightHandFrameDataRoboticTerritories(List<GameObject> gameObjectsList, GameObject parentObjectTransformedbyQR) //TODO: This changed from the compasXR version
         {
             /*
@@ -251,7 +249,6 @@ namespace CompasXR.Core
             frame.yaxis = yaxisData;
             return frame;
         }
-
         public static (float[], float[], float[]) FromUnityToRhinoConversionRoboticTerritories(GameObject gameObject, GameObject parentObjectTransformedbyQR) //TODO: This changed from the compasXR version
         {
             /*
@@ -269,30 +266,9 @@ namespace CompasXR.Core
             * Method used to convert a GameObjects rotation from LeftHand to RightHand.
             * The method takes a GameObject and returns a Rotation struct.
             */
-            //TODO: TESTING THIS WITH THE PARENT OBJECT TRANSFORMED BY THE QR CODE
             Transform parentTransform = parentObjectTransformedbyQR.transform;
             Vector3 objectWorldZ = parentTransform.InverseTransformDirection(gameObject.transform.forward);
             Vector3 objectWorldX = parentTransform.InverseTransformDirection(gameObject.transform.right);
-
-            //TODO: THIS WORKS BEFORE TRANSFORMING THE OBJECT BY THE QR CODE, BUT NOT AFTER.
-            // Vector3 objectWorldZ = gameObject.transform.forward;
-            // Vector3 objectWorldX = gameObject.transform.right;
-
-            //TODO: TESTING ////////////////////////////////////////////////////////////////////////
-            // Create first test cube and move it 1 meter in the object's world Z direction
-            GameObject testCubeZ = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            testCubeZ.transform.position = gameObject.transform.position + objectWorldZ * 0.1f;
-            testCubeZ.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-            testCubeZ.name = $"TestCubeZ_{gameObject.name}";
-
-            // Create second test cube and move it 1 meter in the object's world X direction
-            GameObject testCubeX = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            testCubeX.transform.position = gameObject.transform.position + objectWorldX * 0.1f;
-            testCubeX.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-            testCubeX.name = $"TestCubeX_{gameObject.name}";
-
-            //TODO: TESTING ////////////////////////////////////////////////////////////////////////
-
 
             float[] x_vecdata = new float[3] {objectWorldX.x, objectWorldX.y, objectWorldX.z};
             float[] z_vecdata = new float[3] {objectWorldZ.x, objectWorldZ.y, objectWorldZ.z};
@@ -303,8 +279,7 @@ namespace CompasXR.Core
             Rotation rotationLH;
             
             rotationLH.x = x_vec_left;
-            rotationLH.y = Vector3.Cross(z_vec_left, x_vec_left); //TODO: CHECK FLIPPING THESE.
-            // rotationLH.y = Vector3.Cross(x_vec_left, z_vec_left); //TODO: CHECK FLIPPING THESE.
+            rotationLH.y = Vector3.Cross(z_vec_left, x_vec_left);
             rotationLH.z = z_vec_left;
             
             return rotationLH;

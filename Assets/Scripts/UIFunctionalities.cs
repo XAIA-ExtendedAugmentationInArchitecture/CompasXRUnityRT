@@ -262,6 +262,7 @@ namespace CompasXR.UI
             MessagesParent = RoboticTerritoriesCanvasItems.FindObject("OnScreenMessages");
             OnScreenErrorMessagePrefab = MessagesParent.FindObject("Prefabs").FindObject("OnScreenErrorMessagePrefab");
             OnScreenInfoMessagePrefab = MessagesParent.FindObject("Prefabs").FindObject("OnScreenInfoMessagePrefab");
+            ActiveRobotUpdatedFromPlannerMessageObject = MessagesParent.FindObject("Prefabs").FindObject("ActiveRobotUpdatedFromPlannerMessage");
 
             //Set Zone Visualization Menu Items on Start
             SetZoneMenuItemsOnStart();
@@ -350,7 +351,7 @@ namespace CompasXR.UI
                 {
                     trajectoryVisualizer.DestroyActiveRobotObjects();
                 }
-                mqttTrajectoryManager.serviceManager.ActiveRobotName = null;
+                mqttTrajectoryManager.serviceManager.ActiveRobotName = null;  //TODO: THIS IS FROM COMPAS XR, BUT NEEDS TO BE THOUGHT ABOUT FOR ROBOT TERRITORIES
                 SetActiveRobotToggleObject.FindObject("Image").SetActive(false);           
             }
         }
@@ -400,7 +401,7 @@ namespace CompasXR.UI
             //Find Slider Objects
             UserInterface.FindSliderandSetOnValueChangeAction(
             MimicControlsReviewAndExecuteTrajectoryUIObjects, ref MimicTrajectoryReviewSliderObject,
-            ref MimicTrajectoryReviewSlider, "TrajectoryReviewSlider", value => UserInterface.PrintStringOnClick($"MimicControls: TrajectoryReviewSlider used {value}"));
+            ref MimicTrajectoryReviewSlider, "TrajectoryReviewSlider", value => MimicTrajectorySliderReviewMethod(value));
 
             //Set Mirror Toggle Object
             MimicMirrorToggleObject = MimicControlsSetPointsUIObjects.FindObject("Mirror");
@@ -676,6 +677,77 @@ namespace CompasXR.UI
 
                 mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic, requestMessage.GetData());
                 SetMimicControlsActivity(true, false, false, true, false);
+            }
+        }
+        public void SignalActiveRobotUpdateFromPlannerRoboticTerritories(string robotName, string activeRobotName, Action visualizeRobotMethod)
+        {
+            /*
+            * Method is used to signal an active robot update from another user on message request.
+            * This method is used for a custom active robot update because it has more requirements then message requests.
+            * and set up the UI elements to acknowledge the request.
+            */
+            Debug.Log($"SignalActiveRobotUpdateFromPlannerRoboticTerrirories: Updating Active Robot from dropdown list .");
+            TMP_Text messageComponent = ActiveRobotUpdatedFromPlannerMessageObject.FindObject("MessageText").GetComponent<TMP_Text>();
+            string message = $"WARNING: You requested for {activeRobotName} but reply Trajectory is for {robotName}. ACTIVE ROBOT UPDATED.";
+            int robotSelection = RobotSelectionDropdown.options.FindIndex(option => option.text == robotName);
+
+            if(robotSelection != -1)
+            {            
+                if(SetActiveRobotToggleObject.GetComponent<Toggle>().isOn)
+                {
+                    SetActiveRobotToggleObject.GetComponent<Toggle>().isOn = false;
+                }
+                RobotSelectionDropdown.value = robotSelection;
+                SetActiveRobotToggleObject.GetComponent<Toggle>().isOn = true;
+            }
+            else
+            {
+                Debug.LogError("SignalActiveRobotUpdateFromPlanner: Could not find robot in dropdown options.");
+            }
+
+            if(messageComponent != null && message != null && ActiveRobotUpdatedFromPlannerMessageObject != null)
+            {
+                UserInterface.SignalOnScreenMessageWithButton(ActiveRobotUpdatedFromPlannerMessageObject, messageComponent, message);
+            }
+            else
+            {
+                Debug.LogWarning("SignalActiveRobotUpdateFromPlanner: Could not find message object or message component.");
+            }
+
+            GameObject AcknowledgeButton = ActiveRobotUpdatedFromPlannerMessageObject.FindObject("AcknowledgeButton");
+            if (AcknowledgeButton!= null && AcknowledgeButton.GetComponent<Button>().onClick.GetPersistentEventCount() <= 1)
+            {
+                AcknowledgeButton.GetComponent<Button>().onClick.AddListener(() => visualizeRobotMethod());
+                AcknowledgeButton.GetComponent<Button>().onClick.AddListener(() => SetMimicControlsActivity(true, false, true, true, true));
+            }
+            else
+            {
+                Debug.LogWarning("SignalActiveRobotUpdateFromPlanner: Something Is messed up with on click event listner.");
+            }
+
+        }
+        public void MimicTrajectorySliderReviewMethod(float value)
+        {
+            if (mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints != null)
+            {
+                if (mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints.Count > 0)
+                {
+                    float SliderValue = value;
+                    int TrajectoryConfigurationsCount = mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints.Count;
+                    float SliderMax = 1;
+                    float SliderMin = 0;
+                    float SliderValueRemaped = HelpersExtensions.Remap(SliderValue, SliderMin, SliderMax, 0, TrajectoryConfigurationsCount-1); 
+                    Debug.Log($"MimicTrajectorySliderReviewMethod: Slider Value Changed is value {value} and the item is {JsonConvert.SerializeObject(mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints[(int)SliderValueRemaped])}");
+                    trajectoryVisualizer.ColorRobotConfigfromSliderInput((int)SliderValueRemaped, instantiateObjects.InactiveRobotMaterial, instantiateObjects.ActiveRobotMaterial,ref trajectoryVisualizer.previousTrajectoryReviewSliderValue);
+                }
+                else
+                {
+                    Debug.Log("MimicTrajectorySliderReviewMethod: Current Trajectory Count is 0.");
+                }
+            }
+            else
+            {
+                Debug.Log("MimicTrajectorySliderReviewMethod: Current Trajectory is null.");
             }
         }
 
@@ -1288,7 +1360,7 @@ namespace CompasXR.UI
                 {
                     trajectoryVisualizer.DestroyActiveRobotObjects();
                 }
-                mqttTrajectoryManager.serviceManager.ActiveRobotName = null;
+                mqttTrajectoryManager.serviceManager.ActiveRobotName = null;  //TODO: THIS IS FROM COMPAS XR, BUT NEEDS TO BE THOUGHT ABOUT FOR ROBOT TERRITORIES
                 SetActiveRobotToggleObject.FindObject("Image").SetActive(false);           
             }
         }

@@ -10,6 +10,8 @@ using Newtonsoft.Json;
 using RosSharp.Urdf;
 using CompasXR.Core.Data;
 using Google.MiniJSON;
+using Unity.VisualScripting;
+using CompasXR.Robots.MqttData.RoboticTerritories;
 
 
 namespace CompasXR.Robots.MqttData
@@ -103,13 +105,21 @@ namespace CompasXR.Robots.MqttData
     /////////////////////////////////////////// Classes for Compas XR Services Management ///////////////////////////////////////////////
     
     [System.Serializable]
-    public class ServiceManager
+    public class ServiceManager  //TODO: THIS IS FROM COMPAS XR, BUT NEEDS TO BE THOUGHT ABOUT FOR ROBOT TERRITORIES
     {
         /*
         * ServiceManager : Class is used to manage the services for Compas XR communication.
         * It is designed to store the current service state and manage each individual users
         * connectoin to the trajectory approval services user and approval counters.
         */
+
+        //TODO: Robotic Territories Testing /////////////////////////////////////////////////////////////////////////
+
+        public MimicTrajectoryRequestMessage LastMimicTrajectoryRequestMessage { get; set; }
+        public MimicTrajectoryResultMessage LastMimicTrajectoryResultMessage { get; set; }
+
+        //TODO: Robotic Territories Testing /////////////////////////////////////////////////////////////////////////
+
         public SimpleCounter UserCount { get; set; }
         public SimpleCounter ApprovalCount { get; set; }
         public bool PrimaryUser { get; set; }
