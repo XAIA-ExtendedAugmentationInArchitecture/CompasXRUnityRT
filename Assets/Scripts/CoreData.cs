@@ -63,6 +63,89 @@ namespace CompasXR.Core.Data
                 return null;
             }
         }
+        public static List<float> ConvertDatatoFloatList(object data)
+        {
+            if (data is List<object>)
+            {
+                List<object> dataList = data as List<object>;
+                return dataList.Select(Convert.ToSingle).ToList();
+            }
+            else if (data is float[])
+            {
+                float[] floatArray = data as float[];
+                return floatArray.ToList();
+            }
+            else if (data is List<double>)
+            {
+                List<double> doubleList = data as List<double>;
+                return doubleList.Select(Convert.ToSingle).ToList();
+            }
+            else if (data is float)
+            {
+                return new List<float> { (float)data };
+            }
+            else if (data is List<float>)
+            {
+                return data as List<float>;
+            }
+            else if (data is double[])
+            {
+                double[] doubleArray = data as double[];
+                return doubleArray.Select(Convert.ToSingle).ToList();
+            }
+            else if (data is JArray)
+            {
+                JArray dataArray = data as JArray;
+                return dataArray.Select(token => (float)token).ToList();
+            }
+            else
+            {
+                Debug.LogError("DataParser: Data is not a List<Object>, List<double>, double Array, float Array, float, or JArray.");
+                return null;
+            }
+        }
+        public static List<string> ConvertDataToStringList(object data)
+        {
+            if (data is JArray jArray)
+            {
+                return jArray.Select(obj => obj.ToString()).ToList();
+            }
+            else if (data is List<object> objectList)
+            {
+                return objectList.Select(obj => obj.ToString()).ToList();
+            }
+            else if (data is List<string> stringList)
+            {
+                return stringList;
+            }
+            else
+            {
+                throw new InvalidCastException("Data is not a valid type for conversion to List<string>.");
+            }
+        }
+
+        public static List<int> ConvertDataToIntList(object data)
+        {
+            if (data is JArray jArray)
+            {
+                // Convert JArray to List<int>
+                return jArray.Select(token => Convert.ToInt32(token)).ToList();
+            }
+            else if (data is List<object> objectList)
+            {
+                // Convert List<object> to List<int>
+                return objectList.Select(obj => Convert.ToInt32(obj)).ToList();
+            }
+            else if (data is List<int> intList)
+            {
+                // Return as-is if it's already a List<int>
+                return intList;
+            }
+            else
+            {
+                throw new InvalidCastException("Data is not a valid type for conversion to List<int>.");
+            }
+        }
     } 
     
 
@@ -382,6 +465,7 @@ namespace CompasXR.Core.Data
             * Method to create an instance of a the Frame class from a dictionary.
             */
             Frame frame = new Frame();
+            Debug.Log("Frame Data Dict: " + JsonConvert.SerializeObject(frameDataDict));
             float[] point = DataConverters.ConvertDatatoFloatArray(frameDataDict["point"]);
             float[] xaxis = DataConverters.ConvertDatatoFloatArray(frameDataDict["xaxis"]);
             float[] yaxis = DataConverters.ConvertDatatoFloatArray(frameDataDict["yaxis"]);

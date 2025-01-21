@@ -4,15 +4,17 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using CompasXR.Core.Data;
 
 using UnityEngine;
 
-namespace CompasXR.Robots.Data //TODO: CHECK IF YOU NEED DATA FOR THE PARSE METHODS.
+namespace CompasXR.Robots.Data
 {
-
-    public class Trajectory //TODO: Double check this class and make sure it is correct.
+    public class Trajectory
     {
         public List<JointTrajectoryPoint> Points { get; set; }
+
         // public List<AttachedCollisionMeshes> AttachedCollisionMeshes { get; set; }
         public List<string> JointNames { get; set; }
         public Configuration StartConfiguration { get; set; }
@@ -60,21 +62,76 @@ namespace CompasXR.Robots.Data //TODO: CHECK IF YOU NEED DATA FOR THE PARSE METH
             Dictionary<string, object> jsonDataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
             return FromData(jsonDataDict);
         }
+
         public static Trajectory FromData(Dictionary<string, object> jsonDataDict)
         {
-            //TODO: Test this and maybe make some exception loops.
-            List<JointTrajectoryPoint> points = ((List<object>)jsonDataDict["points"]).Select(obj => JointTrajectoryPoint.FromData((Dictionary<string, object>)obj)).ToList(); //TODO: INVALID CAST FIGURE THIS OUT.
-            Configuration startConfiguration = Configuration.FromData((Dictionary<string, object>)jsonDataDict["start_configuration"]);
-            List<string> jointNames = jsonDataDict.ContainsKey("joint_names") ? ((List<object>)jsonDataDict["joint_names"]).Select(obj => obj.ToString()).ToList() : null;
-            float? planningTime = jsonDataDict.ContainsKey("planning_time") ? Convert.ToSingle(jsonDataDict["planning_time"]) : null;
-            float? fraction = jsonDataDict.ContainsKey("fraction") ? Convert.ToSingle(jsonDataDict["fraction"]) : null;
-            Dictionary<string, object> attributes = jsonDataDict.ContainsKey("attributes") ? (Dictionary<string, object>)jsonDataDict["attributes"] : null;
-            Trajectory trajectory = new Trajectory(points, startConfiguration, jointNames, planningTime, fraction, attributes);
-            return trajectory;
-        }
+            var pointsList = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonDataDict["points"].ToString());
+            List<JointTrajectoryPoint> trajectoryPoints = new List<JointTrajectoryPoint>();
+            foreach (var point in pointsList)
+            {
+                JointTrajectoryPoint jointTrajectoryPoint = JointTrajectoryPoint.FromData(point);
+                trajectoryPoints.Add(jointTrajectoryPoint);
+            }
+            if (trajectoryPoints.Count > 0)
+            {
+                Debug.Log($"TrajectoryFromData: Deserialized Trajectory with {trajectoryPoints.Count} points.");
+            }
+            else
+            {
+                Debug.LogWarning("TrajectoryFromData: No points found in trajectory.");
+            }
+
+            // Fix: Ensure proper conversion of 'start_configuration'
+            Dictionary<string, object> startConfigurationDict = null;
+            if (jsonDataDict.ContainsKey("start_configuration"))
+            {
+                var startConfigurationObj = jsonDataDict["start_configuration"];
+
+                if (startConfigurationObj is JObject startConfigJObject)
+                {
+                    startConfigurationDict = startConfigJObject.ToObject<Dictionary<string, object>>();
+                }
+                else if (startConfigurationObj is Dictionary<string, object> startConfigDict)
+                {
+                    startConfigurationDict = startConfigDict;
+                }
+                else
+                {
+                    Debug.LogError("TrajectoryFromData : start_configuration is not in expected format.");
+                }
+            }
+            if (startConfigurationDict == null)
+            {
+                throw new InvalidCastException("TrajectoryFromData : Invalid or missing 'start_configuration' field in the JSON data.");
+            }
+            Configuration startConfiguration = Configuration.FromData(startConfigurationDict);
+
+            List<string> jointNames = new List<string>();
+            if (jsonDataDict.ContainsKey("joint_names"))
+            {
+                jointNames = DataConverters.ConvertDataToStringList(jsonDataDict["joint_names"]);
+            }
+            else
+            {
+                Debug.LogWarning("TrajectoryFromData : Joint names not found in trajectory data. Setting to empty list.");
+            }
+
+            float? planningTime = jsonDataDict.ContainsKey("planning_time")
+                ? Convert.ToSingle(jsonDataDict["planning_time"])
+                : null;
+
+            float? fraction = jsonDataDict.ContainsKey("fraction")
+                ? Convert.ToSingle(jsonDataDict["fraction"])
+                : null;
+
+            var attributes = jsonDataDict.ContainsKey("attributes")
+                ? jsonDataDict["attributes"] as Dictionary<string, object>
+                : null;
+
+            return new Trajectory(trajectoryPoints, startConfiguration, jointNames, planningTime, fraction, attributes);
+        }    
     }
 
-    //TODO: THESE THINGS BELOW SHOULD BE DONE....
     public class JointTrajectoryPoint : Configuration
     {
         public List<float> Accelerations { get; set; }
@@ -112,15 +169,30 @@ namespace CompasXR.Robots.Data //TODO: CHECK IF YOU NEED DATA FOR THE PARSE METH
         public static new JointTrajectoryPoint FromData(Dictionary<string, object> jsonDataDict)
         {
             Configuration baseConfig = Configuration.FromData(jsonDataDict);
+            List<float> accelerations = new List<float>();
+            if (jsonDataDict.ContainsKey("accelerations"))
+            {
+                accelerations = DataConverters.ConvertDatatoFloatList(jsonDataDict["accelerations"]);
+            }
+            List<float> velocities = new List<float>();
+            if (jsonDataDict.ContainsKey("velocities"))
+            {
+                velocities = DataConverters.ConvertDatatoFloatList(jsonDataDict["velocities"]);
+            }
+            List<float> effort = new List<float>();
+            if (jsonDataDict.ContainsKey("effort"))
+            {
+                effort = DataConverters.ConvertDatatoFloatList(jsonDataDict["effort"]);
+            }
 
             JointTrajectoryPoint jointTrajectoryPoint = new JointTrajectoryPoint(
                 baseConfig.JointValues, 
                 baseConfig.JointNames, 
-                jsonDataDict.ContainsKey("accelerations") ? ((List<object>)jsonDataDict["accelerations"]).Select(Convert.ToSingle).ToList() : null,
-                jsonDataDict.ContainsKey("velocities") ? ((List<object>)jsonDataDict["velocities"]).Select(Convert.ToSingle).ToList() : null,
-                jsonDataDict.ContainsKey("effort") ? ((List<object>)jsonDataDict["effort"]).Select(Convert.ToSingle).ToList() : null,
+                accelerations,
+                velocities,
+                effort,
                 baseConfig.JointTypes
-            ); //TODO: CHECK THE PARSING HERE MIGHT RESULT IN ERRORS.
+            );
             return jointTrajectoryPoint;
         }
     }
@@ -145,7 +217,7 @@ namespace CompasXR.Robots.Data //TODO: CHECK IF YOU NEED DATA FOR THE PARSE METH
 
             if (JointNames.Count != JointValues.Count)
             {
-                throw new InvalidOperationException("JointNames and JointValues lists must have the same length.");
+                throw new InvalidOperationException("ConfigurationCreateJointDict : JointNames and JointValues lists must have the same length.");
             }
 
             for (int i = 0; i < JointNames.Count; i++)
@@ -164,21 +236,19 @@ namespace CompasXR.Robots.Data //TODO: CHECK IF YOU NEED DATA FOR THE PARSE METH
 
         public static Configuration FromData(Dictionary<string, object> jsonDataDict)
         {
-            List<float> jointValues = ((List<object>)jsonDataDict["joint_values"]).Select(Convert.ToSingle).ToList();
-            List<string> jointNames = ((List<object>)jsonDataDict["joint_names"]).Select(obj => obj.ToString()).ToList();
-            List<int> jointTypes = new List<int>();            
-
+            List<float> jointValues = DataConverters.ConvertDatatoFloatList(jsonDataDict["joint_values"]);
+            List<string> jointNames = DataConverters.ConvertDataToStringList(jsonDataDict["joint_names"]);
+            List<int> jointTypes = new List<int>();
             if (jsonDataDict.ContainsKey("joint_types"))
             {
-                jointTypes = ((List<object>)jsonDataDict["joint_types"]).Select(Convert.ToInt32).ToList(); //TODO: Does this make sense to make an ENUM?
+                jointTypes = DataConverters.ConvertDataToIntList(jsonDataDict["joint_types"]);
             }
             else
             {
-                Debug.LogWarning("Joint types not found in configuration data. Setting to empty list.");
+                Debug.LogWarning("ConfigurationFromData : Joint types not found in configuration data. Setting to empty list.");
             }
 
             Configuration configuration = new Configuration(jointValues, jointNames, jointTypes);
-
             return configuration;
         }
         public Dictionary<string, object> GetData()

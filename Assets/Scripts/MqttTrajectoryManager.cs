@@ -174,18 +174,8 @@ namespace CompasXR.Robots
             if (topic == roboticTerritoriesTopics.subscribers.mimicResultTopic)
             {
                 Debug.Log("MQTT: MimicResult Message Handeling");
-                Debug.Log("MQTT: MimicResult Message: " + message);
-                // try
-                // {
-                    MimicTrajectoryResultMessage mimicResultMessage = MimicTrajectoryResultMessage.Parse(message);
-                    Debug.Log("MQTT: MimicResult Message: You are a fucking wizard joseph it worked");
-                    // MimicResultReceivedMessageHandler(mimicResultMessage);
-                // }
-                // catch (Exception ex)
-                // {
-                //     Debug.LogError($"MQTT: Error parsing MimicResultMessage: {ex.Message}");
-                //     Debug.LogError($"MQTT: StackTrace: {ex.StackTrace}");
-                // }
+                MimicTrajectoryResultMessage mimicResultMessage = MimicTrajectoryResultMessage.Parse(message);
+                MimicResultReceivedMessageHandler(mimicResultMessage);
             }
             else
             {
@@ -196,7 +186,7 @@ namespace CompasXR.Robots
         public void MimicResultReceivedMessageHandler(MimicTrajectoryResultMessage mimicResultMessage)
         {
             Debug.Log("MQTT: MimicResultReceivedMessageHandler: Mimic Result Message Received");
-            Debug.Log("MQTT: MimicResultReceivedMessageHandler: Mimic Result Message: " + mimicResultMessage.ToString());
+            Debug.Log($"MQTT: MimicResultReceivedMessageHandler: Mimic Result Message Received with {mimicResultMessage.Trajectories.Count} trajectories and {mimicResultMessage.CombinedTrajectoryPoints.Count} points");
         }
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////
 

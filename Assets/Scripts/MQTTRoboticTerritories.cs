@@ -11,6 +11,7 @@ using RosSharp.Urdf;
 using CompasXR.Core.Data;
 using Google.MiniJSON;
 using CompasXR.Robots.Data;
+using Newtonsoft.Json.Linq;
 
 
 
@@ -250,7 +251,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             List<JointTrajectoryPoint> combinedTrajectoryPoints = new List<JointTrajectoryPoint>();
             foreach (Trajectory trajectory in Trajectories)
             {
-                combinedTrajectoryPoints.AddRange(trajectory.Points);
+                combinedTrajectoryPoints.AddRange(trajectory.Points); //TODO: THE ERROR HAPPENS HERE.
             }
             return combinedTrajectoryPoints;
         }
@@ -273,15 +274,12 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             * Method is used to parse an instance of the class from a JSON string.
             */
 
-            //Parse the header
             var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
             var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
             Header header = Header.Parse(headerInfo);
 
-            //Parse the trajectories
             var trajectoriesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["trajectories"].ToString());
             List<Trajectory> trajectories = new List<Trajectory>();
-            //TODO: Check this for errors.
             foreach (Dictionary<string, object> trajectoryData in trajectoriesData)
             {
                 if (trajectoryData.TryGetValue("data", out var trajectoryDataValue))
@@ -296,16 +294,57 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 }
             }
 
-            //Parse the robot base frame
-            var robotBaseFrameData = JsonConvert.SerializeObject(jsonObject["robot_base_frame"]);
-            var robotBaseFrameJson = JsonConvert.SerializeObject(JsonConvert.DeserializeObject<Dictionary<string, object>>(robotBaseFrameData)["data"]);
-            Frame robotBaseFrame = Frame.Parse(robotBaseFrameJson);
+            Frame robotBaseFrame = _getBaseFrameFromMessage(jsonObject);
+            if(robotBaseFrame == null)
+            {
+                Debug.LogWarning("MimicTrajectoryResultMessage: Parse: Robot base frame not found in the message.");
+            }
+            else
+            {
+                Debug.Log($"MimicTrajectoryResultMessage: Robot Base Frame Parsed Successfully: {JsonConvert.SerializeObject(robotBaseFrame)}");
+            }
 
             //Parse the robot name
             var robotName = jsonObject["robot_name"].ToString();
 
             //TODO: Return the message
             return new MimicTrajectoryResultMessage(trajectories, robotBaseFrame, robotName, header);
+        }
+
+        public static Frame _getBaseFrameFromMessage(Dictionary<string, object> jsonObject)
+        {
+            var robotBaseFrameData = jsonObject["robot_base_frame"] as JObject;
+            if (robotBaseFrameData != null)
+            {
+                var robotBaseFrameDict = robotBaseFrameData.ToObject<Dictionary<string, object>>();
+
+                if (robotBaseFrameDict != null && robotBaseFrameDict.ContainsKey("data"))
+                {
+                    var robotBaseFrameInnerDict = robotBaseFrameDict["data"] as JObject;
+                    if (robotBaseFrameInnerDict != null)
+                    {
+                        var frameDataDict = robotBaseFrameInnerDict.ToObject<Dictionary<string, object>>();
+                        Debug.Log($"MimicTrajectoryResultMessage: Parse: robotBaseFrameDict: {JsonConvert.SerializeObject(frameDataDict)}");
+                        Frame robotBaseFrame = Frame.FromData(frameDataDict);
+                        return robotBaseFrame;
+                    }
+                    else
+                    {
+                        Debug.LogError("robotBaseFrameInnerDict is null.");
+                        return null;
+                    }
+                }
+                else
+                {
+                    Debug.LogError("Key 'data' not found in robot_base_frame.");
+                    return null;
+                }
+            }
+            else
+            {
+                Debug.LogError("robot_base_frame is not a JObject.");
+                return null;
+            }
         }
     }
 
