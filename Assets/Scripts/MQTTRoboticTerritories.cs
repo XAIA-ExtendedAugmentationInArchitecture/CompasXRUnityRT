@@ -208,7 +208,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         }
     }
 
-    [System.Serializable]
+    [System.Serializable] //TODO: CHECK THIS.
     public class MimicTrajectoryResultMessage
     {
         /*
@@ -284,12 +284,22 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             //TODO: Check this for errors.
             foreach (Dictionary<string, object> trajectoryData in trajectoriesData)
             {
-                trajectories.Add(Trajectory.FromData(trajectoryData));
+                if (trajectoryData.TryGetValue("data", out var trajectoryDataValue))
+                {
+                    var trajectoryJson = JsonConvert.SerializeObject(trajectoryDataValue);
+                    var trajectoryDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(trajectoryJson);
+                    trajectories.Add(Trajectory.FromData(trajectoryDict));
+                }
+                else
+                {
+                    Debug.LogWarning("MimicTrajectoryResultMessage: Parse: Trajectory data not found in the message.");
+                }
             }
 
             //Parse the robot base frame
             var robotBaseFrameData = JsonConvert.SerializeObject(jsonObject["robot_base_frame"]);
-            Frame robotBaseFrame = Frame.Parse(robotBaseFrameData);
+            var robotBaseFrameJson = JsonConvert.SerializeObject(JsonConvert.DeserializeObject<Dictionary<string, object>>(robotBaseFrameData)["data"]);
+            Frame robotBaseFrame = Frame.Parse(robotBaseFrameJson);
 
             //Parse the robot name
             var robotName = jsonObject["robot_name"].ToString();

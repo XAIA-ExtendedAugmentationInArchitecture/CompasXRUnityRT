@@ -154,6 +154,50 @@ namespace CompasXR.Robots
             UnsubscribeFromTopic(roboticTerritoriesTopics.subscribers.mimicResultTopic);
         }
 
+        protected override void DecodeMessage(string topic, byte[] message)
+        {
+            /*
+            * Method is used to decode the message received from the MQTT broker.
+            * The method will decode the message and call the appropriate message handler based on the topic.
+            */
+            msg = System.Text.Encoding.UTF8.GetString(message);
+            Debug.Log("MQTT: DecodeMessage: Received: " + msg + " from topic: " + topic);
+            RoboticTerritoriesIncomingMessageHandler(topic, msg);
+            // CompasXRIncomingMessageHandler(topic, msg);
+            StoreMessage(msg);
+        }
+        public void RoboticTerritoriesIncomingMessageHandler(string topic, string message)
+        {
+            /*
+            * Method is used to handle the incoming messages from the MQTT broker based on the topic.
+            */
+            if (topic == roboticTerritoriesTopics.subscribers.mimicResultTopic)
+            {
+                Debug.Log("MQTT: MimicResult Message Handeling");
+                Debug.Log("MQTT: MimicResult Message: " + message);
+                // try
+                // {
+                    MimicTrajectoryResultMessage mimicResultMessage = MimicTrajectoryResultMessage.Parse(message);
+                    Debug.Log("MQTT: MimicResult Message: You are a fucking wizard joseph it worked");
+                    // MimicResultReceivedMessageHandler(mimicResultMessage);
+                // }
+                // catch (Exception ex)
+                // {
+                //     Debug.LogError($"MQTT: Error parsing MimicResultMessage: {ex.Message}");
+                //     Debug.LogError($"MQTT: StackTrace: {ex.StackTrace}");
+                // }
+            }
+            else
+            {
+                Debug.LogWarning("MQTT: No message handler for topic: " + topic);
+            }
+        }
+
+        public void MimicResultReceivedMessageHandler(MimicTrajectoryResultMessage mimicResultMessage)
+        {
+            Debug.Log("MQTT: MimicResultReceivedMessageHandler: Mimic Result Message Received");
+            Debug.Log("MQTT: MimicResultReceivedMessageHandler: Mimic Result Message: " + mimicResultMessage.ToString());
+        }
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////
 
         protected override void OnConnected()
@@ -286,17 +330,6 @@ namespace CompasXR.Robots
         }  
 
         //////////////////////////////////////////// Message Managers ////////////////////////////////////////////
-        protected override void DecodeMessage(string topic, byte[] message)
-        {
-            /*
-            * Method is used to decode the message received from the MQTT broker.
-            * The method will decode the message and call the appropriate message handler based on the topic.
-            */
-            msg = System.Text.Encoding.UTF8.GetString(message);
-            Debug.Log("MQTT: DecodeMessage: Received: " + msg + " from topic: " + topic);
-            CompasXRIncomingMessageHandler(topic, msg);
-            StoreMessage(msg);
-        }
         private void CompasXRIncomingMessageHandler(string topic, string message)
         {
             /*

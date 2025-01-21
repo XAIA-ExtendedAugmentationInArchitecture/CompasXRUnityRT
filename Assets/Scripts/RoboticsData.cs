@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 using UnityEngine;
 
-namespace CompasXR.Robots.Data
+namespace CompasXR.Robots.Data //TODO: CHECK IF YOU NEED DATA FOR THE PARSE METHODS.
 {
 
     public class Trajectory //TODO: Double check this class and make sure it is correct.
@@ -63,7 +63,7 @@ namespace CompasXR.Robots.Data
         public static Trajectory FromData(Dictionary<string, object> jsonDataDict)
         {
             //TODO: Test this and maybe make some exception loops.
-            List<JointTrajectoryPoint> points = ((List<object>)jsonDataDict["points"]).Select(obj => JointTrajectoryPoint.FromData((Dictionary<string, object>)obj)).ToList();
+            List<JointTrajectoryPoint> points = ((List<object>)jsonDataDict["points"]).Select(obj => JointTrajectoryPoint.FromData((Dictionary<string, object>)obj)).ToList(); //TODO: INVALID CAST FIGURE THIS OUT.
             Configuration startConfiguration = Configuration.FromData((Dictionary<string, object>)jsonDataDict["start_configuration"]);
             List<string> jointNames = jsonDataDict.ContainsKey("joint_names") ? ((List<object>)jsonDataDict["joint_names"]).Select(obj => obj.ToString()).ToList() : null;
             float? planningTime = jsonDataDict.ContainsKey("planning_time") ? Convert.ToSingle(jsonDataDict["planning_time"]) : null;
