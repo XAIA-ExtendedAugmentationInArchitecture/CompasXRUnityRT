@@ -445,17 +445,76 @@ namespace CompasXR.UI
                     break;
                 case ProjectZones.CurrentZoneMode.Inference:
                     instantiateObjects.DestroyMimicZoneObjects();
+                    if(trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+                    {
+                        trajectoryVisualizer.DestroyActiveTrajectoryChildren();
+                    }
                     Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Inference Mode.");
                     break;
                 case ProjectZones.CurrentZoneMode.Mimic:
                     Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Mimic Mode.");
+                    ControlRobotVisibilityBasedOnMode(ProjectZones.CurrentZoneMode.Mimic);
                     break;
                 case ProjectZones.CurrentZoneMode.Telemimic:
                     instantiateObjects.DestroyMimicZoneObjects();
+                    if(trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+                    {
+                        trajectoryVisualizer.DestroyActiveTrajectoryChildren();
+                    }
                     Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Telemimic Mode.");
                     break;
                 default:
                     Debug.LogWarning("ControlARZoneObjectsBasedOnCurrentMode: Current Zone Mode is not set.");
+                    break;
+            }
+        }
+        public void ControlRobotVisibilityBasedOnMode(ProjectZones.CurrentZoneMode currentZoneMode)
+        {
+            /*
+            * Method is used to control the robot visibility based on the current zone mode.
+            */
+            Debug.Log($"ControlRobotVisibilityBasedOnMode: Controlling Robot Visibility based on the current zone mode {currentZoneMode}");
+            switch (currentZoneMode)
+            {
+                case ProjectZones.CurrentZoneMode.None:
+                    Debug.Log("ControlRobotVisibilityBasedOnMode: Controlling Robot Visibility for None Mode.");
+                    break;
+                case ProjectZones.CurrentZoneMode.Inference:
+                    Debug.Log("ControlRobotVisibilityBasedOnMode: Controlling Robot Visibility for Inference Mode.");
+                    break;
+                case ProjectZones.CurrentZoneMode.Mimic:
+                    if (mqttTrajectoryManager.serviceManager.ActiveRobotName != null)
+                    {
+                        if(trajectoryVisualizer.ActiveRobot != null && SetActiveRobotToggleObject.GetComponent<Toggle>().isOn)
+                        {
+                            Debug.Log("ControlRobotVisibilityBasedOnMode: Controlling Robot Visibility for Mimic Mode.");
+                            string robotName = RobotSelectionDropdown.options[RobotSelectionDropdown.value].text;
+                            if(robotName == mqttTrajectoryManager.serviceManager.ActiveRobotName)
+                            {
+                                Debug.Log("ControlRobotVisibilityBasedOnMode: Active Robot Name matches the selected robot name.");
+                                trajectoryVisualizer.ActiveRobot.SetActive(true);
+                            }
+                            else
+                            {
+                                Debug.LogWarning("ControlRobotVisibilityBasedOnMode: Active Robot Name does not match the selected robot name.");
+                            }
+
+                        }
+                        else
+                        {
+                            Debug.LogWarning("ControlRobotVisibilityBasedOnMode: Active Robot Toggle is not on.");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("ControlRobotVisibilityBasedOnMode: Active Robot Name is null.");
+                    }
+                    break;
+                case ProjectZones.CurrentZoneMode.Telemimic:
+                    Debug.Log("ControlRobotVisibilityBasedOnMode: Controlling Robot Visibility for Telemimic Mode.");
+                    break;
+                default:
+                    Debug.LogWarning("ControlRobotVisibilityBasedOnMode: Current Zone Mode is not set.");
                     break;
             }
         }
@@ -472,6 +531,7 @@ namespace CompasXR.UI
                 databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex;
                 ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
                 SetUIObjectsFromCurrentMode(databaseManager.ProjectZones.CurrentZone);
+                ControlARZoneObjectsBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
                 Debug.Log($"PreviousZoneButton: Attempting to push data to database {CurrentZone}");
                 DataHandlers.PushStringDataToDatabaseReference(databaseManager.dbReferenceCurrentMode, JsonConvert.SerializeObject(CurrentZone));
             }

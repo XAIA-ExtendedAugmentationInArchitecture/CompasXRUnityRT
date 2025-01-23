@@ -152,7 +152,6 @@ namespace CompasXR.Robots
                 Debug.LogError("InstantiateRobotTrajectory: Trajectory is empty, robotToConfigure is null, or joint_names is empty.");
             }
         }
-
         public void InstantiateRobotTrajectoryFromJointTrajectoryPoints(List<JointTrajectoryPoint> points, Frame robotBaseFrame, GameObject robotToConfigure, Dictionary<string, string> URDFLinks, GameObject parentObject, bool visibility)
         {
             /*
@@ -177,6 +176,8 @@ namespace CompasXR.Robots
                     URDFManagement.SetRobotLocalPositionandRotationFromFrame(robotBaseFrame, temporaryRobot);
                     temporaryRobot.SetActive(visibility);
                 }
+
+                robotToConfigure.SetActive(false);
 
                 //TODO: This will get replaces with the collision mesh parsing
                 // if(result.PickAndPlace)
