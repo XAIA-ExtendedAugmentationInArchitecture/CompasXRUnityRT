@@ -41,11 +41,11 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         * It is designed to store the specific topics to publish to.
         */
         public string mimicRequestTopic { get; set; }
-        public string executeTrajectoryRequestTopic { get; set; }
+        public string mimicExecuteTrajectoryRequestTopic { get; set; }
         public RTPublishers(string projectName)
         {
             mimicRequestTopic = $"robotic_territories/mimic_request/{projectName}";
-            executeTrajectoryRequestTopic = $"robotic_territories/execute_trajectory/{projectName}";
+            mimicExecuteTrajectoryRequestTopic = $"robotic_territories/mimic_execute_trajectory/{projectName}";
         }
 
     }
@@ -67,6 +67,138 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
     }
 
     // Message classes ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+    public static class MessageHandelingExtensions
+    {
+        public static Frame _getBaseFrameFromMessage(Dictionary<string, object> jsonObject)
+        {
+            var robotBaseFrameData = jsonObject["robot_base_frame"] as JObject;
+            if (robotBaseFrameData != null)
+            {
+                var robotBaseFrameDict = robotBaseFrameData.ToObject<Dictionary<string, object>>();
+
+                if (robotBaseFrameDict != null && robotBaseFrameDict.ContainsKey("data"))
+                {
+                    var robotBaseFrameInnerDict = robotBaseFrameDict["data"] as JObject;
+                    if (robotBaseFrameInnerDict != null)
+                    {
+                        var frameDataDict = robotBaseFrameInnerDict.ToObject<Dictionary<string, object>>();
+                        Debug.Log($"MimicTrajectoryResultMessage: Parse: robotBaseFrameDict: {JsonConvert.SerializeObject(frameDataDict)}");
+                        Frame robotBaseFrame = Frame.FromData(frameDataDict);
+                        return robotBaseFrame;
+                    }
+                    else
+                    {
+                        Debug.LogError("robotBaseFrameInnerDict is null.");
+                        return null;
+                    }
+                }
+                else
+                {
+                    Debug.LogError("Key 'data' not found in robot_base_frame.");
+                    return null;
+                }
+            }
+            else
+            {
+                Debug.LogError("robot_base_frame is not a JObject.");
+                return null;
+            }
+        }
+
+        public static List<Dictionary<string, object>> _getTrajectoriesDataFromList(List<Trajectory> Trajectories)
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            List<Dictionary<string, object>> trajectoriesData = new List<Dictionary<string, object>>();
+            foreach (Trajectory trajectory in Trajectories)
+            {
+                trajectoriesData.Add(trajectory.GetData());
+            }
+            return trajectoriesData;
+        }
+
+        
+        public static List<Frame> _parseDataFromFramesList(List<Dictionary<string, object>> framesData)
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            List<Frame> frames = new List<Frame>();
+            foreach (Dictionary<string, object> frameData in framesData)
+            {
+                frames.Add(Frame.Parse(JsonConvert.SerializeObject(frameData)));
+            }
+            return frames;
+        }
+
+        public static List<JointTrajectoryPoint> _getCombinedTrajectoryPointsFromTrajectoryList(List<Trajectory> Trajectories)
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            List<JointTrajectoryPoint> combinedTrajectoryPoints = new List<JointTrajectoryPoint>();
+            foreach (Trajectory trajectory in Trajectories)
+            {
+                combinedTrajectoryPoints.AddRange(trajectory.Points);
+            }
+            return combinedTrajectoryPoints;
+        }
+        public static List<Dictionary<string, object>> _getDataFromJointTrajectoryPointList(List<JointTrajectoryPoint> jointTrajectoryPoints)
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            List<Dictionary<string, object>> jointTrajectoryPointsData = new List<Dictionary<string, object>>();
+            foreach (JointTrajectoryPoint jointTrajectoryPoint in jointTrajectoryPoints)
+            {
+                jointTrajectoryPointsData.Add(jointTrajectoryPoint.GetData());
+            }
+            return jointTrajectoryPointsData;
+        }
+
+        public static List<JointTrajectoryPoint> _parseJointTrajectoryPointFromDataList(List<Dictionary<string, object>> jointTrajectoryPointsData)
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            List<JointTrajectoryPoint> jointTrajectoryPoints = new List<JointTrajectoryPoint>();
+            foreach (Dictionary<string, object> jointTrajectoryPointData in jointTrajectoryPointsData)
+            {
+                jointTrajectoryPoints.Add(JointTrajectoryPoint.Parse(JsonConvert.SerializeObject(jointTrajectoryPointData)));
+            }
+            return jointTrajectoryPoints;
+        }
+
+        public static List<Dictionary<string, object>> _getDataFromFramesList(List<Frame> Frames)
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            List<Dictionary<string, object>> framesData = new List<Dictionary<string, object>>();
+            foreach (Frame frame in Frames)
+            {
+                framesData.Add(frame.GetData());
+            }
+            return framesData;
+        }
+
+        public static List<Frame> _parseFramesFromDataList(List<Dictionary<string, object>> framesData)
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            List<Frame> frames = new List<Frame>();
+            foreach (Dictionary<string, object> frameData in framesData)
+            {
+                frames.Add(Frame.Parse(JsonConvert.SerializeObject(frameData)));
+            }
+            return frames;
+        }
+
+    }
 
     [System.Serializable]
     public class Header
@@ -156,38 +288,11 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             return new Dictionary<string, object>
             {
                 { "header", Header.GetData() },
-                { "human_frames", _getFramesData(HumanFrames) },
-                { "robot_frames", _getFramesData(RobotFrames) },
+                { "human_frames", MessageHandelingExtensions._getDataFromFramesList(HumanFrames) },
+                { "robot_frames", MessageHandelingExtensions._getDataFromFramesList(RobotFrames) },
                 { "robot_name", RobotName }
             };
         }
-
-        public List<Dictionary<string, object>> _getFramesData(List<Frame> Frames)
-        {
-            /*
-            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
-            */
-            List<Dictionary<string, object>> framesData = new List<Dictionary<string, object>>();
-            foreach (Frame frame in Frames)
-            {
-                framesData.Add(frame.GetData());
-            }
-            return framesData;
-        }
-
-        public List<Frame> _parseFramesData(List<Dictionary<string, object>> framesData)
-        {
-            /*
-            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
-            */
-            List<Frame> frames = new List<Frame>();
-            foreach (Dictionary<string, object> frameData in framesData)
-            {
-                frames.Add(Frame.Parse(JsonConvert.SerializeObject(frameData)));
-            }
-            return frames;
-        }
-
         public static MimicTrajectoryRequestMessage Parse(string jsonString)
         {
             /*
@@ -226,9 +331,23 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         {
             Header = header ?? new Header();
             Trajectories = trajectories;
-            CombinedTrajectoryPoints = _getCombinedTrajectoryPoints(trajectories);
+            CombinedTrajectoryPoints = _GetJointTRajectoryPoints(trajectories);
             RobotBaseFrame = robotBaseFrame;
             RobotName = robotName;
+        }
+
+        public static List<JointTrajectoryPoint> _GetJointTRajectoryPoints(List<Trajectory> trajectories)
+        {
+            if(trajectories.Count == 0)
+            {
+                Debug.LogWarning("MimicTrajectoryResultMessage: No trajectories found in the message returning null list.");
+                return new List<JointTrajectoryPoint>();
+            }
+            else
+            {
+                Debug.Log($"MimicTrajectoryResultMessage: Found {trajectories.Count} trajectories in the message.");
+                return MessageHandelingExtensions._getCombinedTrajectoryPointsFromTrajectoryList(trajectories);
+            }
         }
         public Dictionary<string, object> GetData()
         {
@@ -238,42 +357,103 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             return new Dictionary<string, object>
             {
                 { "header", Header.GetData() },
-                { "trajectories", _getTrajectoriesData(Trajectories) },
+                { "trajectories", MessageHandelingExtensions._getTrajectoriesDataFromList(Trajectories) },
                 { "robot_base_frame", RobotBaseFrame.GetData() },
                 { "robot_name", RobotName }
             };
         }
-        private List<JointTrajectoryPoint> _getCombinedTrajectoryPoints(List<Trajectory> Trajectories)
-        {
-            /*
-            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
-            */
-            List<JointTrajectoryPoint> combinedTrajectoryPoints = new List<JointTrajectoryPoint>();
-            foreach (Trajectory trajectory in Trajectories)
-            {
-                combinedTrajectoryPoints.AddRange(trajectory.Points); //TODO: THE ERROR HAPPENS HERE.
-            }
-            return combinedTrajectoryPoints;
-        }
-        private List<Dictionary<string, object>> _getTrajectoriesData(List<Trajectory> Trajectories)
-        {
-            /*
-            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
-            */
-            List<Dictionary<string, object>> trajectoriesData = new List<Dictionary<string, object>>();
-            foreach (Trajectory trajectory in Trajectories)
-            {
-                trajectoriesData.Add(trajectory.GetData());
-            }
-            return trajectoriesData;
-        }
-
         public static MimicTrajectoryResultMessage Parse(string jsonString)
         {
             /*
             * Method is used to parse an instance of the class from a JSON string.
             */
 
+            var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+            var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
+            Header header = Header.Parse(headerInfo);
+
+            var trajectoriesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["trajectories"].ToString());
+            List<Trajectory> trajectories = new List<Trajectory>();
+            if(trajectoriesData.Count > 0)
+            {
+                foreach (Dictionary<string, object> trajectoryData in trajectoriesData)
+                {
+                    if (trajectoryData.TryGetValue("data", out var trajectoryDataValue))
+                    {
+                        var trajectoryJson = JsonConvert.SerializeObject(trajectoryDataValue);
+                        var trajectoryDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(trajectoryJson);
+                        trajectories.Add(Trajectory.FromData(trajectoryDict));
+                    }
+                    else
+                    {
+                        Debug.LogWarning("MimicTrajectoryResultMessage: Parse: Trajectory data not found in the message.");
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogWarning("MimicTrajectoryResultMessage: Parse: No trajectories found in the message.");
+            }
+
+            Frame robotBaseFrame = MessageHandelingExtensions._getBaseFrameFromMessage(jsonObject);
+            if(robotBaseFrame == null)
+            {
+                Debug.LogWarning("MimicTrajectoryResultMessage: Parse: Robot base frame not found in the message.");
+            }
+            else
+            {
+                Debug.Log($"MimicTrajectoryResultMessage: Robot Base Frame Parsed Successfully: {JsonConvert.SerializeObject(robotBaseFrame)}");
+            }
+
+            //Parse the robot name
+            var robotName = jsonObject["robot_name"].ToString();
+
+            return new MimicTrajectoryResultMessage(trajectories, robotBaseFrame, robotName, header);
+        }
+
+    }
+
+
+    [System.Serializable]
+    public class ExacuteMimicTrajectoryRequestMessage
+    {
+        /*
+        * GetTrajectoryRequest : Class is used to manage the GetTrajectoryRequest message for Compas XR communication.
+        * It is designed to store the element ID, robot name, and header for the message.
+        * It is sent to the CAD when a user requests a trajectory.
+        */
+        public Header Header { get; private set; }
+        public List<Trajectory> Trajectories { get; private set; }
+        public List<JointTrajectoryPoint> CombinedTrajectoryPoints { get; private set; }
+        public string RobotName { get; private set; }
+        public Frame RobotBaseFrame { get; private set; }
+        public ExacuteMimicTrajectoryRequestMessage(List<Trajectory> trajectories, List<JointTrajectoryPoint> combinedTrajectoryPoints, string robotName, Frame robotBaseFrame, Header header=null)
+        {
+            Header = header ?? new Header();
+            Trajectories = trajectories;
+            CombinedTrajectoryPoints = combinedTrajectoryPoints;
+            RobotName = robotName;
+            RobotBaseFrame = robotBaseFrame;
+        }
+        public Dictionary<string, object> GetData()
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            return new Dictionary<string, object>
+            {
+                { "header", Header.GetData() },
+                { "trajectories", MessageHandelingExtensions._getTrajectoriesDataFromList(Trajectories) },
+                { "combined_trajectory_points", MessageHandelingExtensions._getDataFromJointTrajectoryPointList(CombinedTrajectoryPoints) },
+                { "robot_name", RobotName },
+                { "robot_base_frame", RobotBaseFrame.GetData() }
+            };
+        }
+        public static ExacuteMimicTrajectoryRequestMessage Parse(string jsonString)
+        {
+            /*
+            * Method is used to parse an instance of the class from a JSON string.
+            */
             var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
             var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
             Header header = Header.Parse(headerInfo);
@@ -290,62 +470,28 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 }
                 else
                 {
-                    Debug.LogWarning("MimicTrajectoryResultMessage: Parse: Trajectory data not found in the message.");
+                    Debug.LogWarning("ExacuteMimicTrajectoryRequestMessage: Parse: Trajectory data not found in the message.");
                 }
             }
 
-            Frame robotBaseFrame = _getBaseFrameFromMessage(jsonObject);
+            var combinedTrajectoryPointsData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["combined_trajectory_points"].ToString());
+            List<JointTrajectoryPoint> combinedTrajectoryPoints = MessageHandelingExtensions._parseJointTrajectoryPointFromDataList(combinedTrajectoryPointsData);
+
+            Frame robotBaseFrame = MessageHandelingExtensions._getBaseFrameFromMessage(jsonObject);
             if(robotBaseFrame == null)
             {
-                Debug.LogWarning("MimicTrajectoryResultMessage: Parse: Robot base frame not found in the message.");
+                Debug.LogWarning("ExacuteMimicTrajectoryRequestMessage: Parse: Robot base frame not found in the message.");
             }
             else
             {
-                Debug.Log($"MimicTrajectoryResultMessage: Robot Base Frame Parsed Successfully: {JsonConvert.SerializeObject(robotBaseFrame)}");
+                Debug.Log($"ExacuteMimicTrajectoryRequestMessage: Robot Base Frame Parsed Successfully: {JsonConvert.SerializeObject(robotBaseFrame)}");
             }
 
-            //Parse the robot name
             var robotName = jsonObject["robot_name"].ToString();
 
-            //TODO: Return the message
-            return new MimicTrajectoryResultMessage(trajectories, robotBaseFrame, robotName, header);
+            return new ExacuteMimicTrajectoryRequestMessage(trajectories, combinedTrajectoryPoints, robotName, robotBaseFrame, header);
         }
 
-        public static Frame _getBaseFrameFromMessage(Dictionary<string, object> jsonObject)
-        {
-            var robotBaseFrameData = jsonObject["robot_base_frame"] as JObject;
-            if (robotBaseFrameData != null)
-            {
-                var robotBaseFrameDict = robotBaseFrameData.ToObject<Dictionary<string, object>>();
-
-                if (robotBaseFrameDict != null && robotBaseFrameDict.ContainsKey("data"))
-                {
-                    var robotBaseFrameInnerDict = robotBaseFrameDict["data"] as JObject;
-                    if (robotBaseFrameInnerDict != null)
-                    {
-                        var frameDataDict = robotBaseFrameInnerDict.ToObject<Dictionary<string, object>>();
-                        Debug.Log($"MimicTrajectoryResultMessage: Parse: robotBaseFrameDict: {JsonConvert.SerializeObject(frameDataDict)}");
-                        Frame robotBaseFrame = Frame.FromData(frameDataDict);
-                        return robotBaseFrame;
-                    }
-                    else
-                    {
-                        Debug.LogError("robotBaseFrameInnerDict is null.");
-                        return null;
-                    }
-                }
-                else
-                {
-                    Debug.LogError("Key 'data' not found in robot_base_frame.");
-                    return null;
-                }
-            }
-            else
-            {
-                Debug.LogError("robot_base_frame is not a JObject.");
-                return null;
-            }
-        }
     }
 
 }

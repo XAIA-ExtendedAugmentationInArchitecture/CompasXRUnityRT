@@ -207,6 +207,7 @@ namespace CompasXR.UI
         //Mimic OnScreen Messages
         public GameObject MimicSetPointOutsideOfHumanZone;
         public GameObject MimicPointsTooFewMessage;
+        public GameObject MimicUnabletoExecuteTrajectory;
 
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
 
@@ -396,7 +397,7 @@ namespace CompasXR.UI
             UserInterface.FindButtonandSetOnClickAction(
             MimicControlsReviewAndExecuteTrajectoryUIObjects,
             ref MimicExecuteTrajectoryButtonObject,
-            "ExecuteTrajectoryButton", () => UserInterface.PrintStringOnClick("MimicControls: ExecuteTrajectoryButton Clicked"));
+            "ExecuteTrajectoryButton", MimicExecuteTrajectoryButtonMethod);
 
             //Find Slider Objects
             UserInterface.FindSliderandSetOnValueChangeAction(
@@ -808,6 +809,31 @@ namespace CompasXR.UI
             else
             {
                 Debug.Log("MimicTrajectorySliderReviewMethod: Current Trajectory is null.");
+            }
+        }
+
+        public void MimicExecuteTrajectoryButtonMethod()
+        {
+            Debug.Log("MimicExecuteTrajectoryButton: Executing Mimic Trajectory.");
+            if(mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints == null 
+            || mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints.Count <= 0 
+            || mqttTrajectoryManager.serviceManager.ActiveRobotName != mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.RobotName)
+            {
+                Debug.Log("MimicExecuteTrajectoryButton: Current Trajectory is null or empty.");
+                string message = "WARNING: There is no trajectory to execute or the active robot does not match the robot trajectory.";
+                UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref MimicUnabletoExecuteTrajectory, "MimicPointsTooFewMessage", MessagesParent, message, "MimicExecuteTrajectoryButton: No Trajectory to Execute.");
+            }
+            else
+            {
+                Debug.Log("MimicExecuteTrajectoryButton: Publising Mimic Exacution Message Mimic Trajectory.");
+                ExacuteMimicTrajectoryRequestMessage exacuteMimicRequestMessage = new ExacuteMimicTrajectoryRequestMessage
+                (
+                    mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.Trajectories,
+                    mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints,
+                    mqttTrajectoryManager.serviceManager.ActiveRobotName,
+                    mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.RobotBaseFrame
+                );
+                mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicExecuteTrajectoryRequestTopic, exacuteMimicRequestMessage.GetData());
             }
         }
 

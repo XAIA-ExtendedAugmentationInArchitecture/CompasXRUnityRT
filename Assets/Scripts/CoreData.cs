@@ -146,6 +146,26 @@ namespace CompasXR.Core.Data
                 throw new InvalidCastException("Data is not a valid type for conversion to List<int>.");
             }
         }
+
+        public static double ConvertNumericDataToDouble(object data)
+        {
+            if (data is double)
+            {
+                return (double)data;
+            }
+            else if (data is float)
+            {
+                return Convert.ToDouble(data);
+            }
+            else if (data is int)
+            {
+                return Convert.ToDouble(data);
+            }
+            else
+            {
+                throw new InvalidCastException("Data is not a valid type for conversion to double.");
+            }
+        }
     } 
     
 
