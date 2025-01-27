@@ -663,6 +663,20 @@ namespace CompasXR.UI
                 Debug.LogWarning("UndoMimicPoint: No Mimic Points to Undo.");
             }
         }
+        public void ReachabilityToggleMethod(bool visibility)
+        {
+            /*
+            ReachabilityToggleMethod is called from the UI Toggle and is responsible for toggling the reachability of the active robot in the scene.
+            */
+            if(trajectoryVisualizer.ActiveRobot != null)
+            {
+                trajectoryVisualizer.SetReachabilityActive(trajectoryVisualizer.ActiveRobot, visibility);
+            }
+            else
+            {
+                Debug.Log("ReachabilityToggleMethod: ActiveRobot is null.");
+            }
+        }
 
         //UI Control Methods
         public void SetUIObjectsFromCurrentMode(ProjectZones.CurrentZoneMode mode)
@@ -811,7 +825,6 @@ namespace CompasXR.UI
                 Debug.Log("MimicTrajectorySliderReviewMethod: Current Trajectory is null.");
             }
         }
-
         public void MimicExecuteTrajectoryButtonMethod()
         {
             Debug.Log("MimicExecuteTrajectoryButton: Executing Mimic Trajectory.");

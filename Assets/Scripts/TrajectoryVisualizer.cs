@@ -128,6 +128,29 @@ namespace CompasXR.Robots
             }
         }
 
+        public void SetReachabilityActive(GameObject robotObject, bool visibility)
+        {
+            /*
+            SetReachabilityActive is responsible for setting the reachability of the robot in the scene.
+            */
+            if(robotObject != null)
+            {
+                GameObject reachabilityObject = robotObject.FindObject("Reachability");
+                if(reachabilityObject != null)
+                {
+                    reachabilityObject.SetActive(visibility);
+                }
+                else
+                {
+                    Debug.Log("SetReachabilityActive: Reachability object not found in the robot object.");
+                }
+            }
+            else
+            {
+                Debug.Log("SetReachabilityActive: Robot object is null.");
+            }
+        }
+
         ////////////////////////////////////////// Robot Object Management ////////////////////////////////////////////////////////
 
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////////////////////////////
