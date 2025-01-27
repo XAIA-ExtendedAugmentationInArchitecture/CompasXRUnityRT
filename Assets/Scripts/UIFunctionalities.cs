@@ -18,6 +18,7 @@ using CompasXR.Robots.MqttData;
 using Unity.VisualScripting;
 using CompasXR.RoboticTerritories.Data;
 using CompasXR.Robots.MqttData.RoboticTerritories;
+using Unity.XR.CoreUtils;
 // using Vuforia;
 
 namespace CompasXR.UI
@@ -183,6 +184,10 @@ namespace CompasXR.UI
         public GameObject ZonesARPrefabObjects;
         public TMP_Text CurrentModeTextObject;
 
+        //ROBOT ITEMS
+        public GameObject ReachabilityToggleObject;
+
+
         public List<string> ZoneMenuItems = new List<string> {"None", "Inference", "Mimic", "Telemimic"};
         public string CurrentZone = "None";
         public int CurrentZoneIndex = 0;
@@ -291,6 +296,11 @@ namespace CompasXR.UI
             RobotSelectionDropdown = RobotSelectionDropdownObject.GetComponent<TMP_Dropdown>();
             List<TMP_Dropdown.OptionData> robotOptions = UserInterface.SetDropDownOptionsFromStringList(RobotSelectionDropdown ,trajectoryVisualizer.RobotPreFabList);
             RobotSelectionDropdown.onValueChanged.AddListener(RobotSelectionDropdownValueChanged);
+
+            GameObject ReachabilityToggleParent = RobotSelectionControlObjects.FindObject("Reachability");
+            UserInterface.FindToggleandSetOnValueChangedAction(RobotSelectionControlObjects, ref ReachabilityToggleObject, "ReachabilityToggle", ReachabilityToggleMethod);
+
+            //Find Active Robot Toggle Objects
             if(RobotSelectionControlObjects == null)
             {
                 Debug.Log("Robot Selection Control Objects is null.");
@@ -663,14 +673,16 @@ namespace CompasXR.UI
                 Debug.LogWarning("UndoMimicPoint: No Mimic Points to Undo.");
             }
         }
-        public void ReachabilityToggleMethod(bool visibility)
+        public void ReachabilityToggleMethod(Toggle toggle)
         {
             /*
             ReachabilityToggleMethod is called from the UI Toggle and is responsible for toggling the reachability of the active robot in the scene.
             */
+            bool visibility = toggle.GetComponent<Toggle>().isOn;
             if(trajectoryVisualizer.ActiveRobot != null)
             {
-                trajectoryVisualizer.SetReachabilityActive(trajectoryVisualizer.ActiveRobot, visibility);
+                trajectoryVisualizer.SetReachabilityActive(trajectoryVisualizer.ActiveRobot.transform.GetChild(0).gameObject, visibility);
+                print("ReachabilityToggleMethod: Reachability is set to " + visibility);
             }
             else
             {

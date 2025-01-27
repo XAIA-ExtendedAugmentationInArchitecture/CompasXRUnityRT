@@ -14,6 +14,7 @@ using Unity.VisualScripting;
 using Firebase.Extensions;
 using CompasXR.Robots.MqttData.RoboticTerritories;
 using CompasXR.Robots.Data;
+using UnityEditor.Animations;
 
 namespace CompasXR.Robots
 {
@@ -115,6 +116,11 @@ namespace CompasXR.Robots
 
                 mqttTrajectoryManager.serviceManager.ActiveRobotName = robotName; //TODO: THIS IS FROM COMPAS XR, BUT NEEDS TO BE THOUGHT ABOUT FOR ROBOT TERRITORIES
 
+                if(uiFunctionalities.ReachabilityToggleObject.GetComponent<Toggle>().isOn)
+                {
+                    SetReachabilityActive(temporaryRobot, visibility);
+                }
+
                 temporaryRobot.transform.SetParent(ActiveRobot.transform);
                 URDFManagement.ColorURDFGameObject(temporaryRobot, material, ref URDFRenderComponents);
                 temporaryRobot.SetActive(visibility);
@@ -135,7 +141,18 @@ namespace CompasXR.Robots
             */
             if(robotObject != null)
             {
-                GameObject reachabilityObject = robotObject.FindObject("Reachability");
+
+                GameObject reachabilityObject = null;
+                for (int i = 0; i < robotObject.transform.childCount; i++)
+                {
+                    GameObject child = robotObject.transform.GetChild(i).gameObject;
+                    Debug.Log($"SetReachabilityActive: Checking child {i} with name {child.name}.");
+                    if(child.name.Contains("Reachability"))
+                    {
+                        reachabilityObject = child;
+                    }
+                }
+
                 if(reachabilityObject != null)
                 {
                     reachabilityObject.SetActive(visibility);
@@ -191,6 +208,13 @@ namespace CompasXR.Robots
                     Debug.Log($"InstantiateRobotTrajectory: Config {i} with {points[i].JointValues.Count} joints.");
 
                     GameObject temporaryRobot = Instantiate(robotToConfigure, robotToConfigure.transform.position, robotToConfigure.transform.rotation);
+
+                    //TODO: This is hardcoded to turn off reachability once the robot is active.
+                    if(uiFunctionalities.ReachabilityToggleObject.GetComponent<Toggle>().isOn)
+                    {
+                        SetReachabilityActive(temporaryRobot.transform.GetChild(0).gameObject, false);
+                    }
+
                     temporaryRobot.name = $"Config {i}";
 
                     SetRobotConfigfromDictWrapper(points[i].JointsDict, $"Config {i}", temporaryRobot, URDFLinkNames);
