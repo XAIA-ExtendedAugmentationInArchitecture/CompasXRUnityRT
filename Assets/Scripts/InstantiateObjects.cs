@@ -410,11 +410,13 @@ namespace CompasXR.Core
             }
             else
             {
-                Vector3 mirroredPosition;
-                Quaternion mirroredRotation;
-                MirrorPositionAndRotationAcrossBox(humanZone, position, rotation, humanZone.transform.right, out mirroredPosition, out mirroredRotation);
+                // Vector3 mirroredPosition;
+                // Quaternion mirroredRotation;
+                Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.right);
+                Quaternion mirrorRotation = MirrorQuaternion(rotation, humanZone.transform.right);
                 mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, mirroredPosition);
-                mappedRotation = mirroredRotation;
+                
+                mappedRotation = mirrorRotation;
             }
             GameObject robotPoint = CreateSphereAtPositionAndRotation(mappedRobotPosition, rotation, radius, robotColor, $"{robotPoints.Count}_MimicPoint");
             robotPoint.transform.rotation = mappedRotation;
@@ -604,14 +606,14 @@ namespace CompasXR.Core
         }
 
     //TODO: THIS NEEDS TO BE CHECKED AND THOUGHT ABOUT FOR ROBOT SPACE CONVERSION. See Notes
-    public static void MirrorPositionAndRotationAcrossBox(GameObject box, Vector3 pointPosition, Quaternion pointRotation, Vector3 mirrorDirection, out Vector3 mirroredPosition, out Quaternion mirroredRotation)
+    public static Vector3 MirrorPositionAcrossBox(GameObject box, Vector3 pointPosition, Vector3 mirrorDirection)
     {
         if (box == null)
         {
             Debug.LogError("MirrorPositionAndRotationAcrossBox: Box GameObject is null.");
-            mirroredPosition = Vector3.zero;
-            mirroredRotation = Quaternion.identity;
-            return;
+            Vector3 zeroPosition = Vector3.zero;
+            // mirroredRotation = Quaternion.identity;
+            return zeroPosition;
         }
 
         BoxCollider boxCollider = box.GetComponent<BoxCollider>();
@@ -619,9 +621,9 @@ namespace CompasXR.Core
         if (boxCollider == null)
         {
             Debug.LogError("MirrorPositionAndRotationAcrossBox: The box does not have a BoxCollider.");
-            mirroredPosition = Vector3.zero;
-            mirroredRotation = Quaternion.identity;
-            return;
+            Vector3 zeroPosition = Vector3.zero;
+            // mirroredRotation = Quaternion.identity;
+            return zeroPosition;
         }
 
         // Convert point position to local space relative to the box
@@ -635,16 +637,30 @@ namespace CompasXR.Core
         );
 
         // Convert mirrored local position back to world space
-        mirroredPosition = box.transform.TransformPoint(mirroredLocalPosition);
+        Vector3 mirroredPosition = box.transform.TransformPoint(mirroredLocalPosition);
 
-        // **Corrected: Use Quaternion Reflection Instead of Euler Angles**
-        Vector3 normal = mirrorDirection.normalized; // Ensure it's a unit vector
-        Quaternion reflectionQuaternion = Quaternion.AngleAxis(180f, normal);
-        mirroredRotation = reflectionQuaternion * pointRotation; // Reflect the rotation
+        // // **Corrected: Use Quaternion Reflection Instead of Euler Angles**
+        // Vector3 normal = mirrorDirection.normalized; // Ensure it's a unit vector
+        // Quaternion reflectionQuaternion = Quaternion.AngleAxis(180f, normal);
+        // mirroredRotation = reflectionQuaternion * pointRotation; // Reflect the rotation
 
-        Debug.Log($"MirrorPositionAndRotationAcrossBox: Mirrored {pointPosition} to {mirroredPosition} with rotation {mirroredRotation.eulerAngles} in {box.name} along {mirrorDirection}");
+        Debug.Log($"MirrorPositionAndRotationAcrossBox: Mirrored {pointPosition} to {mirroredPosition} in {box.name} along {mirrorDirection}");
+        return mirroredPosition;
     }
 
+    public static Quaternion MirrorQuaternion(Quaternion pointRotation, Vector3 normal)
+    {
+
+        // Create a pure quaternion representing the plane normal
+        Quaternion n = new Quaternion(normal.x, normal.y, normal.z, 0);
+
+        Quaternion R = Quaternion.AngleAxis(180, normal);
+
+        // Compute mirrored quaternion
+        Quaternion mirrored = R * pointRotation * n;
+        return mirrored;
+
+    }
     public static Quaternion MirrorRotationAcrossCenter(Transform centerTransform, Quaternion pointARotation)
     {
         // Step 1: Compute relative rotation of pointA to center

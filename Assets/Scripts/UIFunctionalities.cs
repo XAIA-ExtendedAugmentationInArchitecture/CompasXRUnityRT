@@ -456,7 +456,7 @@ namespace CompasXR.UI
                     break;
                 case ProjectZones.CurrentZoneMode.Inference:
                     instantiateObjects.DestroyMimicZoneObjects();
-                    if(trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+                    if(trajectoryVisualizer.ActiveTrajectoryParentObject!= null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
                     {
                         trajectoryVisualizer.DestroyActiveTrajectoryChildren();
                     }
@@ -468,7 +468,7 @@ namespace CompasXR.UI
                     break;
                 case ProjectZones.CurrentZoneMode.Telemimic:
                     instantiateObjects.DestroyMimicZoneObjects();
-                    if(trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+                    if(trajectoryVisualizer.ActiveTrajectoryParentObject!= null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
                     {
                         trajectoryVisualizer.DestroyActiveTrajectoryChildren();
                     }

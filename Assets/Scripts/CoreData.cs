@@ -123,7 +123,6 @@ namespace CompasXR.Core.Data
                 throw new InvalidCastException("Data is not a valid type for conversion to List<string>.");
             }
         }
-
         public static List<int> ConvertDataToIntList(object data)
         {
             if (data is JArray jArray)
@@ -146,7 +145,6 @@ namespace CompasXR.Core.Data
                 throw new InvalidCastException("Data is not a valid type for conversion to List<int>.");
             }
         }
-
         public static double ConvertNumericDataToDouble(object data)
         {
             if (data is double)
@@ -166,6 +164,7 @@ namespace CompasXR.Core.Data
                 throw new InvalidCastException("Data is not a valid type for conversion to double.");
             }
         }
+
     } 
     
 
@@ -485,7 +484,6 @@ namespace CompasXR.Core.Data
             * Method to create an instance of a the Frame class from a dictionary.
             */
             Frame frame = new Frame();
-            Debug.Log("Frame Data Dict: " + JsonConvert.SerializeObject(frameDataDict));
             float[] point = DataConverters.ConvertDatatoFloatArray(frameDataDict["point"]);
             float[] xaxis = DataConverters.ConvertDatatoFloatArray(frameDataDict["xaxis"]);
             float[] yaxis = DataConverters.ConvertDatatoFloatArray(frameDataDict["yaxis"]);
