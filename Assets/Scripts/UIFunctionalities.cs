@@ -214,6 +214,10 @@ namespace CompasXR.UI
         public GameObject MimicPointsTooFewMessage;
         public GameObject MimicUnabletoExecuteTrajectory;
 
+        public GameObject MimicSetPointGreenScreen;
+        public GameObject MimicUndoPointRedScreen;
+        public float MimicSetandUndoFlashDuration = 0.1f;
+
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////// Monobehaviour Methods ///////////////////////////////////////////////////////////        
@@ -417,6 +421,10 @@ namespace CompasXR.UI
             //Set Mirror Toggle Object
             MimicMirrorToggleObject = MimicControlsSetPointsUIObjects.FindObject("Mirror");
             MimicMirrorToggle = MimicMirrorToggleObject.GetComponentInChildren<Toggle>();
+
+            //Set Mimic OnScreen Messages
+            MimicSetPointGreenScreen = MimicControlsSetPointsUIObjects.FindObject("SetPointGreenScreen");
+            MimicUndoPointRedScreen = MimicControlsSetPointsUIObjects.FindObject("UndoPointRedScreen");
         }
         public void NextZoneButton()
         {
@@ -638,7 +646,7 @@ namespace CompasXR.UI
                         instantiateObjects.MimicHumanObjects.SetActive(true);
                         instantiateObjects.MimicRobotObjects.SetActive(true);
                         instantiateObjects.CreateMimicPoints(humanZoneObject, robotZoneObject, ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, instantiateObjects.MimicHumanLine, instantiateObjects.MimicRobotLine, instantiateObjects.MimicHumanPointsParent, instantiateObjects.MimicRobotPointsParent, MimicMirrorToggle.isOn);
-
+                        StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(MimicSetPointGreenScreen, MimicSetandUndoFlashDuration));
                     }
                     else
                     {
@@ -667,6 +675,7 @@ namespace CompasXR.UI
             if(instantiateObjects.MimicHumanPoints.Count > 0 && instantiateObjects.MimicRobotPoints.Count > 0)
             {
                 instantiateObjects.DestroyLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine);
+                StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(MimicUndoPointRedScreen, MimicSetandUndoFlashDuration));
             }
             else
             {

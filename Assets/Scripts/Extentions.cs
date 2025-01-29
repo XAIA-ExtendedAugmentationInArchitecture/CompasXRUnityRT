@@ -149,6 +149,15 @@ namespace CompasXR.Core.Extentions
                 transform.LookAt(transform.position + Camera.main.transform.rotation * Vector3.forward, Camera.main.transform.rotation * Vector3.up);
             }
         }
+        public static IEnumerator FlashOnScreenObjectRoutine(GameObject onScreenObject, float flashDuration)
+        {
+            /*
+            *  FlashGreenScreenRoutine : Coroutine used to flash a green screen on the screen.
+            */
+            onScreenObject.SetActive(true);
+            yield return new WaitForSeconds(flashDuration);
+            onScreenObject.SetActive(false);
+        }
         public class Billboard : MonoBehaviour
         {
             /*
@@ -183,7 +192,6 @@ namespace CompasXR.Core.Extentions
                 this.scale = scale;
             }
         }
-
     }   
 
 }
