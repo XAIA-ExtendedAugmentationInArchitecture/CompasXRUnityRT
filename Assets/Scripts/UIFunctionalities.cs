@@ -195,6 +195,7 @@ namespace CompasXR.UI
         public GameObject PreviousZoneButtonObject;
         public GameObject RoboticTerritoriesConstantUIObjects;
         public GameObject CorrectionButtonObject;
+        public GameObject ToggleZoneVisibilityObject;
 
         //Mimic Controls
         public GameObject MimicControlsSetPointsUIObjects;
@@ -283,8 +284,28 @@ namespace CompasXR.UI
             //Set Mimic Controls on start
             SetMimicControlsOnStart();
 
+            //Set Visualization Items on Start
+            SetVisualizationItemsOnStart();
+
             //Set Correction Items on Start
             SetCorrectionMenuItemsOnStart();
+        }    
+        public void SetVisualizationItemsOnStart()
+        {
+            /*
+            * Method is used to set up the Correction Menu UI elements on start.
+            * Correction Menu UI elements constitute the UI elements that are used to control the correction functionalities
+            * of the application.
+            */
+
+            ToggleZoneVisibilityObject = RoboticTerritoriesCanvasItems.FindObject("ToggleZoneVisibility");
+
+            //Find Correction Menu Objects
+            UserInterface.FindToggleandSetOnValueChangedAction(
+            RoboticTerritoriesCanvasItems,
+            ref ToggleZoneVisibilityObject,
+            "ToggleZonesVisibility", SetZonesVisibilityToggleMethod);
+
         }
         public void SetRoboticMenuItemsOnStart()
         {
@@ -443,6 +464,12 @@ namespace CompasXR.UI
                 SetUIObjectsFromCurrentMode(databaseManager.ProjectZones.CurrentZone);
                 ControlARZoneObjectsBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
 
+                //Update Zones visibility based on toggle
+                if(ToggleZoneVisibilityObject.GetComponent<Toggle>().isOn)
+                {
+                    SetZonesVisibilityToggleMethod(ToggleZoneVisibilityObject.GetComponent<Toggle>());
+                }
+
                 Debug.Log($"NextZoneButton: Attempting to push data to database {CurrentZone}");
                 DataHandlers.PushStringDataToDatabaseReference(databaseManager.dbReferenceCurrentMode, JsonConvert.SerializeObject(CurrentZone));
             }
@@ -551,6 +578,13 @@ namespace CompasXR.UI
                 ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
                 SetUIObjectsFromCurrentMode(databaseManager.ProjectZones.CurrentZone);
                 ControlARZoneObjectsBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
+                
+                //Update Zones visibility based on toggle
+                if(ToggleZoneVisibilityObject.GetComponent<Toggle>().isOn)
+                {
+                    SetZonesVisibilityToggleMethod(ToggleZoneVisibilityObject.GetComponent<Toggle>());
+                }
+
                 Debug.Log($"PreviousZoneButton: Attempting to push data to database {CurrentZone}");
                 DataHandlers.PushStringDataToDatabaseReference(databaseManager.dbReferenceCurrentMode, JsonConvert.SerializeObject(CurrentZone));
             }
@@ -868,6 +902,25 @@ namespace CompasXR.UI
                     mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.RobotBaseFrame
                 );
                 mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicExecuteTrajectoryRequestTopic, exacuteMimicRequestMessage.GetData());
+            }
+        }
+        public void SetZonesVisibilityToggleMethod(Toggle toggle)
+        {
+            /*
+            * Method is used to set the visibility of the zones based on the toggle value.
+            */
+            bool visibility = toggle.isOn;
+            if(visibility)
+            {
+                Debug.Log("SetZonesVisibilityToggleMethod: Setting Zones Visibility to true.");
+                instantiateObjects.SetZoneOnlyCurrentZoneVisible(databaseManager.ProjectZones.CurrentZone);
+                UserInterface.SetUIObjectColor(ToggleZoneVisibilityObject, Yellow);
+            }
+            else
+            {
+                instantiateObjects.SetAllZonesVisible();
+                Debug.LogWarning("SetZonesVisibilityToggleMethod: Mimic Zones are null.");
+                UserInterface.SetUIObjectColor(ToggleZoneVisibilityObject, White);
             }
         }
 

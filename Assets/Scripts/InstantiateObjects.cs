@@ -605,6 +605,73 @@ namespace CompasXR.Core
             return rotatedQuaternion;
         }
 
+        public void SetZoneOnlyCurrentZoneVisible(ProjectZones.CurrentZoneMode currentZone)
+        {
+            /*
+            * Method is used to set the visibility of the current zone only
+            */
+            switch (currentZone)
+            {
+                case ProjectZones.CurrentZoneMode.None:
+                    SetAllZonesVisible();                    
+                    Debug.Log("SetZoneOnlyCurrentZoneVisible: No Zones to set visible");
+                    break;
+                case ProjectZones.CurrentZoneMode.Inference:
+                    SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, false);
+                    SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, true);
+                    SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, false);
+                    SetZoneVisiblity(databaseManager.ProjectZones.TelemimicZones, false);
+                    break;
+                case ProjectZones.CurrentZoneMode.Mimic:
+                    SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, false);
+                    SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, false);
+                    SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, true);
+                    SetZoneVisiblity(databaseManager.ProjectZones.TelemimicZones, false);
+                    break;
+                case ProjectZones.CurrentZoneMode.Telemimic:
+                    SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, false);
+                    SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, false);
+                    SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, false);
+                    SetZoneVisiblity(databaseManager.ProjectZones.TelemimicZones, true);
+                    break;
+                default:
+                    Debug.LogWarning("SetZoneOnlyCurrentZoneVisible: Invalid Current Zone Mode");
+                    break;
+            }
+        }
+
+        public void SetAllZonesVisible()
+        {
+            //Sets all zones visible.
+            SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, true);
+            SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, true);
+            SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, true);
+            SetZoneVisiblity(databaseManager.ProjectZones.TelemimicZones, true);
+        }
+
+        public void SetZoneVisiblity(Dictionary<string, Zone> ZoneDict, bool Visiblity)
+        {
+            /*
+            * Method is used to set the visibility of the zones in the AR space
+            */
+            if (ZoneDict != null)
+            {
+                Debug.Log("SetZoneVisiblity: Setting Zone Visiblity");
+                foreach (KeyValuePair<string, Zone> entry in ZoneDict)
+                {
+                    if (entry.Value != null)
+                    {
+                        entry.Value.ZoneObject.SetActive(Visiblity);
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogWarning("SetZoneVisiblity: Zones Dict is null");
+            }
+        }
+
+
     //TODO: THIS NEEDS TO BE CHECKED AND THOUGHT ABOUT FOR ROBOT SPACE CONVERSION. See Notes
     public static Vector3 MirrorPositionAcrossBox(GameObject box, Vector3 pointPosition, Vector3 mirrorDirection)
     {
