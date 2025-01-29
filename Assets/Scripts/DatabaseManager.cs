@@ -271,7 +271,7 @@ namespace CompasXR.Core
             await DataHandlers.FetchDataFromDatabaseReference(dbRefernceRobotBaseFrame, snapshot => DeserilizeRobotBaseFrameSnapshot(snapshot));
         }
         
-        private void DeserilizeRobotBaseFrameSnapshot(DataSnapshot snapshot)
+        private void DeserilizeRobotBaseFrameSnapshot(DataSnapshot snapshot) //TODO: CHECK WITH FRAME STRUCTURE.
         {
             /*
             * Method is used to deserialize the RobotBaseFrame data from the Firebase Realtime Database.
@@ -411,6 +411,10 @@ namespace CompasXR.Core
             dbReferenceQRCodes.ChildAdded -= OnQRCodesInformationChanged;
             dbReferenceQRCodes.ChildChanged -= OnQRCodesInformationChanged;
             dbReferenceQRCodes.ChildRemoved -= OnQRCodesInformationChanged;
+
+            dbRefernceRobotBaseFrame.ChildChanged -= OnRobotBaseFrameChanged;
+            dbRefernceRobotBaseFrame.ChildRemoved -= OnRobotBaseFrameChanged;
+            dbRefernceRobotBaseFrame.ChildAdded -= OnRobotBaseFrameChanged;
         }
         public void OnZonesInformationChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
         {
@@ -520,7 +524,6 @@ namespace CompasXR.Core
                 Debug.LogWarning("OnQRCodesChanged: Snapshot or key is null. Ignoring the child change.");
             }
         }
-
         protected virtual void OnRobotBaseFrameReceived(Frame RobotBaseFrame)
         {
             /*
