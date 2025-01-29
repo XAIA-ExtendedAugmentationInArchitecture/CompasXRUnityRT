@@ -65,7 +65,19 @@ namespace CompasXR.Core
         public string Key { get; set; }
     }
 
+
+
     //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+
+    public class RobotBaseFrameReceivedEventArgs : EventArgs
+    {
+        /*
+        * TrackingDataDictEventArgs : Class inherits from EventArgs &
+        * it is used to send the TrackingDataDict on events.
+        */
+        public Frame RobotBaseFrame { get; set; }
+    }
+
     public class ZonesInfoReceivedEventArgs : EventArgs
     {
         /*
@@ -108,11 +120,16 @@ namespace CompasXR.Core
         // TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         public DatabaseReference dbReferenceZones;
         public DatabaseReference dbReferenceCurrentMode;
+        public DatabaseReference dbRefernceRobotBaseFrame;
         public ProjectZones ProjectZones = new ProjectZones();
 
         //EVENTS        
         public delegate void ZonesReceivedEventHandler(object source, ZonesInfoReceivedEventArgs e);
         public event ZonesReceivedEventHandler ZonesInfoReceived;
+
+
+        public delegate void RobotBaseFrameReceivedEventHandler(object source, RobotBaseFrameReceivedEventArgs e);
+        public event RobotBaseFrameReceivedEventHandler RobotBaseFrameReceived;
 
         public delegate void UpdateZonesDatatDict(object source, ModeZonesUpdateEventArgs e); 
         public event UpdateZonesDatatDict ModeZonesUpdate;
@@ -247,9 +264,31 @@ namespace CompasXR.Core
             dbReferenceZones = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("zones");
             dbReferenceQRCodes = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("QRFrames").Child("graph").Child("node");
             dbReferenceCurrentMode = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("CurrentMode");
+            dbRefernceRobotBaseFrame = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("robot_base_frame");
 
             await FetchRTDDatawithEventHandler(dbReferenceQRCodes, snapshot => DeserializeAssemblyDataSnapshot(snapshot, QRCodeDataDict), "TrackingDict");
             await DataHandlers.FetchDataFromDatabaseReference(dbReferenceZones, snapshot => DeserializeZoneDataSnapshot(snapshot, ProjectZones));
+            await DataHandlers.FetchDataFromDatabaseReference(dbRefernceRobotBaseFrame, snapshot => DeserilizeRobotBaseFrameSnapshot(snapshot));
+        }
+        
+        private void DeserilizeRobotBaseFrameSnapshot(DataSnapshot snapshot)
+        {
+            /*
+            * Method is used to deserialize the RobotBaseFrame data from the Firebase Realtime Database.
+            * It is designed to take a snapshot of the RobotBaseFrame data reference and parse the information.
+            */
+            var json_data = snapshot.GetValue(true);
+            // if (json_data != null)
+            // {
+                Debug.Log($"DeserilizeRobotBaseFrameSnapshot: RobotBaseFrame Data: {json_data}");
+                Frame robotBaseFrame = Frame.Parse(json_data);
+                OnRobotBaseFrameReceived(robotBaseFrame);
+                Debug.Log($"DeserilizeRobotBaseFrameSnapshot: RobotBaseFrame Data: {robotBaseFrame}");
+            // }
+            // else
+            // {
+            //     Debug.LogWarning("DeserilizeRobotBaseFrameSnapshot: RobotBaseFrame Item Did not produce a value");
+            // }
         }
         private void DeserializeZoneDataSnapshot(DataSnapshot snapshot, ProjectZones Zones)
         {
@@ -350,6 +389,10 @@ namespace CompasXR.Core
             dbReferenceQRCodes.ChildChanged += OnQRCodesInformationChanged;
             dbReferenceQRCodes.ChildRemoved += OnQRCodesInformationChanged;
 
+            dbRefernceRobotBaseFrame.ChildChanged += OnRobotBaseFrameChanged;
+            dbRefernceRobotBaseFrame.ChildRemoved += OnRobotBaseFrameChanged;
+            dbRefernceRobotBaseFrame.ChildAdded += OnRobotBaseFrameChanged;
+
 
         }
 
@@ -425,6 +468,7 @@ namespace CompasXR.Core
             Debug.Log("ZonesUpdate: Sending Zones to the respective classes");
             ModeZonesUpdate(this, new ModeZonesUpdateEventArgs() {Zones = ModeZonesDict, Key = key});
         }
+
         protected async void OnQRCodesInformationChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
         {
             if (args.DatabaseError != null) {
@@ -449,6 +493,43 @@ namespace CompasXR.Core
             {
                 Debug.LogWarning("OnQRCodesChanged: Snapshot or key is null. Ignoring the child change.");
             }
+        }
+
+        protected async void OnRobotBaseFrameChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
+        {
+            if (args.DatabaseError != null) {
+                Debug.LogError($"OnQRCodesChanged: Database error: {args.DatabaseError}");
+                return;
+            }
+
+            if (args.Snapshot == null) {
+                Debug.LogWarning("OnQRCodesChanged: Snapshot is null. Ignoring the child change.");
+                return;
+            }
+
+            string key = args.Snapshot.Key;
+            var childSnapshot = args.Snapshot.GetValue(true);
+
+            if (childSnapshot != null && key != null)
+            {
+                Debug.Log("OnProjectInfoChangedUpdate: Robot Base Frame Changed");
+                await DataHandlers.FetchDataFromDatabaseReference(dbRefernceRobotBaseFrame, snapshot => DeserilizeRobotBaseFrameSnapshot(snapshot));
+            }
+            else
+            {
+                Debug.LogWarning("OnQRCodesChanged: Snapshot or key is null. Ignoring the child change.");
+            }
+        }
+
+        protected virtual void OnRobotBaseFrameReceived(Frame RobotBaseFrame)
+        {
+            /*
+            * Method is used to trigger the Tracking Data Received Event.
+            * It is designed to trigger the event and send the Tracking Data to the respective classes.
+            */
+            UnityEngine.Assertions.Assert.IsNotNull(RobotBaseFrameReceived, "Tracking Dict is null!");
+            Debug.Log("OnTrackingDataReceived: Tracking Data Received");
+            RobotBaseFrameReceived(this, new RobotBaseFrameReceivedEventArgs() {RobotBaseFrame = RobotBaseFrame});
         }
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////

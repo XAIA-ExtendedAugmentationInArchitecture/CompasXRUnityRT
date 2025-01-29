@@ -53,9 +53,14 @@ namespace CompasXR.Core
             databaseManager.ApplicationSettingUpdate += databaseManager.FetchRoboticTerritoriesData;
             databaseManager.ApplicationSettingUpdate += mqttTrajectoryReceiver.SetRoboticTerritoriesTopics;
             databaseManager.TrackingDictReceived += qrLocalization.OnTrackingInformationReceived;
+
+            //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
+            databaseManager.RobotBaseFrameReceived += trajectoryVisualizer.OnRobotBaseFrameReceived;
+            //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
+            
             databaseManager.ZonesInfoReceived += instantiateObjects.OnZonesReceived;
             instantiateObjects.InitialZonesPlaced += databaseManager.AddListenersRoboticTerritories;
-            databaseManager.ModeZonesUpdate += instantiateObjects.OnModeZonesUpdate;        
+            databaseManager.ModeZonesUpdate += instantiateObjects.OnModeZonesUpdate;    
 
             // databaseManager.ApplicationSettingUpdate += databaseManager.FetchData;
             // databaseManager.ApplicationSettingUpdate += mqttTrajectoryReceiver.SetCompasXRTopics;

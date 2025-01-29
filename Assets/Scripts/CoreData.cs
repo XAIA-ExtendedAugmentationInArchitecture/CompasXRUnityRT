@@ -484,6 +484,7 @@ namespace CompasXR.Core.Data
             * Method to create an instance of a the Frame class from a dictionary.
             */
             Frame frame = new Frame();
+            Debug.Log("FrameParse: Parsing Frame Data " + JsonConvert.SerializeObject(frameDataDict));
             float[] point = DataConverters.ConvertDatatoFloatArray(frameDataDict["point"]);
             float[] xaxis = DataConverters.ConvertDatatoFloatArray(frameDataDict["xaxis"]);
             float[] yaxis = DataConverters.ConvertDatatoFloatArray(frameDataDict["yaxis"]);

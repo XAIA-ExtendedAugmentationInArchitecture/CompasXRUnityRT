@@ -48,6 +48,9 @@ namespace CompasXR.Robots
 
         //List of available robots
         public List<string> RobotPreFabList = new List<string> {"UR3", "UR5", "UR10e", "UR20", "ETHZurichRFL"};
+
+        //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////////////////////////////
+        public Frame databaseRobotBaseFrame;
             
         ////////////////////////////////////////// Monobehaviour Methods ////////////////////////////////////////////////////////
         void Start()
@@ -82,6 +85,16 @@ namespace CompasXR.Robots
                 URDFRenderComponents.Clear();
             }
             SetActiveRobot(BuiltInRobotsParent, robotName, yRotation, ActiveRobotObjects, ref ActiveRobot, ref ActiveTrajectoryParentObject, instantiateObjects.InactiveRobotMaterial, visibility);
+        
+            //TODO: Updated for Robotic Territories /////////////////////////////////////////////////////////////////////////////////////////////////////
+            if(databaseRobotBaseFrame != null)
+            {
+                URDFManagement.SetRobotLocalPositionandRotationFromFrame(databaseRobotBaseFrame, ActiveRobot);
+            }
+            else
+            {
+                Debug.Log("SetActiveRobotFromDropdown: Robot Base Frame is null.");
+            }
         }
         private void SetActiveRobot(GameObject BuiltInRobotsParent, string robotName, bool yRotation, GameObject ActiveRobotObjectsParent, ref GameObject ActiveRobot, ref GameObject ActiveTrajectoryParentObject, Material material, bool visibility)
         {
@@ -434,7 +447,28 @@ namespace CompasXR.Robots
             previousTrajectoryReviewSliderValue = sliderValue;
         }
 
+        //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////////////////////////////
+        public void OnRobotBaseFrameReceived(object source, RobotBaseFrameReceivedEventArgs e)
+        {
+            /*
+            OnRobotBaseFrameReceived is responsible for setting the robot base frame in the scene.
+            */
+            if(uiFunctionalities.SetActiveRobotToggleObject.GetComponent<Toggle>().isOn)
+            {
+                URDFManagement.SetRobotLocalPositionandRotationFromFrame(e.RobotBaseFrame, ActiveRobot);
+                databaseRobotBaseFrame = e.RobotBaseFrame;
+            }
+            else
+            {
+                databaseRobotBaseFrame = e.RobotBaseFrame;
+                Debug.Log("OnRobotBaseFrameReceived: SetActiveRobotToggle is not on but robot baseframe is updates.");
+            }
+        }
     }
+
+
+
+    //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////////////////////////////
 
     public static class URDFManagement
     {
