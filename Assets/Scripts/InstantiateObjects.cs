@@ -412,7 +412,7 @@ namespace CompasXR.Core
             {
                 // Vector3 mirroredPosition;
                 // Quaternion mirroredRotation;
-                Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.right);
+                Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position,  humanZone.transform.right); //TODO: CHECK THIS IDK WHATS UP.
                 Quaternion mirrorRotation = MirrorQuaternion(rotation, humanZone.transform.right);
                 mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, mirroredPosition);
                 
