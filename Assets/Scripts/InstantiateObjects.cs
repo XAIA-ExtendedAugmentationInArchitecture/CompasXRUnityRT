@@ -288,6 +288,7 @@ namespace CompasXR.Core
             GameObject zoneObject = zone.CreateZoneObject();
             SetIndividualZoneMaterial(zone);
             zone.ZoneObject = zoneObject;
+            CreateTextObjectBasedOnZone(zone);
             zoneObject.transform.SetParent(ParentObject.transform, false);
         }
         public void SetIndividualZoneMaterial(Zone zone)
@@ -671,6 +672,84 @@ namespace CompasXR.Core
             }
         }
 
+        
+        public void CreateTextObjectBasedOnZone(Zone ZoneObject)
+        {
+            /*
+            * Method is used to create a 3D text object on the instantiation of the gameobject
+            * in the AR space.
+            */
+
+            float offset = 0.2f;
+            float halfGameObjectHeight = ZoneObject.Box.zsize / 2 + offset;
+            float fontSize = 0.75f;
+
+            switch (ZoneObject.Name)
+            {
+                case "tele_mimic_zone":
+                    CreateZonesTextOnInstantiation(ZoneObject.ZoneObject, halfGameObjectHeight, "Tele-Mimic Zone", "TeleMimicZoneText", fontSize);
+                    break;
+                case "human_zone":
+                    CreateZonesTextOnInstantiation(ZoneObject.ZoneObject, halfGameObjectHeight, "Human Zone", "HumanZoneText", fontSize);
+                    break;
+                case "robot_zone":
+                    CreateZonesTextOnInstantiation(ZoneObject.ZoneObject, halfGameObjectHeight, "Robot Zone", "RobotZoneText", fontSize);
+                    break;
+                case "collaboration_zone":
+                    CreateZonesTextOnInstantiation(ZoneObject.ZoneObject, halfGameObjectHeight, "Collaboration Zone", "CollaborationZoneText", fontSize);
+                    break;
+                case "pick_zone":
+                    CreateZonesTextOnInstantiation(ZoneObject.ZoneObject, halfGameObjectHeight, "Pick Zone", "PickZoneText", fontSize);
+                    break;
+                case "boundary_zone":
+                    CreateZonesTextOnInstantiation(ZoneObject.ZoneObject, halfGameObjectHeight, "Boundary Zone", "BoundaryZoneText", fontSize);
+                    break;
+                default:
+                    Debug.LogWarning("CreateTextObjectBasedOnZone: Invalid Zone Name");
+                    break;
+            }
+        }
+        
+        private float GetHalfHeightofGameObject(GameObject obj)
+        {
+            if (obj == null)
+            {
+                Debug.LogWarning("GetHalfHeight: GameObject is null.");
+                return 0.5f; // Default fallback
+            }
+
+            // Try to get a Collider
+            Collider col = obj.GetComponent<Collider>();
+            if (col != null)
+            {
+                return col.bounds.size.y / 2;
+            }
+
+            // Try to get a Renderer
+            Renderer rend = obj.GetComponent<Renderer>();
+            if (rend != null)
+            {
+                return rend.bounds.size.y / 2;
+            }
+
+            Debug.LogWarning("GetHalfHeight: No Collider or Renderer found, using default height.");
+            return 0.5f; // Default fallback
+        }
+
+        private void CreateZonesTextOnInstantiation(GameObject gameObject, float offsetDistance, string text, string textObjectName, float fontSize)
+        {              
+            /*
+            * Method is used to create a 3D text object on the instantiation of the gameobject
+            * in the AR space.
+            */
+            Vector3 center = ObjectTransformations.FindGameObjectCenter(gameObject);
+            Vector3 offsetPosition = ObjectTransformations.OffsetPositionVectorByDistance(center, offsetDistance, "y");
+
+            GameObject TextContainer = ObjectInstantiaion.CreateTextinARSpaceAsGameObject(
+                text, textObjectName, fontSize,
+                TextAlignmentOptions.Center, Color.white, offsetPosition,
+                Quaternion.identity, true, true, gameObject);
+        }
 
     //TODO: THIS NEEDS TO BE CHECKED AND THOUGHT ABOUT FOR ROBOT SPACE CONVERSION. See Notes
     public static Vector3 MirrorPositionAcrossBox(GameObject box, Vector3 pointPosition, Vector3 mirrorDirection)
@@ -714,7 +793,6 @@ namespace CompasXR.Core
         Debug.Log($"MirrorPositionAndRotationAcrossBox: Mirrored {pointPosition} to {mirroredPosition} in {box.name} along {mirrorDirection}");
         return mirroredPosition;
     }
-
     public static Quaternion MirrorQuaternion(Quaternion pointRotation, Vector3 normal)
     {
 
