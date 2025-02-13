@@ -331,59 +331,6 @@ namespace CompasXR.Core
             */
             InitialZonesPlaced(this, EventArgs.Empty);
         }
-
-        // public void CreateMimicPoints(GameObject humanZone, GameObject robotZone, ref List<GameObject> humanPoints, ref List<GameObject> robotPoints, GameObject humanLine, GameObject robotLine, GameObject humanParent, GameObject robotParent, bool Mirror=false)
-        // {
-        //     /*
-        //     * Method is used to create the mimic points in the AR space
-        //     */
-
-        //     Vector3 position = cameraPositionObject.transform.position;
-        //     Quaternion rotation = arCamera.transform.rotation;
-
-        //     float radius = 0.1f;
-        //     Color color = new Color(1.0f, 1.0f, 0.0f, 1.0f);
-        //     Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
-        //     GameObject humanPoint = CreateSphereAtPositionAndRotation(position, rotation, radius, color, $"{humanPoints.Count}_MimicPoint");
-        //     humanPoint.transform.SetParent(humanParent.transform, true);
-        //     humanPoints.Add(humanPoint);
-
-        //     Vector3 mappedRobotPosition = Vector3.zero;
-        //     Quaternion mappedRotation = Quaternion.identity;
-        //     if (!Mirror)
-        //     {
-        //         mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, position);
-        //         mappedRotation = rotation;
-        //     }
-        //     else
-        //     {
-        //         Vector3 mirroredPosition;
-        //         Quaternion mirroredRotation;
-
-        //         // **Ensure correct mirror direction (local space instead of world space)**
-        //         Vector3 mirrorDirection = humanZone.transform.right; // Right direction in local space
-        //         MirrorPositionAndRotationAcrossBox(humanZone, position, rotation, mirrorDirection, out mirroredPosition, out mirroredRotation);
-        //         mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, mirroredPosition);
-        //         mappedRotation = mirroredRotation;
-        //     }
-
-        //     // **Ensure mappedRotation is passed correctly**
-        //     GameObject robotPoint = CreateSphereAtPositionAndRotation(mappedRobotPosition, mappedRotation, radius, robotColor, $"{robotPoints.Count}_MimicPoint");
-        //     robotPoint.transform.rotation = mappedRotation;
-        //     robotPoint.transform.SetParent(robotParent.transform, true);
-        //     robotPoints.Add(robotPoint);
-            
-        //     if (humanPoints.Count > 1 && robotPoints.Count > 1)
-        //     {
-        //         Debug.Log("CreateMimicPoints: Creating Mimic Points");
-        //         DrawLineFromGameObjectList(humanPoints, humanLine, color, 0.01f);
-        //         DrawLineFromGameObjectList(robotPoints, robotLine, robotColor, 0.01f);
-        //     }
-        //     else
-        //     {
-        //         Debug.LogWarning("CreateMimicPoints: Human or Robot Positions are empty");
-        //     }
-        // }
         public void CreateMimicPoints(GameObject humanZone, GameObject robotZone, ref List<GameObject> humanPoints, ref List<GameObject> robotPoints, GameObject humanLine, GameObject robotLine, GameObject humanParent, GameObject robotParent, bool Mirror=false)
         {
             /*
@@ -605,7 +552,6 @@ namespace CompasXR.Core
 
             return rotatedQuaternion;
         }
-
         public void SetZoneOnlyCurrentZoneVisible(ProjectZones.CurrentZoneMode currentZone)
         {
             /*
@@ -640,7 +586,6 @@ namespace CompasXR.Core
                     break;
             }
         }
-
         public void SetAllZonesVisible()
         {
             //Sets all zones visible.
@@ -649,7 +594,6 @@ namespace CompasXR.Core
             SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, true);
             SetZoneVisiblity(databaseManager.ProjectZones.TelemimicZones, true);
         }
-
         public void SetZoneVisiblity(Dictionary<string, Zone> ZoneDict, bool Visiblity)
         {
             /*
@@ -670,9 +614,7 @@ namespace CompasXR.Core
             {
                 Debug.LogWarning("SetZoneVisiblity: Zones Dict is null");
             }
-        }
-
-        
+        }      
         public void CreateTextObjectBasedOnZone(Zone ZoneObject)
         {
             /*
@@ -709,33 +651,6 @@ namespace CompasXR.Core
                     break;
             }
         }
-        
-        private float GetHalfHeightofGameObject(GameObject obj)
-        {
-            if (obj == null)
-            {
-                Debug.LogWarning("GetHalfHeight: GameObject is null.");
-                return 0.5f; // Default fallback
-            }
-
-            // Try to get a Collider
-            Collider col = obj.GetComponent<Collider>();
-            if (col != null)
-            {
-                return col.bounds.size.y / 2;
-            }
-
-            // Try to get a Renderer
-            Renderer rend = obj.GetComponent<Renderer>();
-            if (rend != null)
-            {
-                return rend.bounds.size.y / 2;
-            }
-
-            Debug.LogWarning("GetHalfHeight: No Collider or Renderer found, using default height.");
-            return 0.5f; // Default fallback
-        }
-
         private void CreateZonesTextOnInstantiation(GameObject gameObject, float offsetDistance, string text, string textObjectName, float fontSize)
         {              
             /*
@@ -819,109 +734,7 @@ namespace CompasXR.Core
         return mirroredRotationB;
     }
 
-        // public static void MirrorPositionAndRotationAcrossBox(GameObject box, Vector3 pointPosition, Quaternion pointRotation, Vector3 mirrorDirection, out Vector3 mirroredPosition, out Quaternion mirroredRotation)
-        // {
-        //     if (box == null)
-        //     {
-        //         Debug.LogError("MirrorPositionAndRotationAcrossBox: Box GameObject is null.");
-        //         mirroredPosition = Vector3.zero;
-        //         mirroredRotation = Quaternion.identity;
-        //         return;
-        //     }
-
-        //     BoxCollider boxCollider = box.GetComponent<BoxCollider>();
-
-        //     if (boxCollider == null)
-        //     {
-        //         Debug.LogError("MirrorPositionAndRotationAcrossBox: The box does not have a BoxCollider.");
-        //         mirroredPosition = Vector3.zero;
-        //         mirroredRotation = Quaternion.identity;
-        //         return;
-        //     }
-
-        //     // Convert point position to local space relative to the box
-        //     Vector3 localPosition = box.transform.InverseTransformPoint(pointPosition);
-
-        //     // Mirror across the box's center, but only in the direction of mirrorDirection
-        //     Vector3 mirroredLocalPosition = new Vector3(
-        //         mirrorDirection.x != 0 ? (2 * boxCollider.center.x - localPosition.x) : localPosition.x, // Mirror X if direction.x != 0
-        //         localPosition.y, // Keep Y the same (no height change)
-        //         mirrorDirection.z != 0 ? (2 * boxCollider.center.z - localPosition.z) : localPosition.z  // Mirror Z if direction.z != 0
-        //     );
-
-        //     // Convert mirrored local position back to world space
-        //     mirroredPosition = box.transform.TransformPoint(mirroredLocalPosition);
-
-        //     // **Mirror the rotation based on the direction**
-        //     Vector3 mirroredEuler = pointRotation.eulerAngles;
-
-        //     if (mirrorDirection.x != 0)
-        //     {
-        //         Debug.Log("MirrorPositionAndRotationAcrossBox: Mirroring X rotation");
-        //         mirroredEuler.y = -mirroredEuler.y;  // Flip Y rotation
-        //         mirroredEuler.z = -mirroredEuler.z;  // Flip Z rotation
-        //     }
-        //     if (mirrorDirection.z != 0)
-        //     {
-        //         Debug.Log("MirrorPositionAndRotationAcrossBox: Mirroring Z rotation");
-        //         mirroredEuler.x = -mirroredEuler.x;  // Flip X rotation
-        //         mirroredEuler.y = -mirroredEuler.y;  // Flip Y rotation
-        //     }
-
-        //     mirroredRotation = Quaternion.Euler(mirroredEuler);
-
-        //     Debug.Log($"MirrorPositionAndRotationAcrossBox: Mirrored {pointPosition} to {mirroredPosition} with rotation {mirroredRotation.eulerAngles} in {box.name} along {mirrorDirection}");
-        // }
-
-        // public static void MirrorPositionAndRotationAcrossBox(GameObject box, Vector3 pointPosition, Quaternion pointRotation, Vector3 mirrorDirection, out Vector3 mirroredPosition, out Quaternion mirroredRotation)
-        // {
-        //     if (box == null)
-        //     {
-        //         Debug.LogError("MirrorPositionAndRotationAcrossBox: Box GameObject is null.");
-        //         mirroredPosition = Vector3.zero;
-        //         mirroredRotation = Quaternion.identity;
-        //         return;
-        //     }
-
-        //     BoxCollider boxCollider = box.GetComponent<BoxCollider>();
-
-        //     if (boxCollider == null)
-        //     {
-        //         Debug.LogError("MirrorPositionAndRotationAcrossBox: The box does not have a BoxCollider.");
-        //         mirroredPosition = Vector3.zero;
-        //         mirroredRotation = Quaternion.identity;
-        //         return;
-        //     }
-
-        //     // Convert point position to local space relative to the box
-        //     Vector3 localPosition = box.transform.InverseTransformPoint(pointPosition);
-
-        //     // Mirror across the box's center, but only in the direction of mirrorDirection
-        //     Vector3 mirroredLocalPosition = new Vector3(
-        //         mirrorDirection.x != 0 ? -localPosition.x : localPosition.x, // Flip X if mirroring in X
-        //         localPosition.y, // Keep Y the same (no height change)
-        //         mirrorDirection.z != 0 ? -localPosition.z : localPosition.z  // Flip Z if mirroring in Z
-        //     );
-
-        //     // Convert mirrored local position back to world space
-        //     mirroredPosition = box.transform.TransformPoint(mirroredLocalPosition);
-
-        //     // **Extract the basis vectors from the original rotation**
-        //     Vector3 originalForward = pointRotation * Vector3.forward;
-        //     Vector3 originalRight = pointRotation * Vector3.right;
-        //     Vector3 originalUp = pointRotation * Vector3.up;
-
-        //     // **Mirror X and Z while keeping Y unchanged**
-        //     Vector3 mirroredForward = new Vector3(-originalForward.x, originalForward.y, -originalForward.z);
-        //     Vector3 mirroredRight = new Vector3(-originalRight.x, originalRight.y, -originalRight.z);
-
-        //     // **Reconstruct the quaternion using LookRotation**
-        //     mirroredRotation = Quaternion.LookRotation(mirroredRight, originalUp);
-
-        //     Debug.Log($"MirrorPositionAndRotationAcrossBox: Mirrored {pointPosition} to {mirroredPosition} with rotation {mirroredRotation.eulerAngles} in {box.name} along {mirrorDirection}");
-        // }
-
-        //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+    //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
         {
             /*
