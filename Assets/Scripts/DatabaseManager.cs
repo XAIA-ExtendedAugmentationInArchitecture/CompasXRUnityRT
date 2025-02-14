@@ -270,7 +270,7 @@ namespace CompasXR.Core
             await DataHandlers.FetchDataFromDatabaseReference(dbReferenceZones, snapshot => DeserializeZoneDataSnapshot(snapshot, ProjectZones));
             await DataHandlers.FetchDataFromDatabaseReference(dbRefernceRobotBaseFrame, snapshot => DeserilizeRobotBaseFrameSnapshot(snapshot));
         }
-        
+       
         private void DeserilizeRobotBaseFrameSnapshot(DataSnapshot snapshot) //TODO: CHECK WITH FRAME STRUCTURE.
         {
             /*
@@ -278,17 +278,11 @@ namespace CompasXR.Core
             * It is designed to take a snapshot of the RobotBaseFrame data reference and parse the information.
             */
             var json_data = snapshot.GetValue(true);
-            // if (json_data != null)
-            // {
-                Debug.Log($"DeserilizeRobotBaseFrameSnapshot: RobotBaseFrame Data: {json_data}");
-                Frame robotBaseFrame = Frame.Parse(json_data);
-                OnRobotBaseFrameReceived(robotBaseFrame);
-                Debug.Log($"DeserilizeRobotBaseFrameSnapshot: RobotBaseFrame Data: {robotBaseFrame}");
-            // }
-            // else
-            // {
-            //     Debug.LogWarning("DeserilizeRobotBaseFrameSnapshot: RobotBaseFrame Item Did not produce a value");
-            // }
+
+            Debug.Log($"DeserilizeRobotBaseFrameSnapshot: RobotBaseFrame Data: {json_data}");
+            Frame robotBaseFrame = Frame.Parse(json_data);
+            OnRobotBaseFrameReceived(robotBaseFrame);
+            Debug.Log($"DeserilizeRobotBaseFrameSnapshot: RobotBaseFrame Data: {robotBaseFrame}");
         }
         private void DeserializeZoneDataSnapshot(DataSnapshot snapshot, ProjectZones Zones)
         {
@@ -472,7 +466,6 @@ namespace CompasXR.Core
             Debug.Log("ZonesUpdate: Sending Zones to the respective classes");
             ModeZonesUpdate(this, new ModeZonesUpdateEventArgs() {Zones = ModeZonesDict, Key = key});
         }
-
         protected async void OnQRCodesInformationChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
         {
             if (args.DatabaseError != null) {
@@ -498,7 +491,6 @@ namespace CompasXR.Core
                 Debug.LogWarning("OnQRCodesChanged: Snapshot or key is null. Ignoring the child change.");
             }
         }
-
         protected async void OnRobotBaseFrameChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
         {
             if (args.DatabaseError != null) {
@@ -536,7 +528,6 @@ namespace CompasXR.Core
         }
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
-
         public async void FetchData(object source, ApplicationSettingsEventArgs e)
         {
             /*

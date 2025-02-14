@@ -387,6 +387,10 @@ namespace CompasXR.UI
                 {
                     trajectoryVisualizer.DestroyActiveRobotObjects();
                 }
+                if(trajectoryVisualizer.humanZoneMimicReachibility != null)
+                {
+                    Destroy(trajectoryVisualizer.humanZoneMimicReachibility);
+                }
                 mqttTrajectoryManager.serviceManager.ActiveRobotName = null;  //TODO: THIS IS FROM COMPAS XR, BUT NEEDS TO BE THOUGHT ABOUT FOR ROBOT TERRITORIES
                 SetActiveRobotToggleObject.FindObject("Image").SetActive(false);           
             }
@@ -442,6 +446,7 @@ namespace CompasXR.UI
             //Set Mirror Toggle Object
             MimicMirrorToggleObject = MimicControlsSetPointsUIObjects.FindObject("Mirror");
             MimicMirrorToggle = MimicMirrorToggleObject.GetComponentInChildren<Toggle>();
+            MimicMirrorToggle.onValueChanged.AddListener(MimicMirrorToggleMethod);
 
             //Set Mimic OnScreen Messages
             MimicSetPointGreenScreen = MimicControlsSetPointsUIObjects.FindObject("SetPointGreenScreen");
@@ -495,17 +500,34 @@ namespace CompasXR.UI
                     {
                         trajectoryVisualizer.DestroyActiveTrajectoryChildren();
                     }
+                    if(trajectoryVisualizer.humanZoneMimicReachibility != null)
+                    {
+                        Destroy(trajectoryVisualizer.humanZoneMimicReachibility);
+                    }
                     Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Inference Mode.");
                     break;
                 case ProjectZones.CurrentZoneMode.Mimic:
                     Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Mimic Mode.");
                     ControlRobotVisibilityBasedOnMode(ProjectZones.CurrentZoneMode.Mimic);
+                    if(ReachabilityToggleObject.GetComponentInChildren<Toggle>().isOn)
+                    {
+                        trajectoryVisualizer.AddReachabilitlyToHumanZone(trajectoryVisualizer.ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName),
+                        databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, true);
+                    }
+                    else
+                    {
+                        Debug.LogWarning("ControlARZoneObjectsBasedOnCurrentMode: Reachability Toggle is not on.");
+                    }
                     break;
                 case ProjectZones.CurrentZoneMode.Telemimic:
                     instantiateObjects.DestroyMimicZoneObjects();
                     if(trajectoryVisualizer.ActiveTrajectoryParentObject!= null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
                     {
                         trajectoryVisualizer.DestroyActiveTrajectoryChildren();
+                    }                    
+                    if(trajectoryVisualizer.humanZoneMimicReachibility != null)
+                    {
+                        Destroy(trajectoryVisualizer.humanZoneMimicReachibility);
                     }
                     Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Telemimic Mode.");
                     break;
@@ -924,6 +946,23 @@ namespace CompasXR.UI
             }
         }
 
+        public void MimicMirrorToggleMethod(bool value)
+        {
+            /*
+            * Method is used to set the mimic mirror based on the toggle value.
+            */
+            Debug.Log($"MimicMirrorToggleMethod: Setting Mimic Mirror to {value}");
+            if(ReachabilityToggleObject.GetComponentInChildren<Toggle>().isOn)
+            {
+                Debug.Log("MimicMirrorToggleMethod: Reachability Toggle is on.");
+                trajectoryVisualizer.AddReachabilitlyToHumanZone(trajectoryVisualizer.ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName),
+                databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, ReachabilityToggleObject.GetComponent<Toggle>().isOn);
+            }
+            else
+            {
+                Debug.LogWarning("MimicMirrorToggleMethod: Reachability Toggle is not on.");
+            }
+        }
         //TODO: RoboticTerritories Testing ///////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
         {

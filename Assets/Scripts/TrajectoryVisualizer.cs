@@ -14,6 +14,7 @@ using Unity.VisualScripting;
 using Firebase.Extensions;
 using CompasXR.Robots.MqttData.RoboticTerritories;
 using CompasXR.Robots.Data;
+using CompasXR.RoboticTerritories.Data;
 
 namespace CompasXR.Robots
 {
@@ -50,6 +51,8 @@ namespace CompasXR.Robots
 
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////////////////////////////
         public Frame databaseRobotBaseFrame;
+        public DatabaseManager databaseManager;
+        public GameObject humanZoneMimicReachibility;
             
         ////////////////////////////////////////// Monobehaviour Methods ////////////////////////////////////////////////////////
         void Start()
@@ -67,6 +70,7 @@ namespace CompasXR.Robots
             instantiateObjects = GameObject.Find("Instantiate").GetComponent<InstantiateObjects>();
             uiFunctionalities = GameObject.Find("UIFunctionalities").GetComponent<UIFunctionalities>();
             mqttTrajectoryManager = GameObject.Find("MQTTTrajectoryManager").GetComponent<MqttTrajectoryManager>();
+            databaseManager = GameObject.Find("DatabaseManager").GetComponent<DatabaseManager>();
             BuiltInRobotsParent = GameObject.Find("RobotPrefabs");
             ActiveRobotObjects = GameObject.Find("ActiveRobotObjects");
         }
@@ -83,12 +87,23 @@ namespace CompasXR.Robots
             {
                 URDFRenderComponents.Clear();
             }
+            if(humanZoneMimicReachibility != null)
+            {
+                Destroy(humanZoneMimicReachibility);
+            }
+
             SetActiveRobot(BuiltInRobotsParent, robotName, yRotation, ActiveRobotObjects, ref ActiveRobot, ref ActiveTrajectoryParentObject, instantiateObjects.InactiveRobotMaterial, visibility);
         
             //TODO: Updated for Robotic Territories /////////////////////////////////////////////////////////////////////////////////////////////////////
             if(databaseRobotBaseFrame != null)
             {
                 URDFManagement.SetRobotLocalPositionandRotationFromFrame(databaseRobotBaseFrame, ActiveRobot);
+
+                //TODO: This is a hot fix, but the code should probably be restructured.
+                if(uiFunctionalities.ReachabilityToggleObject.GetComponent<Toggle>().isOn && databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
+                {
+                    AddReachabilitlyToHumanZone(ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName), databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, visibility);
+                }
             }
             else
             {
@@ -145,7 +160,6 @@ namespace CompasXR.Robots
                 UserInterface.SignalOnScreenMessageFromPrefab(ref uiFunctionalities.OnScreenErrorMessagePrefab, ref uiFunctionalities.ActiveRobotCouldNotBeFoundWarningMessage, "ActiveRobotCouldNotBeFoundWarningMessage", uiFunctionalities.MessagesParent, message, $"SetActiveRobot: Robot {robotName} could not be found");
             }
         }
-
         public void SetReachabilityActive(GameObject robotObject, bool visibility)
         {
             /*
@@ -161,13 +175,19 @@ namespace CompasXR.Robots
                     Debug.Log($"SetReachabilityActive: Checking child {i} with name {child.name}.");
                     if(child.name.Contains("Reachability"))
                     {
+                        Debug.Log("SetReachabilityActive: Reachability object found in the robot object.");
                         reachabilityObject = child;
                     }
                 }
 
                 if(reachabilityObject != null)
                 {
+                    Debug.Log("SetReachabilityActive: Reachability object found in the robot object.");
                     reachabilityObject.SetActive(visibility);
+                    if(databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
+                    {
+                        AddReachabilitlyToHumanZone(robotObject, databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, visibility);
+                    }
                 }
                 else
                 {
@@ -178,6 +198,91 @@ namespace CompasXR.Robots
             {
                 Debug.Log("SetReachabilityActive: Robot object is null.");
             }
+        }
+
+        //TODO: Reachibility Sphere needs to be thought about a bit more in terms of positioning.
+        //TODO: ZONES IN GENERAL NEED SOME MORE THOUGHT.... MAYBE THERE SHOULD BE MORE REFERENCE TO WHAT THE CARTESIAN SPACE IS LIKE.
+        public void AddReachabilitlyToHumanZone(GameObject robotObject, GameObject humanZoneObject, GameObject robotZoneObject, bool visibility)
+        {
+            /*
+            AddReachabilitlyToHumanZone is responsible for adding reachability to the human zone in the scene.
+            */
+            Debug.Log("AddReachabilitlyToHumanZone: Adding reachability to the human zone.");
+            if(robotObject != null)
+            {
+                GameObject reachabilityObject = null;
+                for (int i = 0; i < robotObject.transform.childCount; i++)
+                {
+                    GameObject child = robotObject.transform.GetChild(i).gameObject;
+                    Debug.Log($"AddReachabilitlyToHumanZone: Checking child {i} with name {child.name}.");
+                    if(child.name.Contains("Reachability"))
+                    {
+                        Debug.Log("AddReachabilitlyToHumanZone: Reachability object found in the robot object.");
+                        reachabilityObject = child;
+                    }
+                }
+                if(humanZoneObject != null && reachabilityObject != null)
+                {
+                    GameObject humanZoneReachability = instantiateObjects.ZonesARPrefabObjects.FindObject("MimicObjects").FindObject("HumanZoneMimicReachibility"); 
+                    if(humanZoneReachability == null)
+                    {
+                        Debug.Log("AddReachabilitlyToHumanZone: HumanZoneMimicReachibility does not exist.");
+                        humanZoneReachability = Instantiate(reachabilityObject, reachabilityObject.transform.position, reachabilityObject.transform.rotation);
+                        humanZoneReachability.name = "HumanZoneMimicReachibility";
+                        humanZoneReachability.transform.SetParent(instantiateObjects.ZonesARPrefabObjects.FindObject("MimicObjects").transform, true);
+                        humanZoneMimicReachibility = humanZoneReachability;
+                    }
+                    else
+                    {
+                        Debug.Log("AddReachabilitlyToHumanZone: HumanZoneMimicReachibility already exists.");
+                    }
+
+                    Vector3 reachibilitysphereScale = ScaleReachibilitySphereProportionally(robotZoneObject, reachabilityObject, humanZoneObject);
+                    humanZoneReachability.transform.localScale = reachibilitysphereScale;
+                    
+                    Vector3 tempPos = reachabilityObject.transform.position;
+                    if(uiFunctionalities.MimicMirrorToggle.isOn)
+                    {
+                        tempPos = InstantiateObjects.MirrorPositionAcrossBox(robotZoneObject, reachabilityObject.transform.position, robotZoneObject.transform.right); //TODO: CHECK THIS IDK WHATS UP.
+                    }
+                    Vector3 position = InstantiateObjects.MapPointBetweenBoxes(robotZoneObject, humanZoneObject, tempPos);
+                    humanZoneReachability.transform.position = position;
+                    humanZoneReachability.SetActive(visibility);
+
+                }
+                else
+                {
+                    Debug.Log("AddReachabilitlyToHumanZone: HumanZoneObject or ReachabilityObject is null.");
+                }
+            }
+            else
+            {
+                Debug.Log("AddReachabilitlyToHumanZone: Robot object is null.");
+            }
+
+        }
+        public Vector3 ScaleReachibilitySphereProportionally(GameObject referenceBox, GameObject referenceSphere, GameObject targetBox)
+        {
+            if (referenceBox == null || referenceSphere == null || targetBox == null)
+            {
+                Debug.LogWarning("ScaleReachibilitySphereProportionally: One or more objects are not assigned.");
+                return Vector3.zero;
+            }
+
+            // Get heights (assuming scale.y represents height)
+            float referenceBoxHeight = referenceBox.transform.localScale.y;
+            float referenceSphereHeight = referenceSphere.transform.localScale.y;
+
+            // Compute the size ratio
+            float sizeRatio = referenceSphereHeight / referenceBoxHeight;
+
+            // Get the new height of Sphere 2 based on Box 2's height
+            float targetBoxHeight = targetBox.transform.localScale.y;
+            float newSphereHeight = targetBoxHeight * sizeRatio;
+
+            // Apply the new scale to Sphere 2 (assuming uniform scale)
+            Vector3 reachabilitySphere = new Vector3(newSphereHeight, newSphereHeight, newSphereHeight);
+            return reachabilitySphere;
         }
 
         ////////////////////////////////////////// Robot Object Management ////////////////////////////////////////////////////////
@@ -251,10 +356,7 @@ namespace CompasXR.Robots
             }
         }
 
-
-
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////////////////////////////
-
         public void InstantiateRobotTrajectoryFromJointsDict(GetTrajectoryResult result, List<Dictionary<string, float>> TrajectoryConfigs, Frame robotBaseFrame, string trajectoryID, GameObject robotToConfigure, Dictionary<string, string> URDFLinks, GameObject parentObject, bool visibility)
         {
             /*
@@ -311,7 +413,6 @@ namespace CompasXR.Robots
             yield return new WaitForSeconds(delay);
             AttachElementToTrajectoryEndEffectorLinks(result.ElementID, parentObject.name, result.RobotName, result.EndEffectorLinkName, result.PickIndex.Value, result.Trajectory.Count);
         }
-
         public void AttachElementToTrajectoryEndEffectorLinks(string stepID, string trajectoryParentName, string robotName, string endEffectorLinkName, int pickIndex, int trajectoryCount)
         {
             /*
@@ -455,6 +556,12 @@ namespace CompasXR.Robots
             if(uiFunctionalities.SetActiveRobotToggleObject.GetComponent<Toggle>().isOn)
             {
                 URDFManagement.SetRobotLocalPositionandRotationFromFrame(e.RobotBaseFrame, ActiveRobot);
+                if(ActiveRobot != null)
+                {
+                    //TODO: ADDED FOR TESTING...
+                    //TODO: THiS SERVICE MANAGER NEEDS TO BE UPDATED AS THE COMPAS XR ONE DOES...
+                    AddReachabilitlyToHumanZone(ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName), databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, ActiveRobot.activeSelf);
+                }
                 databaseRobotBaseFrame = e.RobotBaseFrame;
             }
             else
