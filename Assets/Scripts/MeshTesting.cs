@@ -4,6 +4,7 @@ using UnityEngine;
 using System;
 using Newtonsoft.Json;
 using CompasXR.Core.Data;
+using System.IO;
 
 
 //EVA //////////////////////////////////////////////////////////////////////////////////
@@ -19,7 +20,43 @@ public class MeshTesting : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        string filePath = @"C:\Users\jk6372\Desktop\00_princeton_projects\00_robotic_territories\02_Production\02_Unity\01_mesh_parsing_tests\mesh.json";
+
+        if (File.Exists(filePath))
+        {
+            // Read the JSON file
+            string jsonText = File.ReadAllText(filePath);
+
+            Debug.Log("JOE LOOK FOR ME" + jsonText);
+            // Parse JSON into a Dictionary
+            // Dictionary<string, object> jsonData = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonText);
+
+            // Print to console
+            // Debug.Log(JsonConvert.SerializeObject(jsonData, Formatting.Indented));
+
+            
+            Mesh mesh = Mesh.Parse(jsonText);
+            Debug.Log("JOE LOOK FOR ME Type" + mesh.GetType());
+            Debug.Log("JOE LOOK FOR ME Attributes" + JsonConvert.SerializeObject(mesh.GetData()));
+            Debug.Log("JOE LOOK FOR ME MaxFace" + mesh.MaxFace);
+            Debug.Log("JOE LOOK FOR ME MaxVertex" + mesh.MaxVertex);
+            Debug.Log("JOE LOOK FOR ME Attributes" + mesh.Attributes);
+            Debug.Log("JOE LOOK FOR ME DefaultEdgeAttributes" + mesh.DefaultEdgeAttributes);
+            Debug.Log("JOE LOOK FOR ME DefaultFaceAttributes" + mesh.DefaultFaceAttributes);
+            Debug.Log("JOE LOOK FOR ME DefaultVertexAttributes" + mesh.DefaultVertexAttributes);
+            Debug.Log("JOE LOOK FOR ME Faces" + mesh.Faces);
+            Debug.Log("JOE LOOK FOR ME FaceData" + mesh.FaceData);
+            Debug.Log("JOE LOOK FOR ME Vertex" + JsonConvert.SerializeObject(mesh.Vertex));
+            Debug.Log("JOE LOOK FOR ME Vertex GetData" + JsonConvert.SerializeObject(mesh.Vertex["0"].GetData()));
+            Debug.Log("JOE LOOK FOR ME MeshVetex0X" + mesh.Vertex["0"].X);
+            Debug.Log("JOE LOOK FOR ME MeshVetex0Y" + mesh.Vertex["0"].Y);
+            Debug.Log("JOE LOOK FOR ME MeshVetex0Z" + mesh.Vertex["0"].Z);
+
+        }
+        else
+        {
+            Debug.LogError("JSON file not found: " + filePath);
+        }
     }
 
     // Update is called once per frame

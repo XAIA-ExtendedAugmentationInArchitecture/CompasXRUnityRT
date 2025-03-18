@@ -38774,6 +38774,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1139708558}
   m_CullTransparentMesh: 1
+--- !u!1 &1140256716
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1140256717}
+  - component: {fileID: 1140256718}
+  m_Layer: 0
+  m_Name: MeshTesting
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1140256717
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1140256716}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1465979388}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1140256718
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1140256716}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c34ed26c07fb154da6f929e99f8de39, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1140748301
 GameObject:
   m_ObjectHideFlags: 8
@@ -51002,6 +51046,7 @@ Transform:
   - {fileID: 5577410598647176134}
   - {fileID: 937515586}
   - {fileID: 279596140}
+  - {fileID: 1140256717}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1467578021
@@ -81943,6 +81988,7 @@ MonoBehaviour:
   PreviousZoneButtonObject: {fileID: 0}
   RoboticTerritoriesConstantUIObjects: {fileID: 0}
   CorrectionButtonObject: {fileID: 0}
+  ToggleZoneVisibilityObject: {fileID: 0}
   MimicControlsSetPointsUIObjects: {fileID: 0}
   MimicSetPointsButtonObject: {fileID: 0}
   MimicControlsUndoPointButtonObject: {fileID: 0}
@@ -93306,6 +93352,8 @@ MonoBehaviour:
   - UR10e
   - UR20
   - ETHZurichRFL
+  databaseManager: {fileID: 0}
+  humanZoneMimicReachibility: {fileID: 0}
 --- !u!224 &8456128683707837387
 RectTransform:
   m_ObjectHideFlags: 0
@@ -95257,7 +95305,6 @@ SceneRoots:
   - {fileID: 9171784431562014785}
   - {fileID: 7531816793139834130}
   - {fileID: 316923129428089353}
-  - {fileID: 1465979388}
   - {fileID: 676333925487049998}
   - {fileID: 9207822240330166455}
   - {fileID: 2881518918928875851}
@@ -95266,3 +95313,4 @@ SceneRoots:
   - {fileID: 3775548851062386739}
   - {fileID: 3377408315014968198}
   - {fileID: 664389695}
+  - {fileID: 1465979388}
