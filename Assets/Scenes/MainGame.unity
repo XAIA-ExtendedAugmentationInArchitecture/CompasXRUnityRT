@@ -75440,7 +75440,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c4d8832d07fa36429d690d119e751f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  brokerAddress: broker.hivemq.com
+  brokerAddress: test.mosquitto.org
   brokerPort: 1883
   isEncrypted: 0
   certificateName: 
@@ -81943,6 +81943,7 @@ MonoBehaviour:
   PreviousZoneButtonObject: {fileID: 0}
   RoboticTerritoriesConstantUIObjects: {fileID: 0}
   CorrectionButtonObject: {fileID: 0}
+  ToggleZoneVisibilityObject: {fileID: 0}
   MimicControlsSetPointsUIObjects: {fileID: 0}
   MimicSetPointsButtonObject: {fileID: 0}
   MimicControlsUndoPointButtonObject: {fileID: 0}
@@ -93306,6 +93307,8 @@ MonoBehaviour:
   - UR10e
   - UR20
   - ETHZurichRFL
+  databaseManager: {fileID: 0}
+  humanZoneMimicReachibility: {fileID: 0}
 --- !u!224 &8456128683707837387
 RectTransform:
   m_ObjectHideFlags: 0
