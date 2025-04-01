@@ -14,13 +14,18 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Google.MiniJSON;
+using CompasXR.Core;
 
 public class MeshTesting : MonoBehaviour
 {
     // Start is called before the first frame update
     void Start()
     {
-        string filePath = @"C:\Users\jk6372\Desktop\00_princeton_projects\00_robotic_territories\02_Production\02_Unity\01_mesh_parsing_tests\mesh.json";
+        // string filePath = @"C:\Users\jk6372\Desktop\00_princeton_projects\00_robotic_territories\02_Production\02_Unity\01_mesh_parsing_tests\box_mesh.json";
+        // string filePath = @"C:\Users\jk6372\Desktop\00_princeton_projects\00_robotic_territories\02_Production\02_Unity\01_mesh_parsing_tests\box_tri_mesh.json";
+        string filePath = @"C:\Users\jk6372\Desktop\00_princeton_projects\00_robotic_territories\02_Production\02_Unity\01_mesh_parsing_tests\mesh_tri.json";
+        // string filePath = @"C:\Users\jk6372\Desktop\00_princeton_projects\00_robotic_territories\02_Production\02_Unity\01_mesh_parsing_tests\mesh.json";
 
         if (File.Exists(filePath))
         {
@@ -51,6 +56,7 @@ public class MeshTesting : MonoBehaviour
             Debug.Log("JOE LOOK FOR ME MeshVetex0X" + mesh.Vertex["0"].X);
             Debug.Log("JOE LOOK FOR ME MeshVetex0Y" + mesh.Vertex["0"].Y);
             Debug.Log("JOE LOOK FOR ME MeshVetex0Z" + mesh.Vertex["0"].Z);
+            mesh.GenerateMeshFromRHMeshDebug();
 
         }
         else
@@ -159,6 +165,11 @@ public class MeshTesting : MonoBehaviour
         public int MaxFace { get; set; }
         public int MaxVertex { get; set; }
         public Dictionary<string, Vertex> Vertex { get; set; }
+        
+        //TODO: ADDED FOR EASE DO NOT KNOW IF I NEED THEM...
+        private int[] tris { get; set; }
+        public Vector3[] normals { get; set; }
+        public Vector2[] uv { get; set; }
 
         public Mesh(
             Dictionary<string, object> attributes,
@@ -222,36 +233,71 @@ public class MeshTesting : MonoBehaviour
                 throw new ArgumentNullException(nameof(jsonDataDict), "Input data cannot be null.");
             }
 
-            var attributes = GetSafeDictionary(jsonDataDict, "attributes");
-            var defaultEdgeAttributes = GetSafeDictionary(jsonDataDict, "default_edge_attributes");
-            var defaultFaceAttributes = GetSafeDictionary(jsonDataDict, "default_face_attributes");
-            var defaultVertexAttributes = GetSafeDictionary(jsonDataDict, "default_vertex_attributes");
-            var faces = GetSafeDictionary<int[]>(jsonDataDict, "faces");
-            var faceData = GetSafeDictionary(jsonDataDict, "face_data");
-
-            int maxFace = jsonDataDict.TryGetValue("max_face", out var maxFaceObj) ? Convert.ToInt32(maxFaceObj) : 0;
-            int maxVertex = jsonDataDict.TryGetValue("max_vertex", out var maxVertexObj) ? Convert.ToInt32(maxVertexObj) : 0;
-
-            Dictionary<string, Vertex> vertex = new Dictionary<string, Vertex>();
-            if (jsonDataDict.TryGetValue("vertex", out var vertexObj) && vertexObj is Dictionary<string, object> vertexDict)
+            Dictionary<string, object> dataDictionary = GetAsDictionary(jsonDataDict, "data");
+            if (dataDictionary == null || dataDictionary.Count == 0)
             {
-                foreach (var kvp in vertexDict)
-                {
-                    if (kvp.Value is Dictionary<string, object> vertexData)
-                    {
-                        double x = DataConverters.ConvertNumericDataToDouble(vertexData["x"]);
-                        double y = DataConverters.ConvertNumericDataToDouble(vertexData["y"]);
-                        double z = DataConverters.ConvertNumericDataToDouble(vertexData["z"]);
-                        vertex[kvp.Key] = new Vertex(x, y, z);
-                    }
-                }
+                throw new ArgumentException("Data dictionary is empty or not found in the provided JSON data.");
             }
             else
             {
-                Debug.LogWarning("Mesh.FromData: Vertex data not found or invalid. Setting to empty dictionary.");
+                Debug.Log("JOE LOOK FOR ME HERE dataDictionary" + JsonConvert.SerializeObject(dataDictionary));
             }
 
-            return new Mesh(attributes, defaultEdgeAttributes, defaultFaceAttributes, defaultVertexAttributes, faces, faceData, maxFace, maxVertex, vertex);
+            var attributes = GetSafeDictionary(dataDictionary, "attributes");
+            var defaultEdgeAttributes = GetSafeDictionary(dataDictionary, "default_edge_attributes");
+            var defaultFaceAttributes = GetSafeDictionary(dataDictionary, "default_face_attributes");
+            var defaultVertexAttributes = GetSafeDictionary(dataDictionary, "default_vertex_attributes");
+            // var faces = GetSafeDictionary<int[]>(dataDictionary, "face");
+            Dictionary<string, object> faces = GetAsDictionary(dataDictionary, "face");
+
+            Dictionary<string, int[]> facesDict = new Dictionary<string, int[]>();
+            foreach (var kvp in faces)
+            {
+                if (kvp.Value is JArray jArray)
+                {
+                    int[] faceArray = jArray.ToObject<int[]>();
+                    facesDict[kvp.Key] = faceArray;
+                }
+                else
+                {
+                    Debug.LogWarning($"Mesh.FromData: Invalid face data for key {kvp.Key}. Expected JArray.");
+                }
+            }
+
+            Debug.Log("JOE LOOK FOR ME HERE faces" + JsonConvert.SerializeObject(facesDict));
+            var faceData = GetSafeDictionary(dataDictionary, "face_data");
+
+            int maxFace = dataDictionary.TryGetValue("max_face", out var maxFaceObj) ? Convert.ToInt32(maxFaceObj) : 0;
+            int maxVertex = dataDictionary.TryGetValue("max_vertex", out var maxVertexObj) ? Convert.ToInt32(maxVertexObj) : 0;
+            Debug.Log("JOE LOOK FOR ME HERE maxFace" + JsonConvert.SerializeObject(maxFaceObj));
+            Debug.Log("JOE LOOK FOR ME HERE maxVertex" + JsonConvert.SerializeObject(maxVertexObj));
+
+            Dictionary<string, object> vertexDataDict = GetAsDictionary(dataDictionary, "vertex");
+            Dictionary<string, Vertex> vertex = new Dictionary<string, Vertex>();
+
+            if (vertexDataDict.Count == 0)
+            {
+                Debug.LogWarning("Mesh.FromData: Vertex data not found or invalid. Setting to empty dictionary.");
+            }
+            else
+            {
+                foreach (var kvp in vertexDataDict)
+                {
+                    Dictionary<string, object> individualVertexData = GetAsDictionary(vertexDataDict, kvp.Key.ToString());
+                    if (individualVertexData is Dictionary<string, object>)
+                    {
+                        double x = DataConverters.ConvertNumericDataToDouble(individualVertexData["x"]);
+                        double y = DataConverters.ConvertNumericDataToDouble(individualVertexData["y"]);
+                        double z = DataConverters.ConvertNumericDataToDouble(individualVertexData["z"]);
+                        vertex[kvp.Key] = new Vertex(x, y, z);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Mesh.FromData: Invalid vertex data for key {kvp.Key}. Expected Dictionary<string, object>.");
+                    }
+                }
+            }
+            return new Mesh(attributes, defaultEdgeAttributes, defaultFaceAttributes, defaultVertexAttributes, facesDict, faceData, maxFace, maxVertex, vertex);
         }
 
         private static Dictionary<string, object> GetSafeDictionary(Dictionary<string, object> jsonDataDict, string key)
@@ -263,6 +309,221 @@ public class MeshTesting : MonoBehaviour
         {
             return jsonDataDict.TryGetValue(key, out var obj) && obj is Dictionary<string, int[]> dict ? dict : new Dictionary<string, int[]>();
         }
+
+        private static Dictionary<string, object> GetAsDictionary(Dictionary<string, object> jsonDataDict, string key)
+        {
+            if (jsonDataDict.TryGetValue(key, out var obj))
+            {
+                if (obj is JObject jObj)
+                {
+                    return jObj.ToObject<Dictionary<string, object>>();
+                }
+
+                if (obj is Dictionary<string, object> dict)
+                {
+                    return dict;
+                }
+            }
+            return new Dictionary<string, object>();
+        }
+
+        private static Dictionary<string, T> GetAsDictionary<T>(Dictionary<string, object> jsonDataDict, string key)
+        {
+            if (jsonDataDict.TryGetValue(key, out var obj))
+            {
+                // Convert from JObject if necessary
+                if (obj is JObject jObj)
+                {
+                    return jObj.ToObject<Dictionary<string, T>>();
+                }
+
+                // Try direct cast
+                if (obj is Dictionary<string, T> dict)
+                {
+                    return dict;
+                }
+            }
+
+            // Fallback to empty dictionary
+            return new Dictionary<string, T>();
+        }
+
+        public void CalculateTriangles()
+        {
+            List<int> triangles = new List<int>();
+
+            foreach (var face in Faces)
+            {
+                // Assuming each face is a triangle (consists of three vertices)
+                if (face.Value.Length != 3)
+                {
+                    throw new System.InvalidOperationException("Each face must have exactly 3 vertices to calculate triangles.");
+                }
+
+                triangles.AddRange(face.Value);
+            }
+
+            tris = triangles.ToArray();
+        }
+
+    public GameObject GenerateMeshFromRHMeshDebug()
+    {
+        Debug.Log("GenerateMeshFromRHMeshDebug: Starting mesh generation...");
+
+        if (Vertex == null || Vertex.Count == 0)
+        {
+            Debug.LogError("GenerateMeshFromRHMeshDebug: Vertex dictionary is null or empty.");
+            return null;
+        }
+
+        if (Faces == null || Faces.Count == 0)
+        {
+            Debug.LogError("GenerateMeshFromRHMeshDebug: Faces dictionary is null or empty.");
+            return null;
+        }
+
+        Debug.Log($"GenerateMeshFromRHMeshDebug: Found {Vertex.Count} vertices and {Faces.Count} faces.");
+
+        // Sample log the first 3 vertices
+        for (int i = 0; i < Mathf.Min(3, Vertex.Count); i++)
+        {
+            string key = i.ToString();
+            if (Vertex.ContainsKey(key))
+            {
+                Debug.Log($"Vertex[{key}] = ({Vertex[key].X}, {Vertex[key].Y}, {Vertex[key].Z})");
+            }
+            else
+            {
+                Debug.LogWarning($"Vertex key '{key}' not found in Vertex dictionary.");
+            }
+        }
+
+        // Sample log the first 3 faces
+        int faceIndex = 0;
+        foreach (var face in Faces)
+        {
+            Debug.Log($"GenerateMeshFromRHMeshDebug: Face[{face.Key}] = {string.Join(", ", face.Value)}");
+            faceIndex++;
+            if (faceIndex >= 3) break;
+        }
+
+        // Convert vertices to Unity Vector3 format
+        Vector3[] vertices = new Vector3[Vertex.Count];
+        for (int i = 0; i < Vertex.Count; i++)
+        {
+            string key = i.ToString();
+            if (!Vertex.ContainsKey(key))
+            {
+                Debug.LogError($"GenerateMeshFromRHMeshDebug: Missing vertex with key {key}");
+                return null;
+            }
+
+            Vector3 rhVec = ObjectTransformations.GetPositionFromRightHand(Vertex[key].Values);
+            vertices[i] = rhVec;
+        }
+
+        // Calculate triangles if not already done
+        if (tris == null || tris.Length == 0)
+        {
+            try
+            {
+                CalculateTriangles();
+                Debug.Log($"GenerateMeshFromRHMeshDebug: Triangles calculated. Count: {tris.Length / 3} faces.");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"GenerateMeshFromRHMeshDebug: Error calculating triangles: {ex.Message}");
+                return null;
+            }
+        }
+
+        // Create the new mesh
+        UnityEngine.Mesh mesh = new UnityEngine.Mesh
+        {
+            name = "TESTING OBJECT",
+            vertices = vertices,
+            triangles = this.tris,
+            normals = this.normals,
+            uv = this.uv
+        };
+
+        if (this.normals == null || this.normals.Length == 0)
+        {
+            Debug.Log("GenerateMeshFromRHMeshDebug: Recalculating normals...");
+            mesh.RecalculateNormals();
+        }
+
+        mesh.RecalculateBounds();
+        Debug.Log("GenerateMeshFromRHMeshDebug: Mesh bounds recalculated.");
+
+        // Create GameObject
+        GameObject meshObject = new GameObject("TESTING OBJECT");
+        MeshFilter meshFilter = meshObject.AddComponent<MeshFilter>();
+        MeshRenderer meshRenderer = meshObject.AddComponent<MeshRenderer>();
+
+        meshFilter.mesh = mesh;
+
+        // Optional sanity cube
+        GameObject debugCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        debugCube.transform.position = Vector3.zero;
+        debugCube.name = "DEBUG CUBE - Scene Check";
+
+        Debug.Log("GenerateMeshFromRHMesh: Mesh generation complete.");
+
+        return meshObject;
+    }
+
+
+        public GameObject GenerateMeshFromRHMesh()
+        {
+            if (Vertex == null || Faces == null)
+            {
+                Debug.LogError("Vertices or faces data is missing.");
+                return null;
+            }
+
+            // Convert vertices to Unity Vector3 format
+            Vector3[] vertices = new Vector3[Vertex.Count];
+            for (int i = 0; i < Vertex.Count; i++)
+            {
+                
+                Vector3 rhVec = ObjectTransformations.GetPositionFromRightHand(Vertex[i.ToString()].Values);
+                vertices[i] = rhVec;
+            }
+
+            // Calculate triangles if not already done
+            if (tris == null || tris.Length == 0)
+            {
+                CalculateTriangles();
+            }
+
+            // Create the new mesh
+            UnityEngine.Mesh mesh = new UnityEngine.Mesh
+            {
+                name = "TESTING OBJECT",
+                vertices = vertices,
+                triangles = this.tris,
+                normals = this.normals,
+                uv = this.uv
+            };
+
+            // Recalculate bounds and normals if not provided
+            if (this.normals == null || this.normals.Length == 0)
+            {
+                mesh.RecalculateNormals();
+            }
+            mesh.RecalculateBounds();
+
+            // Create a new game object and add necessary components
+            GameObject meshObject = new GameObject("TESTING OBJECT");
+            MeshFilter meshFilter = meshObject.AddComponent<MeshFilter>();
+            MeshRenderer meshRenderer = meshObject.AddComponent<MeshRenderer>();
+
+            // Assign the mesh to the mesh filter
+            meshFilter.mesh = mesh;
+
+            return meshObject;
+        }
     }
 
     public class Vertex
@@ -271,11 +532,14 @@ public class MeshTesting : MonoBehaviour
         public double Y { get; set; }
         public double Z { get; set; }
 
+        public float[] Values { get; set; }
+
         public Vertex(double x, double y, double z)
         {
             X = x;
             Y = y;
             Z = z;
+            Values = new float[] { (float)x, (float)y, (float)z };
         }
 
         public Dictionary<string, object> GetData()
