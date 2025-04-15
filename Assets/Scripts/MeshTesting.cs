@@ -24,8 +24,9 @@ public class MeshTesting : MonoBehaviour
     {
         // string filePath = @"C:\Users\jk6372\Desktop\00_princeton_projects\00_robotic_territories\02_Production\02_Unity\01_mesh_parsing_tests\box_mesh.json";
         // string filePath = @"C:\Users\jk6372\Desktop\00_princeton_projects\00_robotic_territories\02_Production\02_Unity\01_mesh_parsing_tests\box_tri_mesh.json";
-        string filePath = @"C:\Users\jk6372\Desktop\00_princeton_projects\00_robotic_territories\02_Production\02_Unity\01_mesh_parsing_tests\mesh_tri.json";
+        // string filePath = @"C:\Users\jk6372\Desktop\00_princeton_projects\00_robotic_territories\02_Production\02_Unity\01_mesh_parsing_tests\mesh_tri.json";
         // string filePath = @"C:\Users\jk6372\Desktop\00_princeton_projects\00_robotic_territories\02_Production\02_Unity\01_mesh_parsing_tests\mesh.json";
+        string filePath = @"C:\Users\jk6372\Desktop\00_princeton_projects\00_robotic_territories\02_Production\02_Unity\01_mesh_parsing_tests\trajectory_acm_test_detailed.json";
 
         if (File.Exists(filePath))
         {
@@ -33,6 +34,8 @@ public class MeshTesting : MonoBehaviour
             string jsonText = File.ReadAllText(filePath);
 
             Debug.Log("JOE LOOK FOR ME" + jsonText);
+            
+            /////////////////////////////////////////////// MESH TESTING /////////////////////////////////////////////////////////////////////
             // Parse JSON into a Dictionary
             // Dictionary<string, object> jsonData = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonText);
 
@@ -40,23 +43,31 @@ public class MeshTesting : MonoBehaviour
             // Debug.Log(JsonConvert.SerializeObject(jsonData, Formatting.Indented));
 
             
-            Mesh mesh = Mesh.Parse(jsonText);
-            Debug.Log("JOE LOOK FOR ME Type" + mesh.GetType());
-            Debug.Log("JOE LOOK FOR ME Attributes" + JsonConvert.SerializeObject(mesh.GetData()));
-            Debug.Log("JOE LOOK FOR ME MaxFace" + mesh.MaxFace);
-            Debug.Log("JOE LOOK FOR ME MaxVertex" + mesh.MaxVertex);
-            Debug.Log("JOE LOOK FOR ME Attributes" + mesh.Attributes);
-            Debug.Log("JOE LOOK FOR ME DefaultEdgeAttributes" + mesh.DefaultEdgeAttributes);
-            Debug.Log("JOE LOOK FOR ME DefaultFaceAttributes" + mesh.DefaultFaceAttributes);
-            Debug.Log("JOE LOOK FOR ME DefaultVertexAttributes" + mesh.DefaultVertexAttributes);
-            Debug.Log("JOE LOOK FOR ME Faces" + mesh.Faces);
-            Debug.Log("JOE LOOK FOR ME FaceData" + mesh.FaceData);
-            Debug.Log("JOE LOOK FOR ME Vertex" + JsonConvert.SerializeObject(mesh.Vertex));
-            Debug.Log("JOE LOOK FOR ME Vertex GetData" + JsonConvert.SerializeObject(mesh.Vertex["0"].GetData()));
-            Debug.Log("JOE LOOK FOR ME MeshVetex0X" + mesh.Vertex["0"].X);
-            Debug.Log("JOE LOOK FOR ME MeshVetex0Y" + mesh.Vertex["0"].Y);
-            Debug.Log("JOE LOOK FOR ME MeshVetex0Z" + mesh.Vertex["0"].Z);
-            mesh.GenerateMeshFromRHMeshDebug();
+            // Mesh mesh = Mesh.Parse(jsonText);
+            // mesh.GenerateMeshFromRHMesh();
+            /////////////////////////////////////////////// MESH TESTING /////////////////////////////////////////////////////////////////////
+            
+            /////////////////////////////////////////////// ACM TESTING /////////////////////////////////////////////////////////////////////
+            var rootDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonText);
+            var dataDict = ((JObject)rootDict["data"]).ToObject<Dictionary<string, object>>();
+            var acmListRaw = (JArray)dataDict["attached_collision_meshes"];
+
+            foreach (var item in acmListRaw)
+            {
+                string acmJson = item.ToString();
+                AttachedCollisionMesh acm = AttachedCollisionMesh.Parse(acmJson);
+
+                Debug.Log("JOE LOOK FOR ME Parsed Link Name: " + acm.LinkName);
+                Debug.Log("JOE LOOK FOR ME Parsed Collision Mesh ID: " + acm.CollisionMesh.Id);
+                Debug.Log("JOE LOOK FOR ME Parsed Collision Mesh Root Name: " + acm.CollisionMesh.RootName);
+                Debug.Log("JOE LOOK FOR ME Parsed Collision Mesh Frame: " + acm.CollisionMesh.Frame.GetData());
+                Debug.Log("JOE LOOK FOR ME Parsed Collision Mesh Vertices: " + acm.CollisionMesh.Mesh.Vertex.Count);
+
+                acm.CollisionMesh.Mesh.GenerateMeshFromRHMesh();
+
+            }
+
+            /////////////////////////////////////////////// ACM TESTING /////////////////////////////////////////////////////////////////////
 
         }
         else
@@ -102,6 +113,28 @@ public class MeshTesting : MonoBehaviour
             };
             return data;
         }
+
+        public static AttachedCollisionMesh Parse(string jsonData)
+        {
+            Dictionary<string, object> jsonDataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
+            Debug.Log("JOE LOOK FOR ME HERE jsonDataDict" + JsonConvert.SerializeObject(jsonDataDict));
+            if (jsonDataDict == null)
+            {
+                throw new ArgumentNullException(nameof(jsonDataDict), "Input data cannot be null.");
+            }
+            return FromData(jsonDataDict);
+        }
+
+        public static AttachedCollisionMesh FromData(Dictionary<string, object> jsonDataDict)
+        {
+            Dictionary<string, object> collisionMeshDict = DictionaryHelpers.GetAsDictionary(jsonDataDict, "collision_mesh");
+            CollisionMesh collisionMesh = CollisionMesh.FromData(collisionMeshDict);
+            string linkName = jsonDataDict["link_name"] as string;
+            List<string> touchLinks = jsonDataDict["touch_links"] as List<string>;
+            double weight = Convert.ToDouble(jsonDataDict["weight"]);
+
+            return new AttachedCollisionMesh(collisionMesh, linkName, touchLinks, weight);
+        }
     }
 
     public class CollisionMesh
@@ -144,11 +177,16 @@ public class MeshTesting : MonoBehaviour
 
         public static CollisionMesh FromData(Dictionary<string, object> jsonDataDict)
         {
-            Frame frame = Frame.FromData(jsonDataDict["frame"] as Dictionary<string, object>);
+            Debug.Log("JOSEEPHHHH" + JsonConvert.SerializeObject(jsonDataDict));
+            Debug.Log("JOSEEPHHHH" + jsonDataDict.GetType());
+            var frameDict = DictionaryHelpers.GetAsDictionary(jsonDataDict, "frame");
+            Frame frame = Frame.FromData(frameDict);
             string id = jsonDataDict["id"] as string;
-            Mesh mesh = Mesh.FromData(jsonDataDict["mesh"] as Dictionary<string, object>);
-            string rootName = jsonDataDict["root_name"] as string;
+            Dictionary<string, object> meshDict = DictionaryHelpers.GetAsDictionary(jsonDataDict, "mesh");
+            Debug.Log("JOSEEPHHHH MESH DICT" + JsonConvert.SerializeObject(meshDict));
 
+            Mesh mesh = Mesh.FromData(meshDict);
+            string rootName = jsonDataDict["root_name"] as string;
             return new CollisionMesh(frame, id, mesh, rootName);
         }
     }
@@ -233,22 +271,22 @@ public class MeshTesting : MonoBehaviour
                 throw new ArgumentNullException(nameof(jsonDataDict), "Input data cannot be null.");
             }
 
-            Dictionary<string, object> dataDictionary = GetAsDictionary(jsonDataDict, "data");
+            Dictionary<string, object> dataDictionary = DictionaryHelpers.GetAsDictionary(jsonDataDict, "data"); //TODO: This is only needed when it comes from dumping a mesh directly using json_dump
             if (dataDictionary == null || dataDictionary.Count == 0)
             {
-                throw new ArgumentException("Data dictionary is empty or not found in the provided JSON data.");
+                dataDictionary = jsonDataDict; //TODO: This will cause errors when loading directly from data...
             }
             else
             {
                 Debug.Log("JOE LOOK FOR ME HERE dataDictionary" + JsonConvert.SerializeObject(dataDictionary));
             }
 
-            var attributes = GetSafeDictionary(dataDictionary, "attributes");
-            var defaultEdgeAttributes = GetSafeDictionary(dataDictionary, "default_edge_attributes");
-            var defaultFaceAttributes = GetSafeDictionary(dataDictionary, "default_face_attributes");
-            var defaultVertexAttributes = GetSafeDictionary(dataDictionary, "default_vertex_attributes");
+            var attributes = DictionaryHelpers.GetSafeDictionary(dataDictionary, "attributes");
+            var defaultEdgeAttributes = DictionaryHelpers.GetSafeDictionary(dataDictionary, "default_edge_attributes");
+            var defaultFaceAttributes = DictionaryHelpers.GetSafeDictionary(dataDictionary, "default_face_attributes");
+            var defaultVertexAttributes = DictionaryHelpers.GetSafeDictionary(dataDictionary, "default_vertex_attributes");
             // var faces = GetSafeDictionary<int[]>(dataDictionary, "face");
-            Dictionary<string, object> faces = GetAsDictionary(dataDictionary, "face");
+            Dictionary<string, object> faces = DictionaryHelpers.GetAsDictionary(dataDictionary, "face");
 
             Dictionary<string, int[]> facesDict = new Dictionary<string, int[]>();
             foreach (var kvp in faces)
@@ -265,14 +303,14 @@ public class MeshTesting : MonoBehaviour
             }
 
             Debug.Log("JOE LOOK FOR ME HERE faces" + JsonConvert.SerializeObject(facesDict));
-            var faceData = GetSafeDictionary(dataDictionary, "face_data");
+            var faceData = DictionaryHelpers.GetSafeDictionary(dataDictionary, "face_data");
 
             int maxFace = dataDictionary.TryGetValue("max_face", out var maxFaceObj) ? Convert.ToInt32(maxFaceObj) : 0;
             int maxVertex = dataDictionary.TryGetValue("max_vertex", out var maxVertexObj) ? Convert.ToInt32(maxVertexObj) : 0;
             Debug.Log("JOE LOOK FOR ME HERE maxFace" + JsonConvert.SerializeObject(maxFaceObj));
             Debug.Log("JOE LOOK FOR ME HERE maxVertex" + JsonConvert.SerializeObject(maxVertexObj));
 
-            Dictionary<string, object> vertexDataDict = GetAsDictionary(dataDictionary, "vertex");
+            Dictionary<string, object> vertexDataDict = DictionaryHelpers.GetAsDictionary(dataDictionary, "vertex");
             Dictionary<string, Vertex> vertex = new Dictionary<string, Vertex>();
 
             if (vertexDataDict.Count == 0)
@@ -283,7 +321,7 @@ public class MeshTesting : MonoBehaviour
             {
                 foreach (var kvp in vertexDataDict)
                 {
-                    Dictionary<string, object> individualVertexData = GetAsDictionary(vertexDataDict, kvp.Key.ToString());
+                    Dictionary<string, object> individualVertexData = DictionaryHelpers.GetAsDictionary(vertexDataDict, kvp.Key.ToString());
                     if (individualVertexData is Dictionary<string, object>)
                     {
                         double x = DataConverters.ConvertNumericDataToDouble(individualVertexData["x"]);
@@ -298,54 +336,6 @@ public class MeshTesting : MonoBehaviour
                 }
             }
             return new Mesh(attributes, defaultEdgeAttributes, defaultFaceAttributes, defaultVertexAttributes, facesDict, faceData, maxFace, maxVertex, vertex);
-        }
-
-        private static Dictionary<string, object> GetSafeDictionary(Dictionary<string, object> jsonDataDict, string key)
-        {
-            return jsonDataDict.TryGetValue(key, out var obj) && obj is Dictionary<string, object> dict ? dict : new Dictionary<string, object>();
-        }
-
-        private static Dictionary<string, int[]> GetSafeDictionary<T>(Dictionary<string, object> jsonDataDict, string key)
-        {
-            return jsonDataDict.TryGetValue(key, out var obj) && obj is Dictionary<string, int[]> dict ? dict : new Dictionary<string, int[]>();
-        }
-
-        private static Dictionary<string, object> GetAsDictionary(Dictionary<string, object> jsonDataDict, string key)
-        {
-            if (jsonDataDict.TryGetValue(key, out var obj))
-            {
-                if (obj is JObject jObj)
-                {
-                    return jObj.ToObject<Dictionary<string, object>>();
-                }
-
-                if (obj is Dictionary<string, object> dict)
-                {
-                    return dict;
-                }
-            }
-            return new Dictionary<string, object>();
-        }
-
-        private static Dictionary<string, T> GetAsDictionary<T>(Dictionary<string, object> jsonDataDict, string key)
-        {
-            if (jsonDataDict.TryGetValue(key, out var obj))
-            {
-                // Convert from JObject if necessary
-                if (obj is JObject jObj)
-                {
-                    return jObj.ToObject<Dictionary<string, T>>();
-                }
-
-                // Try direct cast
-                if (obj is Dictionary<string, T> dict)
-                {
-                    return dict;
-                }
-            }
-
-            // Fallback to empty dictionary
-            return new Dictionary<string, T>();
         }
 
         public void CalculateTriangles()
@@ -437,7 +427,6 @@ public class MeshTesting : MonoBehaviour
             }
         }
 
-        // Create the new mesh
         UnityEngine.Mesh mesh = new UnityEngine.Mesh
         {
             name = "TESTING OBJECT",
@@ -1008,3 +997,57 @@ public class Vector3DictionaryConverter : JsonConverter
 
     public override bool CanWrite => true;
 }
+
+
+    public static class DictionaryHelpers
+    {
+
+        public static Dictionary<string, object> GetSafeDictionary(Dictionary<string, object> jsonDataDict, string key)
+        {
+            return jsonDataDict.TryGetValue(key, out var obj) && obj is Dictionary<string, object> dict ? dict : new Dictionary<string, object>();
+        }
+
+        public static Dictionary<string, int[]> GetSafeDictionary<T>(Dictionary<string, object> jsonDataDict, string key)
+        {
+            return jsonDataDict.TryGetValue(key, out var obj) && obj is Dictionary<string, int[]> dict ? dict : new Dictionary<string, int[]>();
+        }
+
+        public static Dictionary<string, object> GetAsDictionary(Dictionary<string, object> jsonDataDict, string key)
+        {
+            if (jsonDataDict.TryGetValue(key, out var obj))
+            {
+                if (obj is JObject jObj)
+                {
+                    return jObj.ToObject<Dictionary<string, object>>();
+                }
+
+                if (obj is Dictionary<string, object> dict)
+                {
+                    return dict;
+                }
+            }
+            return new Dictionary<string, object>();
+        }
+
+        public static Dictionary<string, T> GetAsDictionary<T>(Dictionary<string, object> jsonDataDict, string key)
+        {
+            if (jsonDataDict.TryGetValue(key, out var obj))
+            {
+                // Convert from JObject if necessary
+                if (obj is JObject jObj)
+                {
+                    return jObj.ToObject<Dictionary<string, T>>();
+                }
+
+                // Try direct cast
+                if (obj is Dictionary<string, T> dict)
+                {
+                    return dict;
+                }
+            }
+
+            // Fallback to empty dictionary
+            return new Dictionary<string, T>();
+        }
+
+    }
