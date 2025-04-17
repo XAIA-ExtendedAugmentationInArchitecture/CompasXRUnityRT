@@ -6,7 +6,6 @@ using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using CompasXR.Core.Data;
-
 using UnityEngine;
 
 namespace CompasXR.Robots.Data
@@ -15,7 +14,7 @@ namespace CompasXR.Robots.Data
     {
         public List<JointTrajectoryPoint> Points { get; set; }
 
-        // public List<AttachedCollisionMeshes> AttachedCollisionMeshes { get; set; }
+        public List<AttachedCollisionMesh> AttachedCollisionMeshes { get; set; }
         public List<string> JointNames { get; set; }
         public Configuration StartConfiguration { get; set; }
         public float? PlanningTime { get; set; }
@@ -27,7 +26,8 @@ namespace CompasXR.Robots.Data
             List<string> jointNames=null,
             float? planningTime=null,
             float? fraction=null,
-            Dictionary<string, object> attributes = null
+            Dictionary<string, object> attributes = null,
+            List<AttachedCollisionMesh> attachedCollisionMeshes = null
         )
         {
             Points = points ?? throw new ArgumentNullException(nameof(points));
@@ -36,6 +36,7 @@ namespace CompasXR.Robots.Data
             PlanningTime = planningTime;
             Fraction = fraction;
             Attributes = attributes ?? new Dictionary<string, object>();
+            AttachedCollisionMeshes = attachedCollisionMeshes ?? new List<AttachedCollisionMesh>();
         }
         private List<string> GetJointNames()
         {
@@ -48,6 +49,7 @@ namespace CompasXR.Robots.Data
             {
                 { "points", Points.Select(point => point.GetData()).ToList() },
                 { "start_configuration", StartConfiguration.GetData() },
+                { "attached_collision_meshes", AttachedCollisionMeshes?.Select(mesh => mesh.GetData()).ToList() },
                 { "joint_names", JointNames },
                 { "planning_time", PlanningTime },
                 { "fraction", Fraction },
@@ -127,7 +129,23 @@ namespace CompasXR.Robots.Data
                 ? jsonDataDict["attributes"] as Dictionary<string, object>
                 : null;
 
-            return new Trajectory(trajectoryPoints, startConfiguration, jointNames, planningTime, fraction, attributes);
+            var trajectoryAttachedcollisionMeshes = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonDataDict["attached_collision_meshes"].ToString());
+            List<AttachedCollisionMesh> attachedCollisionMeshes = new List<AttachedCollisionMesh>();
+            foreach (var acm in trajectoryAttachedcollisionMeshes)
+            {
+                AttachedCollisionMesh attachedCollisionMesh = AttachedCollisionMesh.FromData(acm);
+                attachedCollisionMeshes.Add(attachedCollisionMesh);
+            }
+            if(attachedCollisionMeshes.Count == 0)
+            {
+                Debug.LogWarning("TrajectoryFromData: No attached collision meshes found in trajectory.");
+            }
+            else
+            {
+                Debug.Log($"TrajectoryFromData: Deserialized {attachedCollisionMeshes.Count} attached collision meshes.");
+            }
+
+            return new Trajectory(trajectoryPoints, startConfiguration, jointNames, planningTime, fraction, attributes, attachedCollisionMeshes);
         }    
     }
 
@@ -294,19 +312,40 @@ namespace CompasXR.Robots.Data
             };
             return data;
         }
+
+        public static AttachedCollisionMesh Parse(string jsonData)
+        {
+            Dictionary<string, object> jsonDataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
+            if (jsonDataDict == null)
+            {
+                throw new ArgumentNullException(nameof(jsonDataDict), "Input data cannot be null.");
+            }
+            return FromData(jsonDataDict);
+        }
+
+        public static AttachedCollisionMesh FromData(Dictionary<string, object> jsonDataDict)
+        {
+            Dictionary<string, object> collisionMeshDict = DictionaryHelpers.GetAsDictionary(jsonDataDict, "collision_mesh");
+            CollisionMesh collisionMesh = CollisionMesh.FromData(collisionMeshDict);
+            string linkName = jsonDataDict["link_name"] as string;
+            List<string> touchLinks = jsonDataDict["touch_links"] as List<string>;
+            double weight = Convert.ToDouble(jsonDataDict["weight"]);
+
+            return new AttachedCollisionMesh(collisionMesh, linkName, touchLinks, weight);
+        }
     }
 
     public class CollisionMesh
     {
         public Frame Frame { get; set; }
         public string Id { get; set; }
-        public Mesh Mesh { get; set; }
+        public CompasMesh Mesh { get; set; }
         public string RootName { get; set; }
 
         public CollisionMesh(
             Frame frame,
             string id,
-            Mesh mesh,
+            CompasMesh mesh,
             string rootName
         )
         {
@@ -336,169 +375,17 @@ namespace CompasXR.Robots.Data
 
         public static CollisionMesh FromData(Dictionary<string, object> jsonDataDict)
         {
-            Frame frame = Frame.FromData(jsonDataDict["frame"] as Dictionary<string, object>);
+            Debug.Log("JOSEEPHHHH" + JsonConvert.SerializeObject(jsonDataDict));
+            Debug.Log("JOSEEPHHHH" + jsonDataDict.GetType());
+            var frameDict = DictionaryHelpers.GetAsDictionary(jsonDataDict, "frame");
+            Frame frame = Frame.FromData(frameDict);
             string id = jsonDataDict["id"] as string;
-            Mesh mesh = Mesh.FromData(jsonDataDict["mesh"] as Dictionary<string, object>);
+            Dictionary<string, object> meshDict = DictionaryHelpers.GetAsDictionary(jsonDataDict, "mesh");
+            Debug.Log("JOSEEPHHHH MESH DICT" + JsonConvert.SerializeObject(meshDict));
+
+            CompasMesh mesh = CompasMesh.FromData(meshDict);
             string rootName = jsonDataDict["root_name"] as string;
-
             return new CollisionMesh(frame, id, mesh, rootName);
-        }
-    }
-
-    //TODO: MOVE TO COMPASXR.CORE.DATA NAMESPACE AND THINK ABOUT THIS...FUCK THIS WILL NOT WORK YOU NEED RH TO LH CONVERSION :(....////////////////////////////////////////////////////////////////////////////////////////
-    public class Mesh
-    {
-        public Dictionary<string, object> Attributes { get; set; }
-        public Dictionary<string, object> DefaultEdgeAttributes { get; set; }
-        public Dictionary<string, object> DefaultFaceAttributes { get; set; }
-        public Dictionary<string, object> DefaultVertexAttributes { get; set; }
-        public Dictionary<string, int[]> Faces { get; set; }
-        public Dictionary<string, object> FaceData { get; set; }
-        public int MaxFace { get; set; }
-        public int MaxVertex { get; set; }
-        public Dictionary<string, Vertex> Vertex { get; set; }
-
-        public Mesh(
-            Dictionary<string, object> attributes,
-            Dictionary<string, object> defaultEdgeAttributes,
-            Dictionary<string, object> defaultFaceAttributes,
-            Dictionary<string, object> defaultVertexAttributes,
-            Dictionary<string, int[]> faces,
-            Dictionary<string, object> faceData,
-            int maxFace,
-            int maxVertex,
-            Dictionary<string, Vertex> vertex
-        )
-        {
-            Attributes = attributes ?? new Dictionary<string, object>();
-            DefaultEdgeAttributes = defaultEdgeAttributes ?? new Dictionary<string, object>();
-            DefaultFaceAttributes = defaultFaceAttributes ?? new Dictionary<string, object>();
-            DefaultVertexAttributes = defaultVertexAttributes ?? new Dictionary<string, object>();
-            Faces = faces ?? new Dictionary<string, int[]>();
-            FaceData = faceData ?? new Dictionary<string, object>();
-            MaxFace = maxFace;
-            MaxVertex = maxVertex;
-            Vertex = vertex ?? new Dictionary<string, Vertex>();
-        }
-
-        public static Dictionary<string, object> GetVertexDataFromDict(Dictionary<string, Vertex> vertexDict)
-        {
-            Dictionary<string, object> vertexData = new Dictionary<string, object>();
-            for (int i = 0; i < vertexDict.Count; i++)
-            {
-                vertexData[i.ToString()] = vertexDict[i.ToString()].GetData();
-            }
-            return vertexData;
-        }
-        public Dictionary<string, object> GetData()
-        {
-            Dictionary<string, object> data = new Dictionary<string, object>
-            {
-                { "attributes", Attributes },
-                { "default_edge_attributes", DefaultEdgeAttributes },
-                { "default_face_attributes", DefaultFaceAttributes },
-                { "default_vertex_attributes", DefaultVertexAttributes },
-                { "faces", Faces },
-                { "face_data", FaceData },
-                { "max_face", MaxFace },
-                { "max_vertex", MaxVertex },
-                { "vertex", Vertex }
-            };
-            return data;
-        }
-        
-        public static Mesh Parse(string jsonData)
-        {
-            Dictionary<string, object> jsonDataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
-            return FromData(jsonDataDict);
-        }
-
-        public static Mesh FromData(Dictionary<string, object> jsonDataDict)
-        {
-            if (jsonDataDict == null)
-            {
-                throw new ArgumentNullException(nameof(jsonDataDict), "Input data cannot be null.");
-            }
-
-            var attributes = GetSafeDictionary(jsonDataDict, "attributes");
-            var defaultEdgeAttributes = GetSafeDictionary(jsonDataDict, "default_edge_attributes");
-            var defaultFaceAttributes = GetSafeDictionary(jsonDataDict, "default_face_attributes");
-            var defaultVertexAttributes = GetSafeDictionary(jsonDataDict, "default_vertex_attributes");
-            var faces = GetSafeDictionary<int[]>(jsonDataDict, "faces");
-            var faceData = GetSafeDictionary(jsonDataDict, "face_data");
-
-            int maxFace = jsonDataDict.TryGetValue("max_face", out var maxFaceObj) ? Convert.ToInt32(maxFaceObj) : 0;
-            int maxVertex = jsonDataDict.TryGetValue("max_vertex", out var maxVertexObj) ? Convert.ToInt32(maxVertexObj) : 0;
-
-            Dictionary<string, Vertex> vertex = new Dictionary<string, Vertex>();
-            if (jsonDataDict.TryGetValue("vertex", out var vertexObj) && vertexObj is Dictionary<string, object> vertexDict)
-            {
-                foreach (var kvp in vertexDict)
-                {
-                    if (kvp.Value is Dictionary<string, object> vertexData)
-                    {
-                        double x = DataConverters.ConvertNumericDataToDouble(vertexData["x"]);
-                        double y = DataConverters.ConvertNumericDataToDouble(vertexData["y"]);
-                        double z = DataConverters.ConvertNumericDataToDouble(vertexData["z"]);
-                        vertex[kvp.Key] = new Vertex(x, y, z);
-                    }
-                }
-            }
-            else
-            {
-                Debug.LogWarning("Mesh.FromData: Vertex data not found or invalid. Setting to empty dictionary.");
-            }
-
-            return new Mesh(attributes, defaultEdgeAttributes, defaultFaceAttributes, defaultVertexAttributes, faces, faceData, maxFace, maxVertex, vertex);
-        }
-
-        private static Dictionary<string, object> GetSafeDictionary(Dictionary<string, object> jsonDataDict, string key)
-        {
-            return jsonDataDict.TryGetValue(key, out var obj) && obj is Dictionary<string, object> dict ? dict : new Dictionary<string, object>();
-        }
-
-        private static Dictionary<string, int[]> GetSafeDictionary<T>(Dictionary<string, object> jsonDataDict, string key)
-        {
-            return jsonDataDict.TryGetValue(key, out var obj) && obj is Dictionary<string, int[]> dict ? dict : new Dictionary<string, int[]>();
-        }
-    }
-
-    public class Vertex
-    {
-        public double X { get; set; }
-        public double Y { get; set; }
-        public double Z { get; set; }
-
-        public Vertex(double x, double y, double z)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
-
-        public Dictionary<string, object> GetData()
-        {
-            Dictionary<string, object> data = new Dictionary<string, object>
-            {
-                { "x", X },
-                { "y", Y },
-                { "z", Z }
-            };
-            return data;
-        }
-
-        public static Vertex Parse(string jsonData)
-        {
-            Dictionary<string, object> jsonDataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
-            return FromData(jsonDataDict);
-        }
-
-        public static Vertex FromData(Dictionary<string, object> jsonDataDict)
-        {
-            double x = DataConverters.ConvertNumericDataToDouble(jsonDataDict["x"]);
-            double y = DataConverters.ConvertNumericDataToDouble(jsonDataDict["y"]);
-            double z = DataConverters.ConvertNumericDataToDouble(jsonDataDict["z"]);
-            return new Vertex(x, y, z);
         }
     }
 }

@@ -166,7 +166,316 @@ namespace CompasXR.Core.Data
         }
 
     } 
+
+    public static class DictionaryHelpers
+    {
+        public static Dictionary<string, object> GetSafeDictionary(Dictionary<string, object> jsonDataDict, string key)
+        {
+            return jsonDataDict.TryGetValue(key, out var obj) && obj is Dictionary<string, object> dict ? dict : new Dictionary<string, object>();
+        }
+        public static Dictionary<string, int[]> GetSafeDictionary<T>(Dictionary<string, object> jsonDataDict, string key)
+        {
+            return jsonDataDict.TryGetValue(key, out var obj) && obj is Dictionary<string, int[]> dict ? dict : new Dictionary<string, int[]>();
+        }
+        public static Dictionary<string, object> GetAsDictionary(Dictionary<string, object> jsonDataDict, string key)
+        {
+            if (jsonDataDict.TryGetValue(key, out var obj))
+            {
+                if (obj is JObject jObj)
+                {
+                    return jObj.ToObject<Dictionary<string, object>>();
+                }
+
+                if (obj is Dictionary<string, object> dict)
+                {
+                    return dict;
+                }
+            }
+            return new Dictionary<string, object>();
+        }
+        public static Dictionary<string, T> GetAsDictionary<T>(Dictionary<string, object> jsonDataDict, string key)
+        {
+            if (jsonDataDict.TryGetValue(key, out var obj))
+            {
+                // Convert from JObject if necessary
+                if (obj is JObject jObj)
+                {
+                    return jObj.ToObject<Dictionary<string, T>>();
+                }
+
+                // Try direct cast
+                if (obj is Dictionary<string, T> dict)
+                {
+                    return dict;
+                }
+            }
+
+            // Fallback to empty dictionary
+            return new Dictionary<string, T>();
+        }
+
+    }
+
     
+
+    /////////////Classes for general Mesh Support.///////////////
+    public class CompasMesh
+    {
+        public Dictionary<string, object> Attributes { get; set; }
+        public Dictionary<string, object> DefaultEdgeAttributes { get; set; }
+        public Dictionary<string, object> DefaultFaceAttributes { get; set; }
+        public Dictionary<string, object> DefaultVertexAttributes { get; set; }
+        public Dictionary<string, int[]> Faces { get; set; }
+        public Dictionary<string, object> FaceData { get; set; }
+        public int MaxFace { get; set; }
+        public int MaxVertex { get; set; }
+        public Dictionary<string, Vertex> Vertex { get; set; }
+        
+        //TODO: ADDED FOR EASE DO NOT KNOW IF I NEED THEM...
+        private int[] tris { get; set; }
+        public Vector3[] normals { get; set; }
+        public Vector2[] uv { get; set; }
+
+        public CompasMesh(
+            Dictionary<string, object> attributes,
+            Dictionary<string, object> defaultEdgeAttributes,
+            Dictionary<string, object> defaultFaceAttributes,
+            Dictionary<string, object> defaultVertexAttributes,
+            Dictionary<string, int[]> faces,
+            Dictionary<string, object> faceData,
+            int maxFace,
+            int maxVertex,
+            Dictionary<string, Vertex> vertex
+        )
+        {
+            Attributes = attributes ?? new Dictionary<string, object>();
+            DefaultEdgeAttributes = defaultEdgeAttributes ?? new Dictionary<string, object>();
+            DefaultFaceAttributes = defaultFaceAttributes ?? new Dictionary<string, object>();
+            DefaultVertexAttributes = defaultVertexAttributes ?? new Dictionary<string, object>();
+            Faces = faces ?? new Dictionary<string, int[]>();
+            FaceData = faceData ?? new Dictionary<string, object>();
+            MaxFace = maxFace;
+            MaxVertex = maxVertex;
+            Vertex = vertex ?? new Dictionary<string, Vertex>();
+        }
+
+        public static Dictionary<string, object> GetVertexDataFromDict(Dictionary<string, Vertex> vertexDict)
+        {
+            Dictionary<string, object> vertexData = new Dictionary<string, object>();
+            for (int i = 0; i < vertexDict.Count; i++)
+            {
+                vertexData[i.ToString()] = vertexDict[i.ToString()].GetData();
+            }
+            return vertexData;
+        }
+        public Dictionary<string, object> GetData()
+        {
+            Dictionary<string, object> data = new Dictionary<string, object>
+            {
+                { "attributes", Attributes },
+                { "default_edge_attributes", DefaultEdgeAttributes },
+                { "default_face_attributes", DefaultFaceAttributes },
+                { "default_vertex_attributes", DefaultVertexAttributes },
+                { "faces", Faces },
+                { "face_data", FaceData },
+                { "max_face", MaxFace },
+                { "max_vertex", MaxVertex },
+                { "vertex", Vertex }
+            };
+            return data;
+        }
+        
+        public static CompasMesh Parse(string jsonData)
+        {
+            Dictionary<string, object> jsonDataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
+            return FromData(jsonDataDict);
+        }
+
+        public static CompasMesh FromData(Dictionary<string, object> jsonDataDict)
+        {
+            if (jsonDataDict == null)
+            {
+                throw new ArgumentNullException(nameof(jsonDataDict), "Input data cannot be null.");
+            }
+
+            Dictionary<string, object> dataDictionary = DictionaryHelpers.GetAsDictionary(jsonDataDict, "data"); //TODO: This is only needed when it comes from dumping a mesh directly using json_dump
+            if (dataDictionary == null || dataDictionary.Count == 0)
+            {
+                dataDictionary = jsonDataDict; //TODO: This will cause errors when loading directly from data...
+            }
+            else
+            {
+                Debug.Log("JOE LOOK FOR ME HERE dataDictionary" + JsonConvert.SerializeObject(dataDictionary));
+            }
+
+            var attributes = DictionaryHelpers.GetSafeDictionary(dataDictionary, "attributes");
+            var defaultEdgeAttributes = DictionaryHelpers.GetSafeDictionary(dataDictionary, "default_edge_attributes");
+            var defaultFaceAttributes = DictionaryHelpers.GetSafeDictionary(dataDictionary, "default_face_attributes");
+            var defaultVertexAttributes = DictionaryHelpers.GetSafeDictionary(dataDictionary, "default_vertex_attributes");
+            // var faces = GetSafeDictionary<int[]>(dataDictionary, "face");
+            Dictionary<string, object> faces = DictionaryHelpers.GetAsDictionary(dataDictionary, "face");
+
+            Dictionary<string, int[]> facesDict = new Dictionary<string, int[]>();
+            foreach (var kvp in faces)
+            {
+                if (kvp.Value is JArray jArray)
+                {
+                    int[] faceArray = jArray.ToObject<int[]>();
+                    facesDict[kvp.Key] = faceArray;
+                }
+                else
+                {
+                    Debug.LogWarning($"Mesh.FromData: Invalid face data for key {kvp.Key}. Expected JArray.");
+                }
+            }
+
+            Debug.Log("JOE LOOK FOR ME HERE faces" + JsonConvert.SerializeObject(facesDict));
+            var faceData = DictionaryHelpers.GetSafeDictionary(dataDictionary, "face_data");
+
+            int maxFace = dataDictionary.TryGetValue("max_face", out var maxFaceObj) ? Convert.ToInt32(maxFaceObj) : 0;
+            int maxVertex = dataDictionary.TryGetValue("max_vertex", out var maxVertexObj) ? Convert.ToInt32(maxVertexObj) : 0;
+            Debug.Log("JOE LOOK FOR ME HERE maxFace" + JsonConvert.SerializeObject(maxFaceObj));
+            Debug.Log("JOE LOOK FOR ME HERE maxVertex" + JsonConvert.SerializeObject(maxVertexObj));
+
+            Dictionary<string, object> vertexDataDict = DictionaryHelpers.GetAsDictionary(dataDictionary, "vertex");
+            Dictionary<string, Vertex> vertex = new Dictionary<string, Vertex>();
+
+            if (vertexDataDict.Count == 0)
+            {
+                Debug.LogWarning("Mesh.FromData: Vertex data not found or invalid. Setting to empty dictionary.");
+            }
+            else
+            {
+                foreach (var kvp in vertexDataDict)
+                {
+                    Dictionary<string, object> individualVertexData = DictionaryHelpers.GetAsDictionary(vertexDataDict, kvp.Key.ToString());
+                    if (individualVertexData is Dictionary<string, object>)
+                    {
+                        double x = DataConverters.ConvertNumericDataToDouble(individualVertexData["x"]);
+                        double y = DataConverters.ConvertNumericDataToDouble(individualVertexData["y"]);
+                        double z = DataConverters.ConvertNumericDataToDouble(individualVertexData["z"]);
+                        vertex[kvp.Key] = new Vertex(x, y, z);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Mesh.FromData: Invalid vertex data for key {kvp.Key}. Expected Dictionary<string, object>.");
+                    }
+                }
+            }
+            return new CompasMesh(attributes, defaultEdgeAttributes, defaultFaceAttributes, defaultVertexAttributes, facesDict, faceData, maxFace, maxVertex, vertex);
+        }
+
+        public void CalculateTriangles()
+        {
+            List<int> triangles = new List<int>();
+
+            foreach (var face in Faces)
+            {
+                // Assuming each face is a triangle (consists of three vertices)
+                if (face.Value.Length != 3)
+                {
+                    throw new System.InvalidOperationException("Each face must have exactly 3 vertices to calculate triangles.");
+                }
+
+                triangles.AddRange(face.Value);
+            }
+
+            tris = triangles.ToArray();
+        }
+        public GameObject GenerateMeshFromRHMesh()
+        {
+            if (Vertex == null || Faces == null)
+            {
+                Debug.LogError("Vertices or faces data is missing.");
+                return null;
+            }
+
+            // Convert vertices to Unity Vector3 format
+            Vector3[] vertices = new Vector3[Vertex.Count];
+            for (int i = 0; i < Vertex.Count; i++)
+            {
+                
+                Vector3 rhVec = ObjectTransformations.GetPositionFromRightHand(Vertex[i.ToString()].Values);
+                vertices[i] = rhVec;
+            }
+
+            // Calculate triangles if not already done
+            if (tris == null || tris.Length == 0)
+            {
+                CalculateTriangles();
+            }
+
+            // Create the new mesh
+            UnityEngine.Mesh mesh = new UnityEngine.Mesh
+            {
+                name = "TESTING OBJECT",
+                vertices = vertices,
+                triangles = this.tris,
+                normals = this.normals,
+                uv = this.uv
+            };
+
+            // Recalculate bounds and normals if not provided
+            if (this.normals == null || this.normals.Length == 0)
+            {
+                mesh.RecalculateNormals();
+            }
+            mesh.RecalculateBounds();
+
+            // Create a new game object and add necessary components
+            GameObject meshObject = new GameObject("TESTING OBJECT");
+            MeshFilter meshFilter = meshObject.AddComponent<MeshFilter>();
+            MeshRenderer meshRenderer = meshObject.AddComponent<MeshRenderer>();
+
+            // Assign the mesh to the mesh filter
+            meshFilter.mesh = mesh;
+
+            return meshObject;
+        }
+    }
+
+    public class Vertex
+    {
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Z { get; set; }
+
+        public float[] Values { get; set; }
+
+        public Vertex(double x, double y, double z)
+        {
+            X = x;
+            Y = y;
+            Z = z;
+            Values = new float[] { (float)x, (float)y, (float)z };
+        }
+
+        public Dictionary<string, object> GetData()
+        {
+            Dictionary<string, object> data = new Dictionary<string, object>
+            {
+                { "x", X },
+                { "y", Y },
+                { "z", Z }
+            };
+            return data;
+        }
+
+        public static Vertex Parse(string jsonData)
+        {
+            Dictionary<string, object> jsonDataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
+            return FromData(jsonDataDict);
+        }
+
+        public static Vertex FromData(Dictionary<string, object> jsonDataDict)
+        {
+            double x = DataConverters.ConvertNumericDataToDouble(jsonDataDict["x"]);
+            double y = DataConverters.ConvertNumericDataToDouble(jsonDataDict["y"]);
+            double z = DataConverters.ConvertNumericDataToDouble(jsonDataDict["z"]);
+            return new Vertex(x, y, z);
+        }
+    }
+
 
    /////////////Classes for Assembly Desearialization./////////////// 
     [System.Serializable]

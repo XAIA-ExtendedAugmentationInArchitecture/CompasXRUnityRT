@@ -297,16 +297,104 @@ namespace CompasXR.Robots
             */
 
             List<JointTrajectoryPoint> trajectoryPointsList = mimicResult.CombinedTrajectoryPoints;
+            List<Trajectory> trajectoryList = mimicResult.Trajectories;
             Debug.Log($"InstantiateRobotFromConfigList: {trajectoryPointsList.Count} configurations.");
             
             if (trajectoryPointsList.Count > 0 && robotToConfigure != null && URDFLinks.Count > 0 || parentObject != null)
             {
-                InstantiateRobotTrajectoryFromJointTrajectoryPoints(trajectoryPointsList, mimicResult.RobotBaseFrame, robotToConfigure, URDFLinks, parentObject, visibility);
+                InstatintaiteRobotFromTrajectoryList(trajectoryList, mimicResult.RobotBaseFrame, robotToConfigure, URDFLinks, parentObject, visibility);
+                // InstantiateRobotTrajectoryFromJointTrajectoryPoints(trajectoryPointsList, mimicResult.RobotBaseFrame, robotToConfigure, URDFLinks, parentObject, visibility);
+                AttachedCollisionMesh attachedCollisionMesh = mimicResult.Trajectories[0].AttachedCollisionMeshes[0];
+                attachedCollisionMesh.CollisionMesh.Mesh.GenerateMeshFromRHMesh();
             }
             else
             {
                 
                 Debug.LogError("InstantiateRobotTrajectory: Trajectory is empty, robotToConfigure is null, or joint_names is empty.");
+            }
+        }
+
+        public void InstatintaiteRobotFromTrajectoryList(List<Trajectory> trajectories, Frame robotBaseFrame, GameObject robotToConfigure, Dictionary<string, string> URDFLinks, GameObject parentObject, bool visibility)
+        {
+            /*
+            InstantiateRobotTrajectoryFromJointsDict is responsible for instantiating the robot trajectory in the scene.
+            */
+
+            Debug.Log($"InstantiateRobotFromConfigList: {trajectories.Count} configurations.");
+            
+            if (trajectories.Count > 0 && robotToConfigure != null && URDFLinks.Count > 0 || parentObject != null)
+            {
+                int trajectoryCount = trajectories.Count;
+                for (int i = 0; i < trajectoryCount; i++)
+                {
+                    Debug.Log($"InstantiateRobotTrajectory: Instantiating Trajectory {trajectories.Count}.");
+                    GameObject trajectoryParent = Instantiate(new GameObject());
+                    trajectoryParent.name = $"Trajectory{i}";
+                    trajectoryParent.transform.SetParent(parentObject.transform, false);
+                    InstantiateRobotTrajectoryFromJointTrajectoryPoints(trajectories[i].Points, robotBaseFrame, robotToConfigure, URDFLinks, trajectoryParent, visibility);
+                
+                    if(trajectories[i].AttachedCollisionMeshes.Count > 0)
+                    {
+                        foreach (AttachedCollisionMesh attachedCollisionMesh in trajectories[i].AttachedCollisionMeshes)
+                        {
+                            GameObject acmGameObject = attachedCollisionMesh.CollisionMesh.Mesh.GenerateMeshFromRHMesh();
+                            if(acmGameObject != null)
+                            {
+                                acmGameObject.transform.GetComponentInChildren<MeshRenderer>().material = instantiateObjects.InactiveRobotMaterial;
+                                Debug.Log(attachedCollisionMesh.CollisionMesh.Id);
+                                acmGameObject.name = attachedCollisionMesh.CollisionMesh.Id;
+                                AttachCollisionMeshToTrajectoryConfigs(attachedCollisionMesh, trajectories[i], acmGameObject, trajectoryParent);
+                            }
+                            else
+                            {
+                                Debug.Log("InstatintaiteRobotFromTrajectoryList: Attached Collision Mesh is null.");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log("InstatintaiteRobotFromTrajectoryList: No attached collision meshes found.");
+                    }
+                }
+
+                robotToConfigure.SetActive(false);
+            }
+            else
+            {
+                Debug.LogWarning("InstantiateRobotTrajectory: Trajectory is empty, robotToConfigure is null, or joint_names is empty.");
+            }
+        }
+
+        public void AttachCollisionMeshToTrajectoryConfigs(AttachedCollisionMesh acm, Trajectory trajectory, GameObject attachedCollisionMeshObject, GameObject trajectoryParent)
+        {
+            /*
+            AttachCollisionMeshToTrajectoryConfigs is responsible for attaching the collision mesh to the trajectory configs.
+            */
+
+            Debug.Log($"AttachCollisionMeshToTrajectoryConfigs: For {trajectory} with {trajectory.Points.Count} configurations.");
+
+            for (int i = 0; i < trajectory.Points.Count; i++)
+            {
+                Debug.Log($"AttachCollisionMeshToTrajectoryConfigs: Config {i} with {trajectory.Points[i].JointValues.Count} joints.");
+                GameObject trajectoryConfig = trajectoryParent.FindObject($"Config {i}");
+                if(trajectoryConfig != null)
+                {
+                    Debug.Log($"AttachCollisionMeshToTrajectoryConfigs: Trajectory Config {trajectoryConfig.name} found.");
+                    GameObject linkToAttachTo = trajectoryConfig.FindObject(acm.LinkName);
+                    if(linkToAttachTo != null)
+                    {
+                        attachedCollisionMeshObject = Instantiate(attachedCollisionMeshObject, linkToAttachTo.transform.position, linkToAttachTo.transform.rotation);
+                        attachedCollisionMeshObject.transform.SetParent(linkToAttachTo.transform, true);
+                    }
+                    else
+                    {
+                        Debug.Log($"AttachCollisionMeshToTrajectoryConfigs: Link {acm.LinkName} not found in trajectory config {i}.");
+                    }
+                }
+                else
+                {
+                    Debug.Log($"AttachCollisionMeshToTrajectoryConfigs: Trajectory Config {i} not found.");
+                }
             }
         }
         public void InstantiateRobotTrajectoryFromJointTrajectoryPoints(List<JointTrajectoryPoint> points, Frame robotBaseFrame, GameObject robotToConfigure, Dictionary<string, string> URDFLinks, GameObject parentObject, bool visibility)
@@ -355,6 +443,42 @@ namespace CompasXR.Robots
                 Debug.LogError("InstantiateRobotTrajectory: Trajectory is empty, robotToConfigure is null, or joint_names is empty.");
             }
         }
+
+        // IEnumerator AttachTrajectoryCollisionMeshesAfterDelay(List<Trajectory> trajectories, string robotName, float delay = 0.1f)
+        // {
+        //     yield return new WaitForSeconds(delay);
+        //     AttachCollisionMeshesToTrajectory();
+        //     // AttachElementToTrajectoryEndEffectorLinks(result.ElementID, parentObject.name, result.RobotName, result.EndEffectorLinkName, result.PickIndex.Value, result.Trajectory.Count);
+        // }
+
+        // public void AttachCollisionMeshesToTrajectory(List<Trajectory> trajectories)
+        // {
+        //     /*
+        //     AttachCollisionMeshesToTrajectory is responsible for attaching collision meshes to the trajectory in the scene.
+        //     */
+
+        //     Debug.Log($"AttachCollisionMeshesToTrajectory: For {trajectories.Count} trajectories.");
+
+
+        //     foreach (var trajectory in trajectories)
+        //     {
+        //         if (trajectoryParent != null)
+        //         {
+        //             AttachCollisionMeshesToTrajectory()
+        //         }
+        //     }
+        // }
+
+        // public void AttachCollisionMeshesToTrajectory(Trajectory trajectory, GameObject trajectoryParent, string robotName, int trajectoryCount, string trajectoryID)
+        // {
+        //     /*
+        //     AttachCollisionMeshesToTrajectory is responsible for attaching collision meshes to the trajectory in the scene.
+        //     */
+
+        //     Debug.Log($"AttachCollisionMeshesToTrajectory: For {trajectory.TrajectoryID} with {trajectory.Trajectory.Count} configurations.");
+
+        // }
+
 
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////////////////////////////
         public void InstantiateRobotTrajectoryFromJointsDict(GetTrajectoryResult result, List<Dictionary<string, float>> TrajectoryConfigs, Frame robotBaseFrame, string trajectoryID, GameObject robotToConfigure, Dictionary<string, string> URDFLinks, GameObject parentObject, bool visibility)
