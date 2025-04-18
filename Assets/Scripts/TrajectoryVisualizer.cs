@@ -53,6 +53,9 @@ namespace CompasXR.Robots
         public Frame databaseRobotBaseFrame;
         public DatabaseManager databaseManager;
         public GameObject humanZoneMimicReachibility;
+
+        public int? previousTrajectoryIndex;
+        public int? previousConfigIndex;
             
         ////////////////////////////////////////// Monobehaviour Methods ////////////////////////////////////////////////////////
         void Start()
@@ -289,7 +292,7 @@ namespace CompasXR.Robots
 
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////////////////////////////
 
-        //TODO: TEST
+        //TODO: TEST UPDATED THIS FOR THE MULTIPLE TRAJECTORY PARSING.
         public void InstantateRobotFromMimicMessage(MimicTrajectoryResultMessage mimicResult, GameObject robotToConfigure, Dictionary<string, string> URDFLinks, GameObject parentObject, bool visibility)
         {
             /*
@@ -313,7 +316,6 @@ namespace CompasXR.Robots
                 Debug.LogError("InstantiateRobotTrajectory: Trajectory is empty, robotToConfigure is null, or joint_names is empty.");
             }
         }
-
         public void InstatintaiteRobotFromTrajectoryList(List<Trajectory> trajectories, Frame robotBaseFrame, GameObject robotToConfigure, Dictionary<string, string> URDFLinks, GameObject parentObject, bool visibility)
         {
             /*
@@ -364,7 +366,6 @@ namespace CompasXR.Robots
                 Debug.LogWarning("InstantiateRobotTrajectory: Trajectory is empty, robotToConfigure is null, or joint_names is empty.");
             }
         }
-
         public void AttachCollisionMeshToTrajectoryConfigs(AttachedCollisionMesh acm, Trajectory trajectory, GameObject attachedCollisionMeshObject, GameObject trajectoryParent)
         {
             /*
@@ -384,6 +385,7 @@ namespace CompasXR.Robots
                     if(linkToAttachTo != null)
                     {
                         attachedCollisionMeshObject = Instantiate(attachedCollisionMeshObject, linkToAttachTo.transform.position, linkToAttachTo.transform.rotation);
+                        attachedCollisionMeshObject.name = $"{acm.CollisionMesh.Id}";
                         attachedCollisionMeshObject.transform.SetParent(linkToAttachTo.transform, true);
                     }
                     else
@@ -443,42 +445,6 @@ namespace CompasXR.Robots
                 Debug.LogError("InstantiateRobotTrajectory: Trajectory is empty, robotToConfigure is null, or joint_names is empty.");
             }
         }
-
-        // IEnumerator AttachTrajectoryCollisionMeshesAfterDelay(List<Trajectory> trajectories, string robotName, float delay = 0.1f)
-        // {
-        //     yield return new WaitForSeconds(delay);
-        //     AttachCollisionMeshesToTrajectory();
-        //     // AttachElementToTrajectoryEndEffectorLinks(result.ElementID, parentObject.name, result.RobotName, result.EndEffectorLinkName, result.PickIndex.Value, result.Trajectory.Count);
-        // }
-
-        // public void AttachCollisionMeshesToTrajectory(List<Trajectory> trajectories)
-        // {
-        //     /*
-        //     AttachCollisionMeshesToTrajectory is responsible for attaching collision meshes to the trajectory in the scene.
-        //     */
-
-        //     Debug.Log($"AttachCollisionMeshesToTrajectory: For {trajectories.Count} trajectories.");
-
-
-        //     foreach (var trajectory in trajectories)
-        //     {
-        //         if (trajectoryParent != null)
-        //         {
-        //             AttachCollisionMeshesToTrajectory()
-        //         }
-        //     }
-        // }
-
-        // public void AttachCollisionMeshesToTrajectory(Trajectory trajectory, GameObject trajectoryParent, string robotName, int trajectoryCount, string trajectoryID)
-        // {
-        //     /*
-        //     AttachCollisionMeshesToTrajectory is responsible for attaching collision meshes to the trajectory in the scene.
-        //     */
-
-        //     Debug.Log($"AttachCollisionMeshesToTrajectory: For {trajectory.TrajectoryID} with {trajectory.Trajectory.Count} configurations.");
-
-        // }
-
 
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////////////////////////////
         public void InstantiateRobotTrajectoryFromJointsDict(GetTrajectoryResult result, List<Dictionary<string, float>> TrajectoryConfigs, Frame robotBaseFrame, string trajectoryID, GameObject robotToConfigure, Dictionary<string, string> URDFLinks, GameObject parentObject, bool visibility)
@@ -669,6 +635,78 @@ namespace CompasXR.Robots
             }
 
             previousTrajectoryReviewSliderValue = sliderValue;
+        }
+        public void ColorRobotConfigfromSliderInputCompoundTrajectories(int trajectoryIndex, int configIndex, List<Trajectory> trajectories, Material inactiveMaterial, Material activeMaterial, ref int? previousConfigIndex, ref int? previoustrajectoryIndex)
+        {
+            /*
+            ColorRobotConfigfromSlider is responsible for coloring the robot configuration from the slider input for trajectory review.
+            */
+            Debug.Log($"ColorRobotConfigfromSliderInputCompoundTrajectories: Coloring robot Trajectory {trajectoryIndex} config {configIndex} for active trajectory.");
+            if(previousConfigIndex != null && previoustrajectoryIndex != null)
+            {
+                GameObject previousRobotGameObject = ActiveTrajectoryParentObject.FindObject($"Trajectory{previousTrajectoryIndex.Value}").FindObject($"Config {previousConfigIndex.Value}");
+                URDFManagement.ColorURDFGameObject(previousRobotGameObject, inactiveMaterial, ref URDFRenderComponents);
+
+                //Attached GameObject
+                Trajectory previousTrajectory = trajectories[previoustrajectoryIndex.Value];
+                if(previousTrajectory == null)
+                {
+                    Debug.Log($"ColorRobotConfigfromSliderInputCompoundTrajectories: Previous Trajectory {previoustrajectoryIndex} is null.");
+                }
+                List<AttachedCollisionMesh> previousAttachedCollisionMeshes = previousTrajectory.AttachedCollisionMeshes;
+                if(previousAttachedCollisionMeshes != null)
+                {
+                    foreach (AttachedCollisionMesh previousattachedCollisionMesh in previousAttachedCollisionMeshes)
+                    {
+                        GameObject previousAttachedGameObject = previousRobotGameObject.FindObject(previousattachedCollisionMesh.CollisionMesh.Id);
+                        if(previousAttachedGameObject != null)
+                        {
+                            previousAttachedGameObject.GetComponentInChildren<Renderer>().material = inactiveMaterial;
+                        }
+                        else
+                        {
+                            Debug.Log($"ColorRobotConfigfromSliderInputCompoundTrajectories: Attached GameObject not found for Trajectory {previoustrajectoryIndex} Config {previousConfigIndex} id {previousattachedCollisionMesh.CollisionMesh.Id}.");
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.Log($"ColorRobotConfigfromSliderInputCompoundTrajectories: Attached GameObject not found for Trajectory {previoustrajectoryIndex} Config {previousConfigIndex}.");
+                }
+            }
+
+            GameObject robotGameObject = ActiveTrajectoryParentObject.FindObject($"Trajectory{trajectoryIndex}").FindObject($"Config {configIndex}");
+            if (robotGameObject == null)
+            {
+                Debug.Log($"ColorRobotConfigfromSliderInputCompoundTrajectories: Robot GameObject not found for Trajectory {trajectoryIndex} Config {configIndex}.");
+            }
+            URDFManagement.ColorURDFGameObject(robotGameObject, activeMaterial, ref URDFRenderComponents);
+
+            //Attached GameObject
+            Trajectory trajectory = trajectories[trajectoryIndex];
+            List<AttachedCollisionMesh> attachedCollisionMeshes = trajectory.AttachedCollisionMeshes;
+            if(attachedCollisionMeshes != null)
+            {
+                foreach (AttachedCollisionMesh attachedCollisionMesh in attachedCollisionMeshes)
+                {
+                    GameObject attachedGameObject = robotGameObject.FindObject(attachedCollisionMesh.CollisionMesh.Id);
+                    if(attachedGameObject != null)
+                    {
+                        attachedGameObject.GetComponentInChildren<Renderer>().material = activeMaterial;
+                    }
+                    else
+                    {
+                        Debug.Log($"ColorRobotConfigfromSliderInputCompoundTrajectories: Attached GameObject not found for Trajectory {previoustrajectoryIndex} Config {previousConfigIndex} id {attachedCollisionMesh.CollisionMesh.Id}.");
+                    }
+                }
+            }
+            else
+            {
+                Debug.Log($"ColorRobotConfigfromSliderInputCompoundTrajectories: Attached GameObject not found for Trajectory {trajectoryIndex} Config {configIndex}.");
+            }
+
+            previoustrajectoryIndex = trajectoryIndex;
+            previousConfigIndex = configIndex;
         }
 
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////////////////////////////

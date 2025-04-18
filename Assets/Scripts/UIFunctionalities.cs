@@ -19,6 +19,7 @@ using Unity.VisualScripting;
 using CompasXR.RoboticTerritories.Data;
 using CompasXR.Robots.MqttData.RoboticTerritories;
 using Unity.XR.CoreUtils;
+using CompasXR.Robots.Data;
 // using Vuforia;
 
 namespace CompasXR.UI
@@ -441,7 +442,9 @@ namespace CompasXR.UI
             //Find Slider Objects
             UserInterface.FindSliderandSetOnValueChangeAction(
             MimicControlsReviewAndExecuteTrajectoryUIObjects, ref MimicTrajectoryReviewSliderObject,
-            ref MimicTrajectoryReviewSlider, "TrajectoryReviewSlider", value => MimicTrajectorySliderReviewMethod(value));
+            // ref MimicTrajectoryReviewSlider, "TrajectoryReviewSlider", value => MimicTrajectorySliderReviewMethod(value));
+            ref MimicTrajectoryReviewSlider, "TrajectoryReviewSlider", value => MimicTrajectorySliderReviewCompoundTrajectories(value));
+            
 
             //Set Mirror Toggle Object
             MimicMirrorToggleObject = MimicControlsSetPointsUIObjects.FindObject("Mirror");
@@ -895,6 +898,64 @@ namespace CompasXR.UI
                 else
                 {
                     Debug.Log("MimicTrajectorySliderReviewMethod: Current Trajectory Count is 0.");
+                }
+            }
+            else
+            {
+                Debug.Log("MimicTrajectorySliderReviewMethod: Current Trajectory is null.");
+            }
+        }
+
+        public void MimicTrajectorySliderReviewCompoundTrajectories(float value) //TODO: WORK HERE AFTER TESTING
+        {
+            if (mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.Trajectories != null)
+            {
+                if (mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.Trajectories.Count > 0)
+                {
+                    
+                    List<Trajectory> trajectories = mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.Trajectories;
+                    List<(int start, int end)> trajectoryRanges = new List<(int, int)>();
+                    int configCount = 0;
+
+                    foreach (Trajectory trajectory in trajectories)
+                    {
+                        int count = trajectory.Points.Count;
+                        trajectoryRanges.Add((configCount, configCount + count - 1));
+                        configCount += count;
+                    }
+
+                    float SliderValue = value;
+                    float SliderMin = 0f;
+                    float SliderMax = 1f;
+                    int targetGlobalIndex = Mathf.RoundToInt(
+                        HelpersExtensions.Remap(SliderValue, SliderMin, SliderMax, 0f, configCount - 1)
+                    );
+
+                    int selectedTrajectoryIndex = -1;
+                    int localIndex = -1;
+
+                    for (int i = 0; i < trajectoryRanges.Count; i++)
+                    {
+                        var (start, end) = trajectoryRanges[i];
+                        if (targetGlobalIndex >= start && targetGlobalIndex <= end)
+                        {
+                            selectedTrajectoryIndex = i;
+                            localIndex = targetGlobalIndex - start;
+                            break;
+                        }
+                    }
+
+                    if (selectedTrajectoryIndex >= 0 && localIndex >= 0)
+                    {
+                        Debug.Log($"Slider = {SliderValue:0.000} → Global Config #{targetGlobalIndex}");
+                        Debug.Log($"Belongs to Trajectory #{selectedTrajectoryIndex}, Local Config #{localIndex}");
+                        trajectoryVisualizer.ColorRobotConfigfromSliderInputCompoundTrajectories(selectedTrajectoryIndex, localIndex, trajectories, instantiateObjects.InactiveRobotMaterial, instantiateObjects.ActiveRobotMaterial, ref trajectoryVisualizer.previousConfigIndex, ref trajectoryVisualizer.previousTrajectoryIndex);
+                        
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Could not map slider to trajectory index.");
+                    }
                 }
             }
             else
@@ -1817,6 +1878,8 @@ namespace CompasXR.UI
                 {
                     TrajectoryReviewSlider.value = 0;
                     trajectoryVisualizer.previousTrajectoryReviewSliderValue = 0;
+                    trajectoryVisualizer.previousConfigIndex = 0;
+                    trajectoryVisualizer.previousTrajectoryIndex = 0;
                 }
             }
 
