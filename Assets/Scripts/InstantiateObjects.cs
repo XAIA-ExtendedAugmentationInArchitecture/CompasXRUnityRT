@@ -12,6 +12,7 @@ using CompasXR.AppSettings;
 using CompasXR.RoboticTerritories.Data;
 using Newtonsoft.Json;
 using CompasXR.Robots;
+using CompasXR.Robots.Data;
 
 
 namespace CompasXR.Core
@@ -32,6 +33,7 @@ namespace CompasXR.Core
         public DatabaseManager databaseManager;
         public UIFunctionalities UIFunctionalities;
         public ScrollSearchManager scrollSearchManager;
+
 
         //Object Materials
         public Material BuiltMaterial;
@@ -73,6 +75,8 @@ namespace CompasXR.Core
         public GameObject InferenceZonesParent;
         public GameObject MimicZonesParent;
         public GameObject TelemimicZonesParent;
+        public TrajectoryVisualizer trajectoryVisualizer;
+
 
         //AR Camera and Object
         public GameObject cameraPositionObject;
@@ -339,44 +343,53 @@ namespace CompasXR.Core
 
             Vector3 position = cameraPositionObject.transform.position;
             Quaternion currentRotation = arCamera.transform.rotation;
-            Quaternion rotation = MapCameraRotationToRobotEndEffector(cameraPositionObject); //TODO: Check this
+            Quaternion rotation = AddAdditionalRotationForEndEffector(cameraPositionObject); //TODO: Check this
 
-            float radius = 0.1f;
-            Color color = new Color(1.0f, 1.0f, 0.0f, 1.0f);
-            Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
-            GameObject humanPoint = CreateSphereAtPositionAndRotation(position, rotation, radius, color, $"{humanPoints.Count}_MimicPoint");
-            humanPoint.transform.SetParent(humanParent.transform, true);
-            humanPoints.Add(humanPoint);
 
-            Vector3 mappedRobotPosition = Vector3.zero;
-            Quaternion mappedRotation = Quaternion.identity;
+            if (trajectoryVisualizer.humanZoneMimicReachibility == null ||
+                ObjectInstantiaion.IsPositionWithinObject(trajectoryVisualizer.humanZoneMimicReachibility, position))
+            {            
+                float radius = 0.1f;
+                Color color = new Color(1.0f, 1.0f, 0.0f, 1.0f);
+                Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
+                GameObject humanPoint = CreateSphereAtPositionAndRotation(position, rotation, radius, color, $"{humanPoints.Count}_MimicPoint");
+                humanPoint.transform.SetParent(humanParent.transform, true);
+                humanPoints.Add(humanPoint);
+
+                Vector3 mappedRobotPosition = Vector3.zero;
+                Quaternion mappedRotation = Quaternion.identity;
+                
+                if(!Mirror)
+                {
+                    mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, position); //TODO: Check this
+                    mappedRotation = rotation; //TODO: Check this
+                }
+                else
+                {
+                    Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.right); //TODO: CHECK THIS IDK WHATS UP.
+                    Quaternion mirrorRotation = MirrorQuaternion(rotation, humanZone.transform.right);
+                    mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, mirroredPosition);
+                    mappedRotation = mirrorRotation;
+                }
+                GameObject robotPoint = CreateSphereAtPositionAndRotation(mappedRobotPosition, rotation, radius, robotColor, $"{robotPoints.Count}_MimicPoint");
+                robotPoint.transform.rotation = mappedRotation;
+                robotPoint.transform.SetParent(robotParent.transform, true);
+                robotPoints.Add(robotPoint);
             
-            if(!Mirror)
-            {
-                mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, position); //TODO: Check this
-                mappedRotation = rotation; //TODO: Check this
+                if (humanPoints.Count > 1 && robotPoints.Count > 1)
+                {
+                    Debug.Log("CreateMimicPoints: Creating Mimic Points");
+                    DrawLineFromGameObjectList(humanPoints, humanLine, color, 0.01f);
+                    DrawLineFromGameObjectList(robotPoints, robotLine, robotColor, 0.01f);
+                }
+                else
+                {
+                    Debug.LogWarning("CreateMimicPoints: Human or Robot Positions are empty");
+                }
             }
             else
             {
-                Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.right); //TODO: CHECK THIS IDK WHATS UP.
-                Quaternion mirrorRotation = MirrorQuaternion(rotation, humanZone.transform.right);
-                mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, mirroredPosition);
-                mappedRotation = mirrorRotation;
-            }
-            GameObject robotPoint = CreateSphereAtPositionAndRotation(mappedRobotPosition, rotation, radius, robotColor, $"{robotPoints.Count}_MimicPoint");
-            robotPoint.transform.rotation = mappedRotation;
-            robotPoint.transform.SetParent(robotParent.transform, true);
-            robotPoints.Add(robotPoint);
-            
-            if (humanPoints.Count > 1 && robotPoints.Count > 1)
-            {
-                Debug.Log("CreateMimicPoints: Creating Mimic Points");
-                DrawLineFromGameObjectList(humanPoints, humanLine, color, 0.01f);
-                DrawLineFromGameObjectList(robotPoints, robotLine, robotColor, 0.01f);
-            }
-            else
-            {
-                Debug.LogWarning("CreateMimicPoints: Human or Robot Positions are empty");
+                Debug.LogWarning("CreateMimicPoints: POINT IS WITHIN THE ZONE BUT NOT REACHABLE BY ROBOT.");
             }
         }
         public static Vector3 MapPointBetweenBoxes(GameObject sourceBox, GameObject targetBox, Vector3 pointPosition)
@@ -530,7 +543,7 @@ namespace CompasXR.Core
                 Debug.Log("DestroyMimicZoneObjects: Mimic Points are empty");
             }
         }
-        public static Quaternion MapCameraRotationToRobotEndEffector(GameObject cameraObject)
+        public static Quaternion AddAdditionalRotationForEndEffector(GameObject cameraObject)
         {
             if (cameraObject == null)
             {
@@ -743,6 +756,12 @@ namespace CompasXR.Core
             databaseManager = GameObject.Find("DatabaseManager").GetComponent<DatabaseManager>();
             UIFunctionalities = GameObject.Find("UIFunctionalities").GetComponent<UIFunctionalities>();
             scrollSearchManager = GameObject.Find("ScrollSearchManager").GetComponent<ScrollSearchManager>();
+            trajectoryVisualizer = GameObject.Find("TrajectoryVisualizer").GetComponent<TrajectoryVisualizer>();
+
+            if (trajectoryVisualizer == null)
+            {
+                Debug.LogError("TrajectoryVisualizer is null");
+            }
 
             if (scrollSearchManager == null)
             {

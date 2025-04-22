@@ -103,9 +103,10 @@ namespace CompasXR.Robots
                 URDFManagement.SetRobotLocalPositionandRotationFromFrame(databaseRobotBaseFrame, ActiveRobot);
 
                 //TODO: This is a hot fix, but the code should probably be restructured.
-                if(uiFunctionalities.ReachabilityToggleObject.GetComponent<Toggle>().isOn && databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
+                if(databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
                 {
-                    AddReachabilitlyToHumanZone(ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName), databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, visibility);
+                    bool reachVisibiility = uiFunctionalities.ReachabilityToggleObject.GetComponent<Toggle>().isOn;
+                    AddReachabilitlyToHumanZone(ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName), databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, reachVisibiility);
                 }
             }
             else
@@ -722,7 +723,13 @@ namespace CompasXR.Robots
                 {
                     //TODO: ADDED FOR TESTING...
                     //TODO: THiS SERVICE MANAGER NEEDS TO BE UPDATED AS THE COMPAS XR ONE DOES...
-                    AddReachabilitlyToHumanZone(ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName), databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, ActiveRobot.activeSelf);
+                    if (databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
+                    {
+                        AddReachabilitlyToHumanZone(ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName), 
+                        databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, 
+                        databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, 
+                        uiFunctionalities.ReachabilityToggleObject.GetComponentInChildren<Toggle>().isOn);
+                    }
                 }
                 databaseRobotBaseFrame = e.RobotBaseFrame;
             }

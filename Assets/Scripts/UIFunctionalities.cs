@@ -512,14 +512,21 @@ namespace CompasXR.UI
                 case ProjectZones.CurrentZoneMode.Mimic:
                     Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Mimic Mode.");
                     ControlRobotVisibilityBasedOnMode(ProjectZones.CurrentZoneMode.Mimic);
-                    if(ReachabilityToggleObject.GetComponentInChildren<Toggle>().isOn)
+                    if(trajectoryVisualizer.ActiveRobot!= null)
                     {
-                        trajectoryVisualizer.AddReachabilitlyToHumanZone(trajectoryVisualizer.ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName),
-                        databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, true);
+                        if(trajectoryVisualizer.humanZoneMimicReachibility == null)
+                        {
+                            trajectoryVisualizer.AddReachabilitlyToHumanZone(trajectoryVisualizer.ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName),
+                            databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, ReachabilityToggleObject.GetComponentInChildren<Toggle>().isOn);
+                        }
+                        else
+                        {
+                            Debug.LogWarning("ControlARZoneObjectsBasedOnCurrentMode: Reachability Toggle is not on.");
+                        }
                     }
                     else
                     {
-                        Debug.LogWarning("ControlARZoneObjectsBasedOnCurrentMode: Reachability Toggle is not on.");
+                        Debug.LogWarning("ControlARZoneObjectsBasedOnCurrentMode: Active Robot is null.");
                     }
                     break;
                 case ProjectZones.CurrentZoneMode.Telemimic:
@@ -687,12 +694,7 @@ namespace CompasXR.UI
             {
                 if (mimicZones.TryGetValue("robot_zone", out Zone robotZone))
                 {
-                    Debug.Log("SetMimicPoint: Found Human Zone: " + humanZone);
-                    Debug.Log("SetMimicPoint: Human Zone Object: " + humanZone.ZoneObject.GetType());
                     GameObject humanZoneObject = humanZone.ZoneObject;
-
-                    Debug.Log("SetMimicPoint: Found Robot Zone: " + robotZone);
-                    Debug.Log("SetMimicPoint: Robot Zone Object: " + robotZone.ZoneObject.GetType());
                     GameObject robotZoneObject = robotZone.ZoneObject;
 
                     // Additional logic for both zones can go here
@@ -823,15 +825,21 @@ namespace CompasXR.UI
             }
             else
             {    
-                //TODO: Convert GameObjects List to Frames List
-                List<Frame> humanFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicHumanPoints, instantiateObjects.ZonesARPrefabObjects);
-                List<Frame> robotFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicRobotPoints, instantiateObjects.ZonesARPrefabObjects);
+                //TODO: Check if the all the points are within the reachbility of the robot: If they are execute the code below                
+                
+                    //TODO: Convert GameObjects List to Frames List
+                    List<Frame> humanFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicHumanPoints, instantiateObjects.ZonesARPrefabObjects);
+                    List<Frame> robotFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicRobotPoints, instantiateObjects.ZonesARPrefabObjects);
 
-                MimicTrajectoryRequestMessage requestMessage = new MimicTrajectoryRequestMessage(humanFrames, robotFrames, mqttTrajectoryManager.serviceManager.ActiveRobotName); //TODO: ROBOT NAME NEEDS TO BE CHANGED FOR SURE...
-                Debug.Log($"MimicRequestTrajectoryButton: Publishing Mimic request {JsonConvert.SerializeObject(requestMessage.GetData())} on topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic}");
+                    MimicTrajectoryRequestMessage requestMessage = new MimicTrajectoryRequestMessage(humanFrames, robotFrames, mqttTrajectoryManager.serviceManager.ActiveRobotName); //TODO: ROBOT NAME NEEDS TO BE CHANGED FOR SURE...
+                    Debug.Log($"MimicRequestTrajectoryButton: Publishing Mimic request {JsonConvert.SerializeObject(requestMessage.GetData())} on topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic}");
 
-                mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic, requestMessage.GetData());
-                SetMimicControlsActivity(true, false, false, true, false);
+                    mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic, requestMessage.GetData());
+                    SetMimicControlsActivity(true, false, false, true, false);
+
+                //TODO: If they are not make function to remap the points and then exacute the points.
+
+
             }
         }
         public void SignalActiveRobotUpdateFromPlannerRoboticTerritories(string robotName, string activeRobotName, Action visualizeRobotMethod)
