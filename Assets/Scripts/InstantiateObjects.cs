@@ -92,12 +92,20 @@ namespace CompasXR.Core
         //Mimic GameObjects
         public GameObject MimicHumanObjects;
         public GameObject MimicHumanPointsParent;
+        public GameObject MimicHumanSystemProposedPointsParent;
         public GameObject MimicHumanLine;
+
+        public GameObject MimicSystemProposedLineHuman;
+        public GameObject MimicSystemProposedLineRobot;
+
         public GameObject MimicRobotObjects;
         public GameObject MimicRobotPointsParent;
+        public GameObject MimicRobotSystemProposedPointsParent;
         public GameObject MimicRobotLine;
         public List<GameObject> MimicHumanPoints = new List<GameObject>();
+        public List<GameObject> MimicHumanSystemProposedPoints = new List<GameObject>();
         public List<GameObject> MimicRobotPoints = new List<GameObject>();
+        public List<GameObject> MimicRobotSystemProposedPoints = new List<GameObject>();
 
         //Zones AR Prefabs
         public GameObject ZonesARPrefabObjects;
@@ -123,6 +131,10 @@ namespace CompasXR.Core
             {
                 UpdateLinePositionsByGameObjectPositionsList(MimicHumanPoints, MimicHumanLine);
                 UpdateLinePositionsByGameObjectPositionsList(MimicRobotPoints, MimicRobotLine);
+
+                //TODO: TESTING
+                UpdateLinePositionsByGameObjectPositionsList(MimicHumanSystemProposedPoints, MimicSystemProposedLineHuman);
+                UpdateLinePositionsByGameObjectPositionsList(MimicRobotSystemProposedPoints, MimicSystemProposedLineRobot);
             }
         }
 
@@ -342,55 +354,184 @@ namespace CompasXR.Core
             */
 
             Vector3 position = cameraPositionObject.transform.position;
-            Quaternion currentRotation = arCamera.transform.rotation;
             Quaternion rotation = AddAdditionalRotationForEndEffector(cameraPositionObject); //TODO: Check this
-
+            float radius = 0.1f;
+            Color humanColor = new Color(1.0f, 1.0f, 0.0f, 1.0f);
+            Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
 
             if (trajectoryVisualizer.humanZoneMimicReachibility == null ||
                 ObjectInstantiaion.IsPositionWithinObject(trajectoryVisualizer.humanZoneMimicReachibility, position))
             {            
-                float radius = 0.1f;
-                Color color = new Color(1.0f, 1.0f, 0.0f, 1.0f);
-                Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
-                GameObject humanPoint = CreateSphereAtPositionAndRotation(position, rotation, radius, color, $"{humanPoints.Count}_MimicPoint");
-                humanPoint.transform.SetParent(humanParent.transform, true);
-                humanPoints.Add(humanPoint);
-
-                Vector3 mappedRobotPosition = Vector3.zero;
-                Quaternion mappedRotation = Quaternion.identity;
-                
-                if(!Mirror)
-                {
-                    mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, position); //TODO: Check this
-                    mappedRotation = rotation; //TODO: Check this
-                }
-                else
-                {
-                    Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.right); //TODO: CHECK THIS IDK WHATS UP.
-                    Quaternion mirrorRotation = MirrorQuaternion(rotation, humanZone.transform.right);
-                    mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, mirroredPosition);
-                    mappedRotation = mirrorRotation;
-                }
-                GameObject robotPoint = CreateSphereAtPositionAndRotation(mappedRobotPosition, rotation, radius, robotColor, $"{robotPoints.Count}_MimicPoint");
-                robotPoint.transform.rotation = mappedRotation;
-                robotPoint.transform.SetParent(robotParent.transform, true);
-                robotPoints.Add(robotPoint);
-            
-                if (humanPoints.Count > 1 && robotPoints.Count > 1)
-                {
-                    Debug.Log("CreateMimicPoints: Creating Mimic Points");
-                    DrawLineFromGameObjectList(humanPoints, humanLine, color, 0.01f);
-                    DrawLineFromGameObjectList(robotPoints, robotLine, robotColor, 0.01f);
-                }
-                else
-                {
-                    Debug.LogWarning("CreateMimicPoints: Human or Robot Positions are empty");
-                }
+                CreateSpheresForMimic(humanZone, robotZone, ref humanPoints, ref robotPoints, humanParent, robotParent, position, rotation, radius, humanColor, robotColor, $"{humanPoints.Count}_MimicPoint", $"{robotPoints.Count}_MimicPoint", true, Mirror);
             }
             else
             {
+                CreateSpheresForMimic(humanZone, robotZone, ref humanPoints, ref robotPoints, 
+                humanParent, robotParent, position, rotation, 
+                radius, humanColor, robotColor, $"{humanPoints.Count}_MimicPoint", $"{robotPoints.Count}_MimicPoint", true, Mirror);
+
+                // //TODO: Quick test for the closest reachable point:
+                // CreateSpheresForMimic(humanZone, robotZone, ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints, 
+                // MimicSystemProposedLineHuman, MimicSystemProposedLineRobot, MimicHumanSystemProposedPointsParent, MimicRobotSystemProposedPointsParent, 
+                // closestReachablePoint, rotation, radius, Color.red, Color.grey, $"{humanPoints.Count}_MimicPointProposal", $"{robotPoints.Count}_MimicPointProposal", false, Mirror);
+                //TODO: TESTING...
+                CreateSystemProposalPoints(humanZone, robotZone, trajectoryVisualizer.humanZoneMimicReachibility, ref humanPoints, 
+                ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints,
+                MimicSystemProposedLineHuman, MimicHumanSystemProposedPointsParent, MimicSystemProposedLineRobot, 
+                MimicRobotSystemProposedPointsParent, Mirror);
+
                 Debug.LogWarning("CreateMimicPoints: POINT IS WITHIN THE ZONE BUT NOT REACHABLE BY ROBOT.");
             }
+
+            if (humanPoints.Count > 1 && robotPoints.Count > 1)
+            {
+                Debug.Log("CreateMimicPoints: Creating Mimic Points");
+                DrawLineFromGameObjectList(humanPoints, humanLine, humanColor, 0.01f);
+                DrawLineFromGameObjectList(robotPoints, robotLine, robotColor, 0.01f);
+            }
+            else
+            {
+                Debug.LogWarning("CreateMimicPoints: Human or Robot Positions are empty");
+            }
+        }
+
+        public void CreateSystemProposalPoints(GameObject humanZone, GameObject robotZone, GameObject reachabilitySphere, ref List<GameObject> userSetHumanPointsList, 
+        ref List<GameObject> systemProposedHumanPointsList, ref List<GameObject> systemProposedRobotPointsList,
+        GameObject systemProposedHumanLine, GameObject systemProposedHumanPointsParent, GameObject systemProposedRobotLine, 
+        GameObject systemProposedRobotPointsParent, bool Mirror=false)
+        {
+            /*
+            * Method is used to create the mimic points in the AR space
+            */
+
+            if (systemProposedHumanPointsList != null || systemProposedRobotPointsList != null)
+            {
+                Debug.Log("CreateSystemProposalPoints: Destroying Previous System Proposed Points");
+                ObjectInstantiaion.DestroyChildrenOfGameObject(systemProposedHumanPointsParent);
+                ObjectInstantiaion.DestroyChildrenOfGameObject(systemProposedRobotPointsParent);
+                systemProposedHumanPointsList.Clear();
+                systemProposedRobotPointsList.Clear();
+            }
+            if (reachabilitySphere == null)
+            {
+                Debug.LogWarning("CreateSystemProposalPoints: Reachability Sphere is null.");
+                return;
+            }
+
+            //TODO: Set Activity of the system proposed line and points.
+            systemProposedHumanLine.SetActive(true);
+            systemProposedHumanPointsParent.SetActive(true);
+            systemProposedRobotLine.SetActive(true);
+            systemProposedRobotPointsParent.SetActive(true);
+
+            List<GameObject> pointsToCheck = new List<GameObject>(userSetHumanPointsList);
+
+            float radius = 0.1f;
+
+            for (int i = 0; i < pointsToCheck.Count; i++)
+            {
+                GameObject point = pointsToCheck[i];
+                Vector3 position = point.transform.position;
+                Quaternion rotation = point.transform.rotation;
+
+                if (!ObjectInstantiaion.IsPositionWithinObject(reachabilitySphere, position))
+                {
+                    position = FindClosestReachablePoint(reachabilitySphere, position);
+                }
+                else
+                {
+                    Debug.LogWarning($"CreateSystemProposalPoints: Point {position} is inside the reachability sphere.");
+                }
+
+                //TODO: THIS IS HUGE, DOUBLE CHECK ROTATION ON THE PHONE.
+                CreateSpheresForMimic(humanZone, robotZone, ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints, 
+                systemProposedHumanPointsParent, systemProposedRobotPointsParent, 
+                position, rotation, radius, Color.red, Color.red, $"{i}_MimicPointProposal", $"{i}_MimicPointProposal", true, Mirror);
+            }
+
+            if (systemProposedHumanPointsList.Count > 1 && systemProposedRobotPointsList.Count > 1)
+            {
+                Debug.Log("CreateSystemTrajectoryProposal: Creating Mimic Points");
+                DrawLineFromGameObjectList(systemProposedHumanPointsList, systemProposedHumanLine, Color.red, 0.01f);
+                DrawLineFromGameObjectList(systemProposedRobotPointsList, systemProposedRobotLine, Color.red, 0.01f);
+            }
+            else
+            {
+                Debug.LogWarning("CreateSystemTrajectoryProposal: Human or Robot Positions are empty");
+            }
+        }
+
+        public void CreateSpheresForMimic(GameObject humanZone, GameObject robotZone, ref List<GameObject> humanPoints, 
+        ref List<GameObject> robotPoints, GameObject humanParent, 
+        GameObject robotParent,
+        Vector3 position, Quaternion rotation, float radius, Color humanColor, Color robotColor, string humanPointName, string robotPointName, bool addToPointsList =true, //TODO: ADDED THESE
+        bool Mirror=false)
+        {
+            GameObject humanPoint = CreateSphereAtPositionAndRotation(position, rotation, radius, humanColor, humanPointName);//$"{humanPoints.Count}_MimicPoint");
+            humanPoint.transform.SetParent(humanParent.transform, true);
+            if(addToPointsList)
+            {
+                humanPoints.Add(humanPoint);
+            }
+            else
+            {
+                Debug.LogWarning("CreateSpheresForMimic: Human Point is not added to the list.");
+            }
+
+            Vector3 mappedRobotPosition = Vector3.zero;
+            Quaternion mappedRotation = Quaternion.identity;
+            
+            if(!Mirror)
+            {
+                mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, position); //TODO: Check this
+                mappedRotation = rotation; //TODO: Check this
+            }
+            else
+            {
+                Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.right); //TODO: CHECK THIS IDK WHATS UP.
+                Quaternion mirrorRotation = MirrorQuaternion(rotation, humanZone.transform.right);
+                mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, mirroredPosition);
+                mappedRotation = mirrorRotation;
+            }
+
+            GameObject robotPoint = CreateSphereAtPositionAndRotation(mappedRobotPosition, rotation, radius, robotColor, robotPointName);//, $"{robotPoints.Count}_MimicPoint");
+            robotPoint.transform.rotation = mappedRotation;
+            robotPoint.transform.SetParent(robotParent.transform, true);
+            if(addToPointsList)
+            {
+                robotPoints.Add(robotPoint);
+            }
+            else
+            {
+                Debug.LogWarning("CreateSpheresForMimic: Robot Point is not added to the list.");
+            }
+        }
+
+        public Vector3 FindClosestReachablePoint(GameObject reachabilitySphere, Vector3 desiredPosition)
+        {
+            /*
+            * Method is used to find the closest reachable point in the zone.
+            */
+            if (reachabilitySphere == null)
+            {
+                Debug.LogError("FindClosestReachablePoint: Zone GameObject is null.");
+                return Vector3.zero;
+            }
+
+            Vector3 center = ObjectTransformations.FindGameObjectCenter(reachabilitySphere);
+
+            // Use half of the scaled size if the sphere is scaled from a 1-unit diameter (default Unity sphere)
+            float radius = 0.5f * reachabilitySphere.transform.lossyScale.x;
+
+            Vector3 direction = desiredPosition - center;
+            float distance = direction.magnitude;
+
+            if (distance <= radius)
+            {
+                return desiredPosition;
+            }
+
+            return center + direction.normalized * radius;
         }
         public static Vector3 MapPointBetweenBoxes(GameObject sourceBox, GameObject targetBox, Vector3 pointPosition)
         {
@@ -793,11 +934,20 @@ namespace CompasXR.Core
 
             //FindObjects for Mimic Controls
             MimicHumanObjects = ZonesARPrefabObjects.FindObject("HumanObjects");
-            MimicHumanPointsParent = MimicHumanObjects.FindObject("Points");
+            MimicHumanPointsParent = MimicHumanObjects.FindObject("Points").FindObject("UserSetPoints");
+            MimicHumanSystemProposedPointsParent = MimicHumanObjects.FindObject("Points").FindObject("SystemProposedPoints");
             MimicHumanLine = MimicHumanObjects.FindObject("HumanLine");
+            MimicSystemProposedLineHuman = MimicHumanObjects.FindObject("HumanSystemProposedLine");
             MimicRobotObjects = ZonesARPrefabObjects.FindObject("RobotObjects");
-            MimicRobotPointsParent = MimicRobotObjects.FindObject("Points");
+            MimicRobotPointsParent = MimicRobotObjects.FindObject("Points").FindObject("UserSetPoints");
+            MimicRobotSystemProposedPointsParent = MimicRobotObjects.FindObject("Points").FindObject("SystemProposedPoints");
             MimicRobotLine = MimicRobotObjects.FindObject("RobotLine");
+            MimicSystemProposedLineRobot = MimicRobotObjects.FindObject("RobotSystemProposedLine");
+
+            if(MimicHumanSystemProposedPointsParent == null || MimicRobotSystemProposedPointsParent == null)
+            {
+                Debug.LogWarning("MimicHumanSystemProposedPointsParent or MimicRobotSystemProposedPointsParent is null");
+            }
 
             //Find AR and system management items
             cameraPositionObject = GameObject.Find("XR Origin").FindObject("Camera Offset").FindObject("Main Camera");

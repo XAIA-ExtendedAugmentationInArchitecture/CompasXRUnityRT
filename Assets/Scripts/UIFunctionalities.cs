@@ -913,8 +913,7 @@ namespace CompasXR.UI
                 Debug.Log("MimicTrajectorySliderReviewMethod: Current Trajectory is null.");
             }
         }
-
-        public void MimicTrajectorySliderReviewCompoundTrajectories(float value) //TODO: WORK HERE AFTER TESTING
+        public void MimicTrajectorySliderReviewCompoundTrajectories(float value)
         {
             if (mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.Trajectories != null)
             {
