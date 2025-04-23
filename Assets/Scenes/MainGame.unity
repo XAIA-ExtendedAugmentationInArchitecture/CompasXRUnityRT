@@ -58902,7 +58902,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1627744095
 RectTransform:
   m_ObjectHideFlags: 0
@@ -85393,6 +85393,7 @@ MonoBehaviour:
   TransactionLockActiveWarningMessageObject: {fileID: 0}
   ActiveRobotCouldNotBeFoundWarningMessage: {fileID: 0}
   ActiveRobotUpdatedFromPlannerMessageObject: {fileID: 0}
+  MimicRemapPointsToRobotReachabilityMessage: {fileID: 0}
   TrajectoryResponseIncorrectWarningMessageObject: {fileID: 0}
   ConfigDoesNotMatchURDFStructureWarningMessageObject: {fileID: 0}
   TrajectoryNullWarningMessageObject: {fileID: 0}
@@ -85472,6 +85473,7 @@ MonoBehaviour:
   MimicSetPointGreenScreen: {fileID: 0}
   MimicUndoPointRedScreen: {fileID: 0}
   MimicSetandUndoFlashDuration: 0.1
+  FollowMeButtonHeldEventComponent: {fileID: 0}
 --- !u!222 &3178311101136892731
 CanvasRenderer:
   m_ObjectHideFlags: 0
