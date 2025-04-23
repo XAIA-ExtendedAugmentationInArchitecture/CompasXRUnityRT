@@ -340,7 +340,7 @@ namespace CompasXR.Robots
                     {
                         foreach (AttachedCollisionMesh attachedCollisionMesh in trajectories[i].AttachedCollisionMeshes)
                         {
-                            GameObject acmGameObject = attachedCollisionMesh.CollisionMesh.Mesh.GenerateMeshFromRHMesh();
+                            GameObject acmGameObject = attachedCollisionMesh.CollisionMesh.Mesh.GenerateMeshFromRHMesh(attachedCollisionMesh.CollisionMesh.Id);
                             if(acmGameObject != null)
                             {
                                 acmGameObject.transform.GetComponentInChildren<MeshRenderer>().material = instantiateObjects.InactiveRobotMaterial;
@@ -352,6 +352,7 @@ namespace CompasXR.Robots
                             {
                                 Debug.Log("InstatintaiteRobotFromTrajectoryList: Attached Collision Mesh is null.");
                             }
+                            Destroy(acmGameObject);
                         }
                     }
                     else

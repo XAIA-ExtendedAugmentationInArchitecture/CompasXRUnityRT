@@ -382,7 +382,7 @@ namespace CompasXR.Core.Data
 
             tris = triangles.ToArray();
         }
-        public GameObject GenerateMeshFromRHMesh()
+        public GameObject GenerateMeshFromRHMesh(string? meshName = "CompasMesh")
         {
             if (Vertex == null || Faces == null)
             {
@@ -408,7 +408,7 @@ namespace CompasXR.Core.Data
             // Create the new mesh
             UnityEngine.Mesh mesh = new UnityEngine.Mesh
             {
-                name = "TESTING OBJECT",
+                name = meshName,
                 vertices = vertices,
                 triangles = this.tris,
                 normals = this.normals,
@@ -423,7 +423,7 @@ namespace CompasXR.Core.Data
             mesh.RecalculateBounds();
 
             // Create a new game object and add necessary components
-            GameObject meshObject = new GameObject("TESTING OBJECT");
+            GameObject meshObject = new GameObject(meshName);
             MeshFilter meshFilter = meshObject.AddComponent<MeshFilter>();
             MeshRenderer meshRenderer = meshObject.AddComponent<MeshRenderer>();
 

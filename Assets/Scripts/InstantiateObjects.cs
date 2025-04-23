@@ -461,7 +461,6 @@ namespace CompasXR.Core
 
             UIFunctionalities.SignalMimicPointsRemaptoRobotReachabilityMessage();
         }
-
         public void MakeMimicPointsFromSystemProposedPoints(ref List<GameObject> humanPoints, ref List<GameObject> robotPoints, ref List<GameObject> systemProposedHumanPoints, ref List<GameObject> systemProposedRobotPoints, 
         GameObject humanPointsParent, GameObject robotPointsParent, GameObject systemProposedHumanParent, GameObject systemProposedRobotParent, 
         GameObject humanLine, GameObject robotLine, GameObject systemProposedHumanLine, GameObject systemProposedRobotLine)
@@ -495,7 +494,6 @@ namespace CompasXR.Core
             }
 
         }
-
         public void MigrateSystemProposedMimicPointsToCurrentSelection(ref List<GameObject> pointListReferenceToSet, ref List<GameObject> systemProposedPointsList, 
         GameObject currentListParent, GameObject currentLine, GameObject systemProposedLine, Material materialToAssignSystemPoints, Color currentLineColor)
         {
@@ -535,7 +533,6 @@ namespace CompasXR.Core
             }
             
         }
-
         public void DestroySystemProposedMimicPoints(ref List<GameObject> systemProposedHumanPoints, ref List<GameObject> systemProposedRobotPoints, GameObject systemProposedHumanParent, GameObject systemProposedRobotParent, GameObject systemProposedHumanLine, GameObject systemProposedRobotLine)
         {
             /*
@@ -590,7 +587,6 @@ namespace CompasXR.Core
             }
             return gameObjects;
         }
-
         public void CreateSpheresForMimic(GameObject humanZone, GameObject robotZone, ref List<GameObject> humanPoints, 
         ref List<GameObject> robotPoints, GameObject humanParent, 
         GameObject robotParent,
@@ -636,7 +632,6 @@ namespace CompasXR.Core
                 Debug.LogWarning("CreateSpheresForMimic: Robot Point is not added to the list.");
             }
         }
-
         public Vector3 FindClosestReachablePoint(GameObject reachabilitySphere, Vector3 desiredPosition)
         {
             /*
