@@ -20,6 +20,8 @@ using CompasXR.RoboticTerritories.Data;
 using CompasXR.Robots.MqttData.RoboticTerritories;
 using Unity.XR.CoreUtils;
 using CompasXR.Robots.Data;
+using RosSharp.RosBridgeClient;
+using System.Collections;
 // using Vuforia;
 
 namespace CompasXR.UI
@@ -222,6 +224,7 @@ namespace CompasXR.UI
         public GameObject MimicSetPointGreenScreen;
         public GameObject MimicUndoPointRedScreen;
         public float MimicSetandUndoFlashDuration = 0.1f;
+        public CompasXRButtonHeldEvent FollowMeButtonHeldEventComponent;
 
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
 
@@ -240,12 +243,45 @@ namespace CompasXR.UI
             * Update : Method is used to update the UI elements and check for touch option activation.
             */
             TouchSearchControler();
+            RealtimeMimicFollowMeEventWatcher();
         }
 
         /////////////////////////////////// UI Control & OnStart methods ////////////////////////////////////////////////////
 
-
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
+        public void RealtimeMimicFollowMeEventWatcher()
+        {
+            if (FollowMeButtonHeldEventComponent.isHeld)
+            {
+                string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                string message = $"sending message {dateTime}";
+
+                if (trajectoryVisualizer.ActiveRobot != null)
+                {
+                    string robotName = RobotSelectionDropdown.options[RobotSelectionDropdown.value].text;
+                    RealtimeMimicRequestMessage realtimeMimicRequestMessage = new RealtimeMimicRequestMessage
+                    (
+                        robotName,
+                        message
+                    );
+                    Debug.Log($"FollowMeButtonHeldEventComponent: Sending message to {robotName} with message {message} with structure {JsonConvert.SerializeObject(realtimeMimicRequestMessage.GetData())} to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic}");
+
+                    mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic, realtimeMimicRequestMessage.GetData());
+                    StartCoroutine(PauseForDurationSeconds(1.0f));
+                }
+                else
+                {
+                    Debug.Log("FollowMeButtonHeldEventComponent: Button is Pressed But Active Robot Name is null.");
+                }
+            }
+        }
+
+        public IEnumerator PauseForDurationSeconds(float duration)
+        {
+            yield return new WaitForSeconds(duration);
+            Debug.Log($"Paused for {duration} seconds.");
+        }
+
         private void OnAwakeInitilizationRoboticTerritories()
         {
             /*
@@ -288,6 +324,11 @@ namespace CompasXR.UI
             NoButton.GetComponent<Button>().onClick.AddListener(DestroySystemProposedMimicPointsButtonMethod);
             //TODO: Mimic remap testing ////////////////////////////////////////////////////////////////////////////////////////
 
+            //TODO: Find FollowMe Button and then add event trigger componnet to it.
+            GameObject FollowMeButton = RoboticTerritoriesCanvasItems.FindObject("RealtimeMimicControls").FindObject("FollowMeButton");
+            FollowMeButton.AddComponent<CompasXRButtonHeldEvent>();
+            FollowMeButtonHeldEventComponent = FollowMeButton.GetComponent<CompasXRButtonHeldEvent>();
+
             //Set Zone Visualization Menu Items on Start
             SetZoneMenuItemsOnStart();
 
@@ -295,7 +336,7 @@ namespace CompasXR.UI
             SetRoboticMenuItemsOnStart();
 
             //Set Mimic Controls on start
-            SetMimicControlsOnStart();
+            SetMimicUserInitiatedMimicControlsOnStart();
 
             //Set Visualization Items on Start
             SetVisualizationItemsOnStart();
@@ -380,7 +421,7 @@ namespace CompasXR.UI
             */
             Debug.Log("SignalMimicPointsRemaptoRobotReachabilityMessage: Signaling user to remap mimic points to robot reachability.");
             MimicRemapPointsToRobotReachabilityMessage.SetActive(true);
-            SetMimicControlsActivity(true, false, false, false, false);
+            SetUserInitiatedMimicControlsActivity(true, false, false, false, false);
         }
         public void RemapMimicPointsToRobotReachabilityButtonMethod()
         {
@@ -393,7 +434,7 @@ namespace CompasXR.UI
             instantiateObjects.MakeMimicPointsFromSystemProposedPoints(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanSystemProposedPoints, ref instantiateObjects.MimicRobotSystemProposedPoints, instantiateObjects.MimicHumanPointsParent, instantiateObjects.MimicRobotPointsParent, 
             instantiateObjects.MimicHumanSystemProposedPointsParent, instantiateObjects.MimicRobotSystemProposedPointsParent, instantiateObjects.MimicHumanLine, instantiateObjects.MimicRobotLine, instantiateObjects.MimicSystemProposedLineHuman, instantiateObjects.MimicSystemProposedLineRobot);
 
-            SetMimicControlsActivity(true, true, true, false, false);
+            SetUserInitiatedMimicControlsActivity(true, true, true, false, false);
             MimicRemapPointsToRobotReachabilityMessage.SetActive(false);
         }
         public void DestroySystemProposedMimicPointsButtonMethod()
@@ -406,7 +447,7 @@ namespace CompasXR.UI
             instantiateObjects.MimicHumanSystemProposedPointsParent, instantiateObjects.MimicRobotSystemProposedPointsParent, instantiateObjects.MimicSystemProposedLineHuman, 
             instantiateObjects.MimicSystemProposedLineRobot);
 
-            SetMimicControlsActivity(true, true, true, false, false);
+            SetUserInitiatedMimicControlsActivity(true, true, true, false, false);
             MimicRemapPointsToRobotReachabilityMessage.SetActive(false);
         }
         public void RoboticTerritoriesSetActiveRobotToggleMethod(Toggle toggle)
@@ -456,7 +497,7 @@ namespace CompasXR.UI
             UserInterface.FindButtonandSetOnClickAction(RoboticTerritoriesConstantUIObjects, ref PreviousZoneButtonObject, "PreviousZoneButton", PreviousZoneButton);
 
         }
-        public void SetMimicControlsOnStart()
+        public void SetMimicUserInitiatedMimicControlsOnStart()
         {
             
             //Find Mimic Control Objects
@@ -819,27 +860,27 @@ namespace CompasXR.UI
             {
                 case ProjectZones.CurrentZoneMode.None:
                     Debug.Log("SetUIObjectsFromCurrentMode: Setting UI Objects for None Mode.");
-                    SetMimicControlsActivity(false, false, false, false, false);
+                    SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
                     break;
                 case ProjectZones.CurrentZoneMode.Inference:
                     Debug.Log("SetUIObjectsFromCurrentMode: Setting UI Objects for Inference Mode.");
-                    SetMimicControlsActivity(false, false, false, false, false);
+                    SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
                     break;
                 case ProjectZones.CurrentZoneMode.Mimic:
-                    SetMimicControlsActivity(true, true, true, false, false);
+                    SetUserInitiatedMimicControlsActivity(true, true, true, false, false);
                     Debug.Log("SetUIObjectsFromCurrentMode: Setting Active Controls for Mimic Mode.");
                     break;
                 case ProjectZones.CurrentZoneMode.Telemimic:
-                    SetMimicControlsActivity(false, false, false, false, false);
+                    SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
                     Debug.Log("SetUIObjectsFromCurrentMode: Setting Active Controls for Telemimic Mode.");
                     break;
                 default:
-                    SetMimicControlsActivity(false, false, false, false, false);
+                    SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
                     Debug.LogWarning("SetUIObjectsFromCurrentMode: Current Zone Mode is not set.");
                     break;
             }
         }
-        public void SetMimicControlsActivity(bool setControlsActive, bool setControlsInteractive, bool requestInteractable, bool reviewActive, bool reviewInteractive)
+        public void SetUserInitiatedMimicControlsActivity(bool setControlsActive, bool setControlsInteractive, bool requestInteractable, bool reviewActive, bool reviewInteractive)
         {
             /*
             * Method is used to set the Mimic Controls activity based on the input.
@@ -906,7 +947,7 @@ namespace CompasXR.UI
                 Debug.Log($"MimicRequestTrajectoryButton: Publishing Mimic request {JsonConvert.SerializeObject(requestMessage.GetData())} on topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic}");
 
                 mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic, requestMessage.GetData());
-                SetMimicControlsActivity(true, false, false, true, false);
+                SetUserInitiatedMimicControlsActivity(true, false, false, true, false);
             }
         }
         public void SignalActiveRobotUpdateFromPlannerRoboticTerritories(string robotName, string activeRobotName, Action visualizeRobotMethod)
@@ -948,7 +989,7 @@ namespace CompasXR.UI
             if (AcknowledgeButton!= null && AcknowledgeButton.GetComponent<Button>().onClick.GetPersistentEventCount() <= 1)
             {
                 AcknowledgeButton.GetComponent<Button>().onClick.AddListener(() => visualizeRobotMethod());
-                AcknowledgeButton.GetComponent<Button>().onClick.AddListener(() => SetMimicControlsActivity(true, false, true, true, true));
+                AcknowledgeButton.GetComponent<Button>().onClick.AddListener(() => SetUserInitiatedMimicControlsActivity(true, false, true, true, true));
             }
             else
             {
@@ -3194,7 +3235,6 @@ namespace CompasXR.UI
                 Debug.LogWarning($"Message: Could not find message object or message component inside of GameObject {messageGameObject.name}.");
             }  
         }
-
     }
 }
 

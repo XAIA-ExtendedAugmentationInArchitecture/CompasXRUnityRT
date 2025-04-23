@@ -42,10 +42,12 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         */
         public string mimicRequestTopic { get; set; }
         public string mimicExecuteTrajectoryRequestTopic { get; set; }
+        public string realtimeMimicRequestTopic { get; set; }
         public RTPublishers(string projectName)
         {
             mimicRequestTopic = $"robotic_territories/mimic_request/{projectName}";
             mimicExecuteTrajectoryRequestTopic = $"robotic_territories/mimic_execute_trajectory/{projectName}";
+            realtimeMimicRequestTopic = $"robotic_territories/real_time_mimic_request/{projectName}";
         }
 
     }
@@ -58,11 +60,13 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         * It is designed to store the specific topics to subscribe to.
         */
         public string mimicResultTopic { get; set; }
+        public string realtimeMimicResultTopic { get; set; }
 
         //Constructer for subscribers that takes an input project name
         public RTSubscribers(string projectName)
         {
             mimicResultTopic = $"robotic_territories/mimic_result/{projectName}";
+            realtimeMimicResultTopic = $"robotic_territories/real_time_mimic_result/{projectName}";
         }
     }
 
@@ -492,6 +496,139 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             return new ExacuteMimicTrajectoryRequestMessage(trajectories, combinedTrajectoryPoints, robotName, robotBaseFrame, header);
         }
 
+    }
+
+    [System.Serializable]
+    public class RealtimeMimicRequestMessage
+    {
+        /*
+        * GetTrajectoryRequest : Class is used to manage the GetTrajectoryRequest message for Compas XR communication.
+        * It is designed to store the element ID, robot name, and header for the message.
+        * It is sent to the CAD when a user requests a trajectory.
+        */
+        public Header Header { get; private set; }
+        // public List<Frame> HumanFrames { get; private set; }
+        // public List<Frame> RobotFrames { get; private set; }
+        public string RobotName { get; private set; }
+        public string Message { get; private set; }
+        public RealtimeMimicRequestMessage(string robotName, string message, Header header=null)
+        {
+            Header = header ?? new Header();
+            // HumanFrames = humanFrames;
+            // RobotFrames = robotFrames;
+            RobotName = robotName;
+            Message = message;
+        }
+        public Dictionary<string, object> GetData()
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            return new Dictionary<string, object>
+            {
+                { "header", Header.GetData() },
+                // { "human_frames", MessageHandelingExtensions._getDataFromFramesList(HumanFrames) },
+                // { "robot_frames", MessageHandelingExtensions._getDataFromFramesList(RobotFrames) },
+                { "robot_name", RobotName },
+                { "message", Message }
+            };
+        }
+        public static RealtimeMimicRequestMessage Parse(string jsonString)
+        {
+            /*
+            * Method is used to parse an instance of the class from a JSON string.
+            */
+            var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+            var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
+            Header header = Header.Parse(headerInfo);
+
+            // var humanFramesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["human_frames"].ToString());
+            // List<Frame> humanFrames = Frame._parseFramesData(humanFramesData);
+
+            // var robotFramesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["robot_frames"].ToString());
+            // List<Frame> robotFrames = Frame._parseFramesData(robotFramesData);
+
+            var robotName = jsonObject["robot_name"].ToString();
+            var message = jsonObject["message"].ToString();
+
+            return new RealtimeMimicRequestMessage(robotName, message, header);
+        }
+    }
+
+    [System.Serializable]
+    public class RealtimeMimicResultMessage
+    {
+        /*
+        * GetTrajectoryRequest : Class is used to manage the GetTrajectoryRequest message for Compas XR communication.
+        * It is designed to store the element ID, robot name, and header for the message.
+        * It is sent to the CAD when a user requests a trajectory.
+        */
+        public Header Header { get; private set; }
+        // public List<Trajectory> Trajectories { get; private set; }
+        // public Frame RobotBaseFrame { get; private set; }
+        // public List<Configuration> Configurations { get; private set; }
+        // public List<AttachedCollisionMesh> AttachedCollisionMeshes { get; private set; }
+        public string RobotName { get; private set; }
+        public string ReturnMessage { get; private set; }
+        public RealtimeMimicResultMessage(string robotName, string returnMessage, Header header=null) //List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header=null)
+        {
+            Header = header ?? new Header();
+            // Trajectories = trajectories;
+            // RobotBaseFrame = robotBaseFrame;
+            RobotName = robotName;
+            ReturnMessage = returnMessage;
+        }
+        public Dictionary<string, object> GetData()
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            return new Dictionary<string, object>
+            {
+                { "header", Header.GetData() },
+                // { "trajectories", MessageHandelingExtensions._getTrajectoriesDataFromList(Trajectories) },
+                // { "robot_base_frame", RobotBaseFrame.GetData() },
+                { "robot_name", RobotName },
+                { "return_message", ReturnMessage }
+            };
+        }
+        public static RealtimeMimicResultMessage Parse(string jsonString)
+        {
+            /*
+            * Method is used to parse an instance of the class from a JSON string.
+            */
+            var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+            var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
+            Header header = Header.Parse(headerInfo);
+
+            var robotName = jsonObject["robot_name"].ToString();
+            var message = jsonObject["return_message"].ToString();
+            return new RealtimeMimicResultMessage(robotName, message, header);
+
+            // var trajectoriesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["trajectories"].ToString());
+            // List<Trajectory> trajectories = new List<Trajectory>();
+            // foreach (Dictionary<string, object> trajectoryData in trajectoriesData)
+            // {
+            //     if (trajectoryData.TryGetValue("data", out var trajectoryDataValue))
+            //     {
+            //         var trajectoryJson = JsonConvert.SerializeObject(trajectoryDataValue);
+            //         var trajectoryDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(trajectoryJson);
+            //         trajectories.Add(Trajectory.FromData(trajectoryDict));
+            //     }
+            //     else
+            //     {
+            //         Debug.LogWarning("ExacuteMimicTrajectoryRequestMessage: Parse: Trajectory data not found in the message.");
+            //     }
+            // }
+            // Frame robotBaseFrame = MessageHandelingExtensions._getBaseFrameFromMessage(jsonObject);
+            // if(robotBaseFrame == null)
+            // {
+            //     Debug.LogWarning("ExacuteMimicTrajectoryRequestMessage: Parse: Robot base frame not found in the message.");
+            // }
+            //     else
+            //     {
+            //     Debug.Log($"ExacuteMimicTrajectoryRequestMessage: Robot Base Frame Parsed Successfully: {JsonConvert.SerializeObject(robotBaseFrame)}");
+        }
     }
 
 }

@@ -123,7 +123,7 @@ namespace CompasXR.Core
         public DatabaseReference dbRefernceRobotBaseFrame;
         public ProjectZones ProjectZones = new ProjectZones();
 
-        //EVENTS        
+        //EVENTS
         public delegate void ZonesReceivedEventHandler(object source, ZonesInfoReceivedEventArgs e);
         public event ZonesReceivedEventHandler ZonesInfoReceived;
 
@@ -269,8 +269,7 @@ namespace CompasXR.Core
             await FetchRTDDatawithEventHandler(dbReferenceQRCodes, snapshot => DeserializeAssemblyDataSnapshot(snapshot, QRCodeDataDict), "TrackingDict");
             await DataHandlers.FetchDataFromDatabaseReference(dbReferenceZones, snapshot => DeserializeZoneDataSnapshot(snapshot, ProjectZones));
             await DataHandlers.FetchDataFromDatabaseReference(dbRefernceRobotBaseFrame, snapshot => DeserilizeRobotBaseFrameSnapshot(snapshot));
-        }
-       
+        }    
         private void DeserilizeRobotBaseFrameSnapshot(DataSnapshot snapshot) //TODO: CHECK WITH FRAME STRUCTURE.
         {
             /*

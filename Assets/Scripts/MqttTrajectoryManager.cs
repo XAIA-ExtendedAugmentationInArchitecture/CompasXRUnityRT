@@ -197,7 +197,7 @@ namespace CompasXR.Robots
             {
                 Debug.LogWarning("MQTT: MimicResultReceivedMessageHandler: No Trajectories in the Mimic Result Message.");
                 string message = "WARNING: The robotic controler replied with a null Trajectory. Please edit points or rerequest.";
-                UIFunctionalities.SetMimicControlsActivity(true, true, true, false, false);
+                UIFunctionalities.SetUserInitiatedMimicControlsActivity(true, true, true, false, false);
                 UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.TrajectoryNullWarningMessageObject, "TrajectoryNullWarningMessage", UIFunctionalities.MessagesParent, message, "MimicTrajectoryResultReceivedMessageHandler: Received trajectory is null");
                 return;
             }
@@ -205,7 +205,7 @@ namespace CompasXR.Robots
             {
                 Debug.LogWarning("MQTT: MimicResultReceivedMessageHandler: Combined Trajectory points are empty in the Mimic Result Message.");
                 string message = "WARNING: The robotic controler replied with a null Trajectory. Please edit points or rerequest.";
-                UIFunctionalities.SetMimicControlsActivity(true, true, true, false, false);
+                UIFunctionalities.SetUserInitiatedMimicControlsActivity(true, true, true, false, false);
                 UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.TrajectoryNullWarningMessageObject, "TrajectoryNullWarningMessage", UIFunctionalities.MessagesParent, message, "MimicTrajectoryResultReceivedMessageHandler: Received trajectory is null");
                 return;
             }
@@ -250,7 +250,7 @@ namespace CompasXR.Robots
                     trajectoryVisualizer.URDFLinkNames,
                     trajectoryVisualizer.ActiveTrajectoryParentObject,
                     true);
-                UIFunctionalities.SetMimicControlsActivity(true, false, false, true, true);
+                UIFunctionalities.SetUserInitiatedMimicControlsActivity(true, false, false, true, true);
                 Debug.Log("MQTT: : MimicResultReceivedMessageHandler : Robot Name in the message is the same as the active robot name.");
             }
         }
