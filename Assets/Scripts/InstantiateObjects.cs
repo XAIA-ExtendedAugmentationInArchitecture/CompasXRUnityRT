@@ -394,7 +394,6 @@ namespace CompasXR.Core
                 Debug.LogWarning("CreateMimicPoints: Human or Robot Positions are empty");
             }
         }
-
         public void CreateSystemProposalPoints(GameObject humanZone, GameObject robotZone, GameObject reachabilitySphere, ref List<GameObject> userSetHumanPointsList, 
         ref List<GameObject> systemProposedHumanPointsList, ref List<GameObject> systemProposedRobotPointsList,
         GameObject systemProposedHumanLine, GameObject systemProposedHumanPointsParent, GameObject systemProposedRobotLine, 
@@ -446,7 +445,7 @@ namespace CompasXR.Core
                 //TODO: THIS IS HUGE, DOUBLE CHECK ROTATION ON THE PHONE.
                 CreateSpheresForMimic(humanZone, robotZone, ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints, 
                 systemProposedHumanPointsParent, systemProposedRobotPointsParent, 
-                position, rotation, radius, Color.red, Color.red, $"{i}_MimicPointProposal", $"{i}_MimicPointProposal", true, Mirror);
+                position, rotation, radius, Color.red, Color.red, $"{i}_MimicPoint", $"{i}_MimicPoint", true, Mirror);
             }
 
             if (systemProposedHumanPointsList.Count > 1 && systemProposedRobotPointsList.Count > 1)
@@ -459,6 +458,137 @@ namespace CompasXR.Core
             {
                 Debug.LogWarning("CreateSystemTrajectoryProposal: Human or Robot Positions are empty");
             }
+
+            UIFunctionalities.SignalMimicPointsRemaptoRobotReachabilityMessage();
+        }
+
+        public void MakeMimicPointsFromSystemProposedPoints(ref List<GameObject> humanPoints, ref List<GameObject> robotPoints, ref List<GameObject> systemProposedHumanPoints, ref List<GameObject> systemProposedRobotPoints, 
+        GameObject humanPointsParent, GameObject robotPointsParent, GameObject systemProposedHumanParent, GameObject systemProposedRobotParent, 
+        GameObject humanLine, GameObject robotLine, GameObject systemProposedHumanLine, GameObject systemProposedRobotLine)
+        {
+            /*
+            * Method is used to create the mimic points from the system proposed points in the AR space
+            */
+            
+            if (humanPoints.Count <= 0 || robotPoints.Count <= 0)
+            {
+                Debug.LogWarning("MakeMimicPointsFromSystemProposedPoints: human points or robot points are not greater then 0 for some reason");
+            }
+            else if (systemProposedHumanPoints.Count <= 0 || systemProposedRobotPoints.Count <= 0)
+            {
+                Debug.LogWarning("MakeMimicPointsFromSystemProposedPoints: System Proposed Points are not greater then 0 for some reason.");
+            }
+            else
+            {
+                Debug.Log("MakeMimicPointsFromSystemProposedPoints: Creating Mimic Points from System Proposed Points");
+                MigrateSystemProposedMimicPointsToCurrentSelection(ref humanPoints, ref systemProposedHumanPoints, humanPointsParent, humanLine, systemProposedHumanLine, HumanBuiltMaterial, Color.yellow);
+                MigrateSystemProposedMimicPointsToCurrentSelection(ref robotPoints, ref systemProposedRobotPoints, robotPointsParent, robotLine, systemProposedRobotLine, RobotBuiltMaterial, Color.cyan);
+
+                if(systemProposedHumanPoints.Count > 0)
+                {
+                    ObjectInstantiaion.DestroyChildrenOfGameObject(systemProposedHumanParent);
+                }
+                if(systemProposedRobotPoints.Count > 0)
+                {
+                    ObjectInstantiaion.DestroyChildrenOfGameObject(systemProposedRobotParent);
+                }
+            }
+
+        }
+
+        public void MigrateSystemProposedMimicPointsToCurrentSelection(ref List<GameObject> pointListReferenceToSet, ref List<GameObject> systemProposedPointsList, 
+        GameObject currentListParent, GameObject currentLine, GameObject systemProposedLine, Material materialToAssignSystemPoints, Color currentLineColor)
+        {
+            /*
+            * Method is used to migrate the mimic points list by the system proposed points in the AR space
+            */
+
+            if (pointListReferenceToSet != null)
+            {
+                Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: Destroying Previous System Proposed Points");
+                ObjectInstantiaion.DestroyChildrenOfGameObject(currentListParent);
+                pointListReferenceToSet.Clear();
+            }
+            else
+            {
+                Debug.LogWarning("MigrateSystemProposedMimicPointsToCurrentSelection: Point List Reference to Set is null.");
+            }
+
+            if (systemProposedPointsList.Count > 0)
+            {
+                Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: Migrating System Proposed Points to Current Selection");
+
+                foreach (GameObject point in systemProposedPointsList)
+                {
+                    point.transform.SetParent(currentListParent.transform, true);
+                    point.GetComponentInChildren<Renderer>().material = materialToAssignSystemPoints;
+                    pointListReferenceToSet.Add(point);
+                }
+
+                DrawLineFromGameObjectList(pointListReferenceToSet, currentLine, currentLineColor, 0.01f);
+                systemProposedLine.SetActive(false);
+                systemProposedPointsList.Clear();
+            }
+            else
+            {
+                Debug.LogWarning("MigrateSystemProposedMimicPointsToCurrentSelection: System Proposed Points are empty for some reason.");
+            }
+            
+        }
+
+        public void DestroySystemProposedMimicPoints(ref List<GameObject> systemProposedHumanPoints, ref List<GameObject> systemProposedRobotPoints, GameObject systemProposedHumanParent, GameObject systemProposedRobotParent, GameObject systemProposedHumanLine, GameObject systemProposedRobotLine)
+        {
+            /*
+            * Method is used to destroy the mimic points in the AR space
+            */
+            if (systemProposedHumanPoints.Count > 0 && systemProposedRobotPoints.Count > 0)
+            {
+                Debug.Log("DestroySystemProposedMimicPoints: Destroying System Proposed Points");
+                ObjectInstantiaion.DestroyChildrenOfGameObject(systemProposedHumanParent);
+                ObjectInstantiaion.DestroyChildrenOfGameObject(systemProposedRobotParent);
+
+                systemProposedHumanPoints.Clear();
+                systemProposedRobotPoints.Clear();
+
+                systemProposedHumanLine.GetComponentInChildren<LineRenderer>().positionCount = 0;
+                systemProposedRobotLine.GetComponentInChildren<LineRenderer>().positionCount = 0;
+
+                systemProposedHumanLine.SetActive(false);
+                systemProposedRobotLine.SetActive(false);
+            }
+            else
+            {
+                Debug.LogWarning("DestroySystemProposedMimicPoints: System Proposed Points are empty for some reason.");
+            }
+        }
+        public List<GameObject> ColorGameObjectListByInputMaterial(List<GameObject> gameObjects, Material material)
+        {
+            /*
+            * Method is used to color the game objects in the AR space
+            */
+            if (gameObjects != null && gameObjects.Count > 0)
+            {
+                foreach (GameObject gameObject in gameObjects)
+                {
+                    if (gameObject != null)
+                    {
+                        Renderer renderer = gameObject.GetComponentInChildren<Renderer>();
+                        if (renderer != null)
+                        {
+                            renderer.material = material;
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"ColorGameObjectListByInputMaterial: Renderer is null for {gameObject.name}");
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogWarning("ColorGameObjectListByInputMaterial: Game Objects List is empty or null.");
+            }
+            return gameObjects;
         }
 
         public void CreateSpheresForMimic(GameObject humanZone, GameObject robotZone, ref List<GameObject> humanPoints, 
@@ -2117,5 +2247,23 @@ namespace CompasXR.Core
                 return false;
             }
         }
-    }
+
+        public static bool AllGameObjectsInListsPositionsAreWithinAnotherObject(List<GameObject> gameObjects, GameObject targetObject)
+        {
+            if (gameObjects == null || gameObjects.Count == 0)
+            {
+                Debug.LogError("AllGameObjectsInListsPositionsAreWithinAnotherObject: The list of game objects is null or empty.");
+                return false;
+            }
+
+            foreach (GameObject gameObject in gameObjects)
+            {
+                if (!IsPositionWithinObject(targetObject, gameObject.transform.position))
+                {
+                    return false; // If any object is not within the target object, return false
+                }
+            }
+            return true; // All objects are within the target object
+            }
+        }
 }

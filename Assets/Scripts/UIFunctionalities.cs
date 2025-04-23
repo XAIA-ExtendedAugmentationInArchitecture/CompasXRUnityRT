@@ -82,6 +82,9 @@ namespace CompasXR.UI
         public GameObject TransactionLockActiveWarningMessageObject;
         public GameObject ActiveRobotCouldNotBeFoundWarningMessage;
         public GameObject ActiveRobotUpdatedFromPlannerMessageObject;
+
+        //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
+        public GameObject MimicRemapPointsToRobotReachabilityMessage;
         public GameObject TrajectoryResponseIncorrectWarningMessageObject;
         public GameObject ConfigDoesNotMatchURDFStructureWarningMessageObject;
         public GameObject TrajectoryNullWarningMessageObject;
@@ -276,6 +279,15 @@ namespace CompasXR.UI
             OnScreenInfoMessagePrefab = MessagesParent.FindObject("Prefabs").FindObject("OnScreenInfoMessagePrefab");
             ActiveRobotUpdatedFromPlannerMessageObject = MessagesParent.FindObject("Prefabs").FindObject("ActiveRobotUpdatedFromPlannerMessage");
 
+
+            //TODO: Mimic remap testing ////////////////////////////////////////////////////////////////////////////////////////
+            MimicRemapPointsToRobotReachabilityMessage = MessagesParent.FindObject("Prefabs").FindObject("RemapMimicPointsMessage");
+            Button RemapButton = MimicRemapPointsToRobotReachabilityMessage.FindObject("YesButton").GetComponent<Button>();
+            Button NoButton = MimicRemapPointsToRobotReachabilityMessage.FindObject("NoButton").GetComponent<Button>();
+            RemapButton.GetComponent<Button>().onClick.AddListener(RemapMimicPointsToRobotReachabilityButtonMethod);
+            NoButton.GetComponent<Button>().onClick.AddListener(DestroySystemProposedMimicPointsButtonMethod);
+            //TODO: Mimic remap testing ////////////////////////////////////////////////////////////////////////////////////////
+
             //Set Zone Visualization Menu Items on Start
             SetZoneMenuItemsOnStart();
 
@@ -290,6 +302,7 @@ namespace CompasXR.UI
 
             //Set Correction Items on Start
             SetCorrectionMenuItemsOnStart();
+
         }    
         public void SetVisualizationItemsOnStart()
         {
@@ -359,6 +372,42 @@ namespace CompasXR.UI
             "CorrectionButton",
             value => { if (value) UserInterface.PrintStringOnClick("Correction Button Clicked"); });
 
+        }
+        public void SignalMimicPointsRemaptoRobotReachabilityMessage() //TODO: Static and not interchangeable
+        {
+            /*
+            * Method is used to signal the user that the mimic points are being remapped to the robot reachability.
+            */
+            Debug.Log("SignalMimicPointsRemaptoRobotReachabilityMessage: Signaling user to remap mimic points to robot reachability.");
+            MimicRemapPointsToRobotReachabilityMessage.SetActive(true);
+            SetMimicControlsActivity(true, false, false, false, false);
+        }
+        public void RemapMimicPointsToRobotReachabilityButtonMethod()
+        {
+            /*
+            * Method is used to remap the mimic points to the robot reachability.
+            */
+            Debug.Log("RemapMimicPointsToRobotReachabilityMethod: Remapping Mimic Points to Robot Reachability.");
+            
+            //TODO: CHECK THIS... IT IS CRAZY...
+            instantiateObjects.MakeMimicPointsFromSystemProposedPoints(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanSystemProposedPoints, ref instantiateObjects.MimicRobotSystemProposedPoints, instantiateObjects.MimicHumanPointsParent, instantiateObjects.MimicRobotPointsParent, 
+            instantiateObjects.MimicHumanSystemProposedPointsParent, instantiateObjects.MimicRobotSystemProposedPointsParent, instantiateObjects.MimicHumanLine, instantiateObjects.MimicRobotLine, instantiateObjects.MimicSystemProposedLineHuman, instantiateObjects.MimicSystemProposedLineRobot);
+
+            SetMimicControlsActivity(true, true, true, false, false);
+            MimicRemapPointsToRobotReachabilityMessage.SetActive(false);
+        }
+        public void DestroySystemProposedMimicPointsButtonMethod()
+        {
+            /*
+            * Method is used to destroy the system proposed mimic points.
+            */
+            Debug.Log("DestroySystemProposedMimicPointsMethod: Destroying System Proposed Mimic Points.");
+            instantiateObjects.DestroySystemProposedMimicPoints(ref instantiateObjects.MimicHumanSystemProposedPoints, ref instantiateObjects.MimicRobotSystemProposedPoints, 
+            instantiateObjects.MimicHumanSystemProposedPointsParent, instantiateObjects.MimicRobotSystemProposedPointsParent, instantiateObjects.MimicSystemProposedLineHuman, 
+            instantiateObjects.MimicSystemProposedLineRobot);
+
+            SetMimicControlsActivity(true, true, true, false, false);
+            MimicRemapPointsToRobotReachabilityMessage.SetActive(false);
         }
         public void RoboticTerritoriesSetActiveRobotToggleMethod(Toggle toggle)
         {
@@ -823,23 +872,41 @@ namespace CompasXR.UI
                 UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref ActiveRobotIsNullWarningMessageObject, "ActiveRobotNullWarningMessage", MessagesParent, message, "MimicRequestTrajectoryButtonMethod: Active Robot is null.");
                 return;
             }
+            else if(!ObjectInstantiaion.AllGameObjectsInListsPositionsAreWithinAnotherObject(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility))
+            {
+                var mimicZones = databaseManager.ProjectZones.MimicZones;
+
+                if (mimicZones.TryGetValue("human_zone", out Zone humanZone))
+                {
+                    if (mimicZones.TryGetValue("robot_zone", out Zone robotZone))
+                    {
+                        GameObject humanZoneObject = humanZone.ZoneObject;
+                        GameObject robotZoneObject = robotZone.ZoneObject;
+                        instantiateObjects.CreateSystemProposalPoints(humanZoneObject, robotZoneObject, trajectoryVisualizer.humanZoneMimicReachibility, ref instantiateObjects.MimicHumanPoints, 
+                        ref instantiateObjects.MimicHumanSystemProposedPoints, ref instantiateObjects.MimicRobotSystemProposedPoints,
+                        instantiateObjects.MimicSystemProposedLineHuman, instantiateObjects.MimicHumanSystemProposedPointsParent, instantiateObjects.MimicSystemProposedLineRobot, 
+                        instantiateObjects.MimicRobotSystemProposedPointsParent, MimicMirrorToggleObject.GetComponentInChildren<Toggle>().isOn);
+                    }
+                    else
+                    {
+                        Debug.LogError("MimicRequestTrajectoryButton: 'robot_zone' key not found in MimicZones.");
+                    }
+                }
+                else
+                {
+                    Debug.LogError("MimicRequestTrajectoryButton: 'human_zone' key not found in MimicZones.");
+                }
+            }
             else
-            {    
-                //TODO: Check if the all the points are within the reachbility of the robot: If they are execute the code below                
-                
-                    //TODO: Convert GameObjects List to Frames List
-                    List<Frame> humanFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicHumanPoints, instantiateObjects.ZonesARPrefabObjects);
-                    List<Frame> robotFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicRobotPoints, instantiateObjects.ZonesARPrefabObjects);
+            {
+                List<Frame> humanFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicHumanPoints, instantiateObjects.ZonesARPrefabObjects);
+                List<Frame> robotFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicRobotPoints, instantiateObjects.ZonesARPrefabObjects);
 
-                    MimicTrajectoryRequestMessage requestMessage = new MimicTrajectoryRequestMessage(humanFrames, robotFrames, mqttTrajectoryManager.serviceManager.ActiveRobotName); //TODO: ROBOT NAME NEEDS TO BE CHANGED FOR SURE...
-                    Debug.Log($"MimicRequestTrajectoryButton: Publishing Mimic request {JsonConvert.SerializeObject(requestMessage.GetData())} on topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic}");
+                MimicTrajectoryRequestMessage requestMessage = new MimicTrajectoryRequestMessage(humanFrames, robotFrames, mqttTrajectoryManager.serviceManager.ActiveRobotName); //TODO: ROBOT NAME NEEDS TO BE CHANGED FOR SURE...
+                Debug.Log($"MimicRequestTrajectoryButton: Publishing Mimic request {JsonConvert.SerializeObject(requestMessage.GetData())} on topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic}");
 
-                    mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic, requestMessage.GetData());
-                    SetMimicControlsActivity(true, false, false, true, false);
-
-                //TODO: If they are not make function to remap the points and then exacute the points.
-
-
+                mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic, requestMessage.GetData());
+                SetMimicControlsActivity(true, false, false, true, false);
             }
         }
         public void SignalActiveRobotUpdateFromPlannerRoboticTerritories(string robotName, string activeRobotName, Action visualizeRobotMethod)
