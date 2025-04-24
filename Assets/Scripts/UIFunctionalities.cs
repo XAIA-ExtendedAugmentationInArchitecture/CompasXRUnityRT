@@ -225,6 +225,7 @@ namespace CompasXR.UI
         public GameObject MimicUndoPointRedScreen;
         public float MimicSetandUndoFlashDuration = 0.1f;
         public CompasXRButtonHeldEvent FollowMeButtonHeldEventComponent;
+        public GameObject RealtimeMimicEditorTestToggleObject;
 
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
 
@@ -325,9 +326,13 @@ namespace CompasXR.UI
             //TODO: Mimic remap testing ////////////////////////////////////////////////////////////////////////////////////////
 
             //TODO: Find FollowMe Button and then add event trigger componnet to it.
-            GameObject FollowMeButton = RoboticTerritoriesCanvasItems.FindObject("RealtimeMimicControls").FindObject("FollowMeButton");
+            GameObject RealtimeMimicControls = RoboticTerritoriesCanvasItems.FindObject("RealtimeMimicControls");
+            GameObject FollowMeButton = RealtimeMimicControls.FindObject("FollowMeButton");
             FollowMeButton.AddComponent<CompasXRButtonHeldEvent>();
             FollowMeButtonHeldEventComponent = FollowMeButton.GetComponent<CompasXRButtonHeldEvent>();
+
+            //TODO: //TODO: //TODO: //TODO: //TODO: THIS IS LITERALLY JUST FOR TESTING PURPOSES IN THE REALTIME MIMIC.
+            UserInterface.FindToggleandSetOnValueChangedAction(RealtimeMimicControls, ref RealtimeMimicEditorTestToggleObject, "TestingToggle", TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY);
 
             //Set Zone Visualization Menu Items on Start
             SetZoneMenuItemsOnStart();
@@ -345,6 +350,23 @@ namespace CompasXR.UI
             SetCorrectionMenuItemsOnStart();
 
         }    
+
+        public void TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY(Toggle toggle)
+        {
+            /*
+            * Method is used to test the Realtime Mimic Is Pressed Toggle.
+            */
+            if (toggle != null && toggle.isOn)
+            {
+                Debug.Log("ToggleRealtimeMimicIsPressedTestingMethod: Realtime Mimic Is Pressed Toggle is On.");
+                FollowMeButtonHeldEventComponent.isHeld = true;
+            }
+            else
+            {
+                Debug.Log("ToggleRealtimeMimicIsPressedTestingMethod: Realtime Mimic Is Pressed Toggle is Off.");
+                FollowMeButtonHeldEventComponent.isHeld = false;
+            }
+        }
         public void SetVisualizationItemsOnStart()
         {
             /*
@@ -770,6 +792,55 @@ namespace CompasXR.UI
                 }
             }
         }
+
+        public void SetRealtimeMimicPointBasicTEMPORARY()
+        {
+            /*
+            * Method is used to set the mimic point based on the human and robot zone objects.
+            */
+            Debug.Log("SetMimicPoint: Setting Mimic Point based on Human and Robot Zone Objects.");
+            Debug.Log("SetMimicPoint: Mimic Zone Objects: " +databaseManager.ProjectZones.MimicZones + "Type of Mimic Zones: " + databaseManager.ProjectZones.MimicZones.GetType());
+    
+            var mimicZones = databaseManager.ProjectZones.MimicZones;
+
+            if (mimicZones.TryGetValue("human_zone", out Zone humanZone))
+            {
+                if (mimicZones.TryGetValue("robot_zone", out Zone robotZone))
+                {
+                    GameObject humanZoneObject = humanZone.ZoneObject;
+                    GameObject robotZoneObject = robotZone.ZoneObject;
+
+                    // Additional logic for both zones can go here
+                    Vector3 cameraPositionObject = arCamera.transform.position;
+
+                    if(ObjectInstantiaion.IsPositionWithinObject(humanZoneObject, cameraPositionObject)) //TODO: Write method to create mimic points etc.
+                    {
+                        Debug.Log("SetMimicPoint: Camera Position is within the Human Zone Object.");
+                        //Set Lines active and Points active
+                        instantiateObjects.MimicHumanObjects.SetActive(true);
+                        instantiateObjects.MimicRobotObjects.SetActive(true);
+                        instantiateObjects.CreateMimicPoints(humanZoneObject, robotZoneObject, ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, instantiateObjects.MimicHumanLine, instantiateObjects.MimicRobotLine, instantiateObjects.MimicHumanPointsParent, instantiateObjects.MimicRobotPointsParent, MimicMirrorToggle.isOn);
+                        StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(MimicSetPointGreenScreen, MimicSetandUndoFlashDuration));
+                    }
+                    else
+                    {
+                        Debug.Log("SetMimicPoint: Camera Position is not within the Human Zone Object.");
+                        string message = "WARNING: This Point cannot be set because it is not within the human editing zone.";
+                        UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenInfoMessagePrefab, ref MimicSetPointOutsideOfHumanZone, "MimicPointOutsideOfBounds", MessagesParent, message, "RequestTrajectoryButtonMethod: Transaction Lock Active Warning.");
+
+                    }
+                }
+                else
+                {
+                    Debug.LogError("SetMimicPoint: 'robot_zone' key not found in MimicZones.");
+                }
+            }
+            else
+            {
+                Debug.LogError("SetMimicPoint: 'human_zone' key not found in MimicZones.");
+            }
+        }
+
         public void SetMimicPointButtonMethod()
         {
             /*
@@ -3114,9 +3185,15 @@ namespace CompasXR.UI
             }
             TMP_Text messageTextComponent = messageObjectReference.FindObject("MessageText").GetComponent<TMP_Text>();
 
-            if(messageTextComponent != null && message != null && messageObjectReference != null)
+
+            //TODO: THIS WAS UPDATED FOR ROBOTIC TERRITORIES.
+            if(messageTextComponent != null && message != null && messageObjectReference != null && messageObjectReference.activeSelf == false)
             {
                 SignalOnScreenMessageWithButton(messageObjectReference, messageTextComponent, message);
+            }
+            else if(messageObjectReference != null && messageObjectReference.activeSelf == true)
+            {
+                Debug.LogWarning($"SignalOnScreenMessageFromPrefab: {logMessageName}: Message is already active.");
             }
             else
             {

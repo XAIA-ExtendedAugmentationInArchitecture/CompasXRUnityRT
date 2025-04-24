@@ -8,6 +8,8 @@ namespace CompasXR.UI
     public class CompasXRButtonHeldEvent : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
     {
         public bool isHeld = false;
+        private float vibrationInterval = 0.3f; // seconds between buzzes
+        private float timer = 0f;
 
         public void OnPointerDown(PointerEventData eventData)
         {
@@ -21,14 +23,26 @@ namespace CompasXR.UI
             Debug.Log("Button released");
         }
 
-        // void Update()
-        // {
-        //     if (isHeld)
-        //     {
-        //         // This runs every frame while the button is held
-        //         Debug.Log("Still holding...");
-        //         // You can run your logic here (e.g., charge power, move object, etc.)
-        //     }
-        // }
+        void Update()
+        {
+            if (isHeld)
+            {
+                timer += Time.deltaTime;
+
+                if (timer >= vibrationInterval)
+                {
+                    Vibrate();
+                    timer = 0f;
+                }
+            }
+        }
+
+        private void Vibrate()
+        {
+            #if UNITY_ANDROID && !UNITY_EDITOR
+                    Handheld.Vibrate();  // or your custom Android vibrator
+            #endif
+            Debug.Log("Vibrate : Buzz!");
+        }
     }
 }
