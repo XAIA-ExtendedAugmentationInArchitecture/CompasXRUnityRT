@@ -218,6 +218,7 @@ namespace CompasXR.UI
         
         //Mimic OnScreen Messages
         public GameObject MimicSetPointOutsideOfHumanZone;
+        public GameObject RealtimeMimicActiveRobotNull;
         public GameObject MimicPointsTooFewMessage;
         public GameObject MimicUnabletoExecuteTrajectory;
 
@@ -226,6 +227,7 @@ namespace CompasXR.UI
         public float MimicSetandUndoFlashDuration = 0.1f;
         public CompasXRButtonHeldEvent FollowMeButtonHeldEventComponent;
         public GameObject RealtimeMimicEditorTestToggleObject;
+        public int TEMPORARYCOUNTERREALTIMEMIMIC = 0;
 
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
 
@@ -254,26 +256,7 @@ namespace CompasXR.UI
         {
             if (FollowMeButtonHeldEventComponent.isHeld)
             {
-                string dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                string message = $"sending message {dateTime}";
-
-                if (trajectoryVisualizer.ActiveRobot != null)
-                {
-                    string robotName = RobotSelectionDropdown.options[RobotSelectionDropdown.value].text;
-                    RealtimeMimicRequestMessage realtimeMimicRequestMessage = new RealtimeMimicRequestMessage
-                    (
-                        robotName,
-                        message
-                    );
-                    Debug.Log($"FollowMeButtonHeldEventComponent: Sending message to {robotName} with message {message} with structure {JsonConvert.SerializeObject(realtimeMimicRequestMessage.GetData())} to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic}");
-
-                    mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic, realtimeMimicRequestMessage.GetData());
-                    StartCoroutine(PauseForDurationSeconds(1.0f));
-                }
-                else
-                {
-                    Debug.Log("FollowMeButtonHeldEventComponent: Button is Pressed But Active Robot Name is null.");
-                }
+                SetRealtimeMimicPointBasicTEMPORARY();
             }
         }
 
@@ -331,8 +314,59 @@ namespace CompasXR.UI
             FollowMeButton.AddComponent<CompasXRButtonHeldEvent>();
             FollowMeButtonHeldEventComponent = FollowMeButton.GetComponent<CompasXRButtonHeldEvent>();
 
+            if (FollowMeButtonHeldEventComponent == null)
+            {
+                Debug.LogError("JOETESTING : FollowMeButtonHeldEventComponent is null.");
+            }
+            else
+            {
+                Debug.Log("JOETESTING : FollowMeButtonHeldEventComponent is not null.");
+            }
+
+            if(RealtimeMimicControls == null)
+            {
+                Debug.LogError("JOETESTING : RealtimeMimicControls is null.");
+            }
+            else
+            {
+                Debug.Log("JOETESTING : RealtimeMimicControls is not null.");
+            }
+
+            if(FollowMeButton == null)
+            {
+                Debug.Log("JOETESTING : FollowMeButton is null.");
+            }
+            else
+            {
+                Debug.Log("JOETESTING : FollowMeButton is not null.");
+            }
+
             //TODO: //TODO: //TODO: //TODO: //TODO: THIS IS LITERALLY JUST FOR TESTING PURPOSES IN THE REALTIME MIMIC.
-            UserInterface.FindToggleandSetOnValueChangedAction(RealtimeMimicControls, ref RealtimeMimicEditorTestToggleObject, "TestingToggle", TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY);
+            RealtimeMimicEditorTestToggleObject = RealtimeMimicControls.FindObject("TestingToggle");
+            if(RealtimeMimicEditorTestToggleObject == null)
+            {
+                Debug.Log("JOETESTING : RealtimeMimicEditorTestToggleObject is null.");
+            }
+            else
+            {
+                Debug.Log("JOETESTING : RealtimeMimicEditorTestToggleObject is not null.");
+            }
+
+            Toggle RealtimeMimicEditorTestToggle = RealtimeMimicEditorTestToggleObject.GetComponent<Toggle>();
+            if(RealtimeMimicEditorTestToggle == null)
+            {
+                Debug.Log("JOETESTING : RealtimeMimicEditorTestToggle is null.");
+            }
+            else
+            {
+                Debug.Log("JOETESTING : RealtimeMimicEditorTestToggle is not null.");
+            }
+
+
+            //Set Mirror Toggle Object
+            RealtimeMimicEditorTestToggleObject = RealtimeMimicControls.FindObject("TestingToggle");
+            Toggle RealtimeMimicTestingToggle = RealtimeMimicEditorTestToggleObject.GetComponentInChildren<Toggle>();
+            RealtimeMimicTestingToggle.onValueChanged.AddListener(TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY);
 
             //Set Zone Visualization Menu Items on Start
             SetZoneMenuItemsOnStart();
@@ -351,12 +385,12 @@ namespace CompasXR.UI
 
         }    
 
-        public void TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY(Toggle toggle)
+        public void TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY(bool toggle)
         {
             /*
             * Method is used to test the Realtime Mimic Is Pressed Toggle.
             */
-            if (toggle != null && toggle.isOn)
+            if (toggle)
             {
                 Debug.Log("ToggleRealtimeMimicIsPressedTestingMethod: Realtime Mimic Is Pressed Toggle is On.");
                 FollowMeButtonHeldEventComponent.isHeld = true;
@@ -798,8 +832,7 @@ namespace CompasXR.UI
             /*
             * Method is used to set the mimic point based on the human and robot zone objects.
             */
-            Debug.Log("SetMimicPoint: Setting Mimic Point based on Human and Robot Zone Objects.");
-            Debug.Log("SetMimicPoint: Mimic Zone Objects: " +databaseManager.ProjectZones.MimicZones + "Type of Mimic Zones: " + databaseManager.ProjectZones.MimicZones.GetType());
+            Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Mimic Zone Objects: " +databaseManager.ProjectZones.MimicZones + "Type of Mimic Zones: " + databaseManager.ProjectZones.MimicZones.GetType());
     
             var mimicZones = databaseManager.ProjectZones.MimicZones;
 
@@ -813,31 +846,101 @@ namespace CompasXR.UI
                     // Additional logic for both zones can go here
                     Vector3 cameraPositionObject = arCamera.transform.position;
 
-                    if(ObjectInstantiaion.IsPositionWithinObject(humanZoneObject, cameraPositionObject)) //TODO: Write method to create mimic points etc.
+                    if(ObjectInstantiaion.IsPositionWithinObject(humanZoneObject, cameraPositionObject))
                     {
-                        Debug.Log("SetMimicPoint: Camera Position is within the Human Zone Object.");
-                        //Set Lines active and Points active
-                        instantiateObjects.MimicHumanObjects.SetActive(true);
-                        instantiateObjects.MimicRobotObjects.SetActive(true);
-                        instantiateObjects.CreateMimicPoints(humanZoneObject, robotZoneObject, ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, instantiateObjects.MimicHumanLine, instantiateObjects.MimicRobotLine, instantiateObjects.MimicHumanPointsParent, instantiateObjects.MimicRobotPointsParent, MimicMirrorToggle.isOn);
-                        StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(MimicSetPointGreenScreen, MimicSetandUndoFlashDuration));
+                        if(trajectoryVisualizer.ActiveRobot == null)
+                        {
+                            Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Active Robot is Null.");
+                            string message = "WARNING: You must select an active robot in order to mimic realtime.";
+                            UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref RealtimeMimicActiveRobotNull, "RealtimeMimicActiveRobotNull", MessagesParent, message, "SetRealtimeMimicPoint: ActiveRobot is null.");
+                            return;
+                        }
+
+                        if(trajectoryVisualizer.humanZoneMimicReachibility == null)
+                        {
+                            Debug.LogError("CreateRealtimeMimicPointsBasicTEMPORARY: Human Zone Reachability is null for some weird reason.");
+                            return;
+                        }
+                        else
+                        {
+                            if(!ObjectInstantiaion.IsPositionWithinObject(trajectoryVisualizer.humanZoneMimicReachibility, cameraPositionObject))
+                            {
+                                Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Camera Position is not within the Human Zone Object.");
+                                string message = "WARNING: This mimic point is outside of the Robots reachability.";
+                                UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref RealtimeMimicActiveRobotNull, "RealtimeMimicActiveRobotNull", MessagesParent, message, "SetRealtimeMimicPoint: ActiveRobot is null.");
+                                return;
+                            }
+                        }
+                        
+                        //TODO: ADD METHOD TO RETURN IF THRESHOLD IS NOT MET.
+                        float DRAWINGTHRESHOLD = 0.1f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
+                        if (instantiateObjects.RealtimeMimicHumanPoints.Count >= 1 && instantiateObjects.RealtimeMimicRobotPoints.Count >= 1)
+                        {
+                            Vector3 lastRealtimeMimicPoint = instantiateObjects.RealtimeMimicHumanPoints[instantiateObjects.RealtimeMimicHumanPoints.Count - 1].transform.position;
+                            if(lastRealtimeMimicPoint == null)
+                            {
+                                Debug.LogError("CreateRealtimeMimicPointsBasicTEMPORARY: Last Realtime Mimic Point is null.");
+                                return;
+                            }
+                            else
+                            {
+                                Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Last Realtime Mimic Point is not null.");
+                            }
+
+                            if(ObjectInstantiaion.Vector3sAreCloserThenThreshold(cameraPositionObject, lastRealtimeMimicPoint, DRAWINGTHRESHOLD))
+                            {
+                                Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Points are closer than threshold, not creating new points.");
+                                return;
+                            }
+                            else
+                            {
+                                Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Camera Position is within the Human Zone Object and Points are not closer than threshold.");
+                            }
+                        }
+                        else
+                        {
+                            Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Camera Position is Outside of the Threshold and Point Will Be Set.");
+                            //Set Lines active and Points active
+                            instantiateObjects.RealtimeMimicObjects.SetActive(true);
+
+                            instantiateObjects.CreateRealtimeMimicPointsBasicTEMPORARY(humanZoneObject, robotZoneObject, 
+                            ref instantiateObjects.RealtimeMimicHumanPoints, ref instantiateObjects.RealtimeMimicRobotPoints, 
+                            instantiateObjects.RealtimeMimicHumanPointsParent, instantiateObjects.RealtimeMimicRobotPointsParent, 
+                            instantiateObjects.RealtimeMimicHumanLine, instantiateObjects.RealtimeMimicRobotLine, MimicMirrorToggle.isOn);
+
+                            //TODO: CONVERT TO FRAME FROM LAST GAMEOBJECT IN ROBOT POINTS LIST.
+                            GameObject lastRealtimeMimicPoint = instantiateObjects.RealtimeMimicRobotPoints[instantiateObjects.RealtimeMimicRobotPoints.Count - 1];
+                            Frame lastMimicPointFrame = ObjectTransformations.ConvertGameObjectToRightHandFrameDataRoboticTerritories(lastRealtimeMimicPoint, instantiateObjects.ZonesARPrefabObjects);
+                            string message = TEMPORARYCOUNTERREALTIMEMIMIC.ToString(); //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
+
+                            string robotName = RobotSelectionDropdown.options[RobotSelectionDropdown.value].text;
+                            RealtimeMimicRequestMessage realtimeMimicRequestMessage = new RealtimeMimicRequestMessage
+                            (
+                                lastMimicPointFrame,
+                                robotName,
+                                message
+                            );
+                            Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Sending message to {robotName} with message {message} with structure {JsonConvert.SerializeObject(realtimeMimicRequestMessage.GetData())} to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic}");
+                            mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic, realtimeMimicRequestMessage.GetData());
+                            TEMPORARYCOUNTERREALTIMEMIMIC++;
+                        }
+
                     }
                     else
                     {
-                        Debug.Log("SetMimicPoint: Camera Position is not within the Human Zone Object.");
+                        Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Camera Position is not within the Human Zone Object.");
                         string message = "WARNING: This Point cannot be set because it is not within the human editing zone.";
-                        UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenInfoMessagePrefab, ref MimicSetPointOutsideOfHumanZone, "MimicPointOutsideOfBounds", MessagesParent, message, "RequestTrajectoryButtonMethod: Transaction Lock Active Warning.");
-
+                        UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref MimicSetPointOutsideOfHumanZone, "MimicPointOutsideOfBounds", MessagesParent, message, "RealtimeMimicRequest: Point outside of human zone.");
                     }
                 }
                 else
                 {
-                    Debug.LogError("SetMimicPoint: 'robot_zone' key not found in MimicZones.");
+                    Debug.LogError("CreateRealtimeMimicPointsBasicTEMPORARY: 'robot_zone' key not found in MimicZones.");
                 }
             }
             else
             {
-                Debug.LogError("SetMimicPoint: 'human_zone' key not found in MimicZones.");
+                Debug.LogError("CreateRealtimeMimicPointsBasicTEMPORARY: 'human_zone' key not found in MimicZones.");
             }
         }
 
@@ -3184,7 +3287,6 @@ namespace CompasXR.UI
                 messageObjectReference.name = activeMessageGameObjectName;
             }
             TMP_Text messageTextComponent = messageObjectReference.FindObject("MessageText").GetComponent<TMP_Text>();
-
 
             //TODO: THIS WAS UPDATED FOR ROBOTIC TERRITORIES.
             if(messageTextComponent != null && message != null && messageObjectReference != null && messageObjectReference.activeSelf == false)

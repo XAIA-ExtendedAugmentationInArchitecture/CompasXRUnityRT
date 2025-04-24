@@ -110,6 +110,15 @@ namespace CompasXR.Core
         //Zones AR Prefabs
         public GameObject ZonesARPrefabObjects;
 
+        //TODO: REALTIME MIMIC OBJECT TESTING
+        public GameObject RealtimeMimicObjects;
+        public GameObject RealtimeMimicHumanLine;
+        public GameObject RealtimeMimicRobotLine;
+        public GameObject RealtimeMimicHumanPointsParent;
+        public GameObject RealtimeMimicRobotPointsParent;
+        public List<GameObject> RealtimeMimicHumanPoints = new List<GameObject>();
+        public List<GameObject> RealtimeMimicRobotPoints = new List<GameObject>();
+
         //Events
         public delegate void InitialZonesCreated(object source, EventArgs e);
         public event InitialZonesCreated InitialZonesPlaced;
@@ -135,6 +144,20 @@ namespace CompasXR.Core
                 //TODO: TESTING
                 UpdateLinePositionsByGameObjectPositionsList(MimicHumanSystemProposedPoints, MimicSystemProposedLineHuman);
                 UpdateLinePositionsByGameObjectPositionsList(MimicRobotSystemProposedPoints, MimicSystemProposedLineRobot);
+
+                if (RealtimeMimicObjects.activeSelf)
+                {
+                    if (RealtimeMimicHumanPoints.Count > 1 && RealtimeMimicRobotPoints.Count > 1)
+                    {
+                        UpdateLinePositionsByGameObjectPositionsList(RealtimeMimicHumanPoints, RealtimeMimicHumanLine);
+                        UpdateLinePositionsByGameObjectPositionsList(RealtimeMimicRobotPoints, RealtimeMimicRobotLine);
+                        Debug.Log("UpdateLinePositionsByGameObjectPositionsList: Updating Realtime Mimic Lines");
+                    }
+                    else
+                    {
+                        Debug.LogWarning("UpdateLinePositionsByGameObjectPositionsList: Realtime Mimic Points are not greater then 1 for some reason.");
+                    }
+                }
             }
         }
 
@@ -1010,6 +1033,103 @@ namespace CompasXR.Core
         return mirroredRotationB;
     }
 
+    //TODO: //TODO: //TODO: //TODO: TEMPORARY ROBOTIC TERRITORIES TESTING REALTIME MIMIC
+    public void CreateRealtimeMimicPointsBasicTEMPORARY(GameObject humanZoneObject, GameObject robotZoneObject, ref List<GameObject> realtimeMimicHumanPoints, 
+    ref List<GameObject> realtimeMimicRobotPoints, GameObject realtimeMimicHumanPointsParent, GameObject realtimeMimicRobotPointsParent, 
+    GameObject realtimeMimicHumanLine, GameObject realtimeMimicRobotLine, bool MimicMirrorToggle=false)
+    {
+        Vector3 position = cameraPositionObject.transform.position;
+        Quaternion rotation = AddAdditionalRotationForEndEffector(cameraPositionObject); //TODO: Check this
+        Color humanColor = new Color(1.0f, 1.0f, 0.0f, 1.0f);
+        Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
+
+
+        CreateRealtimeMimicPointTEMPORARY(humanZoneObject, robotZoneObject, ref realtimeMimicHumanPoints, 
+        ref realtimeMimicRobotPoints, realtimeMimicHumanPointsParent, realtimeMimicRobotPointsParent, position, 
+        rotation, $"{realtimeMimicHumanPoints.Count}_MimicPoint", $"{realtimeMimicRobotPoints.Count}_MimicPoint", true, //TODO: ADDED THESE
+        MimicMirrorToggle);
+
+
+        // CreateSpheresForMimic(humanZone, robotZone, ref humanPoints, ref robotPoints, 
+        // humanParent, robotParent, position, rotation, 
+        // radius, humanColor, robotColor, $"{humanPoints.Count}_MimicPoint", $"{robotPoints.Count}_MimicPoint", true, Mirror);
+
+        // // //TODO: Quick test for the closest reachable point:
+        // // CreateSpheresForMimic(humanZone, robotZone, ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints, 
+        // // MimicSystemProposedLineHuman, MimicSystemProposedLineRobot, MimicHumanSystemProposedPointsParent, MimicRobotSystemProposedPointsParent, 
+        // // closestReachablePoint, rotation, radius, Color.red, Color.grey, $"{humanPoints.Count}_MimicPointProposal", $"{robotPoints.Count}_MimicPointProposal", false, Mirror);
+        // //TODO: TESTING...
+        // CreateSystemProposalPoints(humanZone, robotZone, trajectoryVisualizer.humanZoneMimicReachibility, ref humanPoints, 
+        // ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints,
+        // MimicSystemProposedLineHuman, MimicHumanSystemProposedPointsParent, MimicSystemProposedLineRobot, 
+        // MimicRobotSystemProposedPointsParent, Mirror);
+
+        Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Point is being set within the Robot Reachability.");
+
+        if (realtimeMimicHumanPoints.Count > 1 && realtimeMimicRobotPoints.Count > 1)
+        {
+            Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Drawing Mimic Points Line");
+            DrawLineFromGameObjectList(realtimeMimicHumanPoints, realtimeMimicHumanLine, humanColor, 0.01f);
+            DrawLineFromGameObjectList(realtimeMimicRobotPoints, realtimeMimicRobotLine, robotColor, 0.01f);
+        }
+        else
+        {
+            Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Points are empty or not enough points to draw a line.");
+        }
+    }
+
+    public void CreateRealtimeMimicPointTEMPORARY(GameObject humanZone, GameObject robotZone, ref List<GameObject> humanPoints, 
+    ref List<GameObject> robotPoints, GameObject humanParent, 
+    GameObject robotParent,
+    Vector3 position, Quaternion rotation, string humanPointName, string robotPointName, bool addToPointsList =true, //TODO: ADDED THESE
+    bool Mirror=false)
+    {
+
+        GameObject humanPoint = new GameObject(humanPointName);
+        transform.position = position;
+        humanPoint.transform.rotation = rotation;
+        // GameObject humanPoint = CreateSphereAtPositionAndRotation(position, rotation, radius, humanColor, humanPointName);//$"{humanPoints.Count}_MimicPoint");
+        humanPoint.transform.SetParent(humanParent.transform, true);
+        if(addToPointsList)
+        {
+            humanPoints.Add(humanPoint);
+        }
+        else
+        {
+            Debug.LogWarning("CreateRealtimeMimicPointTEMPORARY: Human Point is not added to the list.");
+        }
+
+        Vector3 mappedRobotPosition = Vector3.zero;
+        Quaternion mappedRotation = Quaternion.identity;
+        
+        if(!Mirror)
+        {
+            mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, position); //TODO: Check this
+            mappedRotation = rotation; //TODO: Check this
+        }
+        else
+        {
+            Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.right); //TODO: CHECK THIS IDK WHATS UP.
+            Quaternion mirrorRotation = MirrorQuaternion(rotation, humanZone.transform.right);
+            mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, mirroredPosition);
+            mappedRotation = mirrorRotation;
+        }
+
+        GameObject robotPoint = new GameObject(robotPointName);
+        transform.position = mappedRobotPosition;
+        // GameObject robotPoint = CreateSphereAtPositionAndRotation(mappedRobotPosition, rotation, radius, robotColor, robotPointName);//, $"{robotPoints.Count}_MimicPoint");
+        robotPoint.transform.rotation = mappedRotation;
+        robotPoint.transform.SetParent(robotParent.transform, true);
+        if(addToPointsList)
+        {
+            robotPoints.Add(robotPoint);
+        }
+        else
+        {
+            Debug.LogWarning("CreateRealtimeMimicPointTEMPORARY: Robot Point is not added to the list.");
+        }
+    }
+
     //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
         {
@@ -1072,6 +1192,31 @@ namespace CompasXR.Core
             if(MimicHumanSystemProposedPointsParent == null || MimicRobotSystemProposedPointsParent == null)
             {
                 Debug.LogWarning("MimicHumanSystemProposedPointsParent or MimicRobotSystemProposedPointsParent is null");
+            }
+
+
+            //TODO: TEMPORARY ROBOTIC TERRITORIES TESTING REALTIME MIMIC
+            RealtimeMimicObjects = ZonesARPrefabObjects.FindObject("RealtimeMimicObjectsTEMPORARY");
+            RealtimeMimicHumanLine = RealtimeMimicObjects.FindObject("HumanLine");
+            RealtimeMimicRobotLine = RealtimeMimicObjects.FindObject("RobotLine");
+            RealtimeMimicHumanPointsParent = RealtimeMimicObjects.FindObject("Points").FindObject("Human");
+            RealtimeMimicRobotPointsParent = RealtimeMimicObjects.FindObject("Points").FindObject("Robot");
+
+            if(RealtimeMimicHumanPointsParent == null || RealtimeMimicRobotPointsParent == null)
+            {
+                Debug.LogWarning("JOETESTING : RealtimeMimicHumanPointsParent or RealtimeMimicRobotPointsParent is null");
+            }
+            else if(RealtimeMimicHumanLine == null || RealtimeMimicRobotLine == null)
+            {
+                Debug.LogWarning("JOETESTING : RealtimeMimicHumanLine or RealtimeMimicRobotLine is null");
+            }
+            else if(RealtimeMimicHumanPointsParent == null || RealtimeMimicRobotPointsParent == null)
+            {
+                Debug.LogWarning("JOETESTING : RealtimeMimicHumanPointsParent or RealtimeMimicRobotPointsParent is null");
+            }
+            else
+            {
+                Debug.Log("JOE TESTING : RealtimeMimicHumanPointsParent and RealtimeMimicRobotPointsParent and Lines are not null");
             }
 
             //Find AR and system management items
@@ -2260,5 +2405,25 @@ namespace CompasXR.Core
             }
             return true; // All objects are within the target object
             }
+        public static bool Vector3sAreCloserThenThreshold(Vector3 pointA, Vector3 pointB, float threshold)
+        {
+            
+            if (threshold <= 0)
+            {
+                Debug.LogError("Vector3sAreCloserThenThreshold: Threshold must be greater than zero.");
+                return false;
+            }
+            else if (pointA == null || pointB == null)
+            {
+                Debug.LogError("Vector3sAreCloserThenThreshold: One or both of the points are null.");
+                return false;
+            }
+            else if (pointA == pointB)
+            {
+                return true; // If the points are the same, they are definitely within the threshold
+            }
+            float distance = Vector3.Distance(pointA, pointB);
+            return distance < threshold;
         }
+    }
 }

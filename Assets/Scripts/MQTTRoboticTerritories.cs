@@ -507,13 +507,17 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         * It is sent to the CAD when a user requests a trajectory.
         */
         public Header Header { get; private set; }
+
+        public Frame RequestedRobotFrame { get; private set; }
+
         // public List<Frame> HumanFrames { get; private set; }
         // public List<Frame> RobotFrames { get; private set; }
         public string RobotName { get; private set; }
         public string Message { get; private set; }
-        public RealtimeMimicRequestMessage(string robotName, string message, Header header=null)
+        public RealtimeMimicRequestMessage(Frame requestedRobotFrame, string robotName, string message, Header header=null)
         {
             Header = header ?? new Header();
+            RequestedRobotFrame = requestedRobotFrame;
             // HumanFrames = humanFrames;
             // RobotFrames = robotFrames;
             RobotName = robotName;
@@ -527,6 +531,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             return new Dictionary<string, object>
             {
                 { "header", Header.GetData() },
+                { "requested_robot_frame", RequestedRobotFrame.GetData() },
                 // { "human_frames", MessageHandelingExtensions._getDataFromFramesList(HumanFrames) },
                 // { "robot_frames", MessageHandelingExtensions._getDataFromFramesList(RobotFrames) },
                 { "robot_name", RobotName },
@@ -542,6 +547,8 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
             Header header = Header.Parse(headerInfo);
 
+            Dictionary<string, object> requestedRobotFrameDict = jsonObject["requested_robot_frame"] as Dictionary<string, object>;
+            Frame requestedFrame = Frame.FromData(requestedRobotFrameDict); 
             // var humanFramesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["human_frames"].ToString());
             // List<Frame> humanFrames = Frame._parseFramesData(humanFramesData);
 
@@ -551,7 +558,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             var robotName = jsonObject["robot_name"].ToString();
             var message = jsonObject["message"].ToString();
 
-            return new RealtimeMimicRequestMessage(robotName, message, header);
+            return new RealtimeMimicRequestMessage(requestedFrame, robotName, message, header);
         }
     }
 
