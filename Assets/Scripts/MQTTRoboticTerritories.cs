@@ -514,7 +514,8 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         // public List<Frame> RobotFrames { get; private set; }
         public string RobotName { get; private set; }
         public string Message { get; private set; }
-        public RealtimeMimicRequestMessage(Frame requestedRobotFrame, string robotName, string message, Header header=null)
+        public bool InitialRequest { get; private set; }
+        public RealtimeMimicRequestMessage(Frame requestedRobotFrame, string robotName, string message, Header header=null, bool initialRequest=false)
         {
             Header = header ?? new Header();
             RequestedRobotFrame = requestedRobotFrame;
@@ -522,6 +523,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             // RobotFrames = robotFrames;
             RobotName = robotName;
             Message = message;
+            InitialRequest = initialRequest;
         }
         public Dictionary<string, object> GetData()
         {
@@ -535,7 +537,8 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 // { "human_frames", MessageHandelingExtensions._getDataFromFramesList(HumanFrames) },
                 // { "robot_frames", MessageHandelingExtensions._getDataFromFramesList(RobotFrames) },
                 { "robot_name", RobotName },
-                { "message", Message }
+                { "message", Message },
+                { "initial_request", InitialRequest }
             };
         }
         public static RealtimeMimicRequestMessage Parse(string jsonString)
@@ -557,8 +560,8 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
 
             var robotName = jsonObject["robot_name"].ToString();
             var message = jsonObject["message"].ToString();
-
-            return new RealtimeMimicRequestMessage(requestedFrame, robotName, message, header);
+            var initialRequest = Convert.ToBoolean(jsonObject["initial_request"]);
+            return new RealtimeMimicRequestMessage(requestedFrame, robotName, message, header, initialRequest);
         }
     }
 

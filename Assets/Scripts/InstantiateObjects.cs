@@ -1039,6 +1039,7 @@ namespace CompasXR.Core
     GameObject realtimeMimicHumanLine, GameObject realtimeMimicRobotLine, bool MimicMirrorToggle=false)
     {
         Vector3 position = cameraPositionObject.transform.position;
+        Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: CAMERA Position FROM REALTIME MIMIC: {position}");
         Quaternion rotation = AddAdditionalRotationForEndEffector(cameraPositionObject); //TODO: Check this
         Color humanColor = new Color(1.0f, 1.0f, 0.0f, 1.0f);
         Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
@@ -1085,8 +1086,9 @@ namespace CompasXR.Core
     bool Mirror=false)
     {
 
+        Debug.Log("CreateRealtimeMimicPointTEMPORARY: Creating Realtime Mimic Point. Position: " + position + " Rotation: " + rotation.eulerAngles);
         GameObject humanPoint = new GameObject(humanPointName);
-        transform.position = position;
+        humanPoint.transform.position = position; //TODO: CHECK IF THIS WORKED....
         humanPoint.transform.rotation = rotation;
         // GameObject humanPoint = CreateSphereAtPositionAndRotation(position, rotation, radius, humanColor, humanPointName);//$"{humanPoints.Count}_MimicPoint");
         humanPoint.transform.SetParent(humanParent.transform, true);
@@ -1115,8 +1117,14 @@ namespace CompasXR.Core
             mappedRotation = mirrorRotation;
         }
 
+        if (mappedRobotPosition == Vector3.zero)
+        {
+            Debug.LogWarning("CreateRealtimeMimicPointTEMPORARY: Mapped Robot Position is zero, cannot create robot point.");
+            return;
+        }
+
         GameObject robotPoint = new GameObject(robotPointName);
-        transform.position = mappedRobotPosition;
+        robotPoint.transform.position = mappedRobotPosition;
         // GameObject robotPoint = CreateSphereAtPositionAndRotation(mappedRobotPosition, rotation, radius, robotColor, robotPointName);//, $"{robotPoints.Count}_MimicPoint");
         robotPoint.transform.rotation = mappedRotation;
         robotPoint.transform.SetParent(robotParent.transform, true);
@@ -2387,7 +2395,6 @@ namespace CompasXR.Core
                 return false;
             }
         }
-
         public static bool AllGameObjectsInListsPositionsAreWithinAnotherObject(List<GameObject> gameObjects, GameObject targetObject)
         {
             if (gameObjects == null || gameObjects.Count == 0)
