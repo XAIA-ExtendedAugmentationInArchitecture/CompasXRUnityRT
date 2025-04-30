@@ -146,6 +146,7 @@ namespace CompasXR.Robots
             */
             Debug.Log("MQTT: SubscribeToRoboticTerritoriesTopics: Subscribing to Robotic Territories Topics");
             SubscribeToTopic(roboticTerritoriesTopics.subscribers.mimicResultTopic);
+            SubscribeToTopic(roboticTerritoriesTopics.subscribers.realtimeMimicResultTopic);
         }
         public void UnsubscribeFromRoboticTerritoriesTopics()
         {
@@ -177,6 +178,13 @@ namespace CompasXR.Robots
                 Debug.Log("MQTT: MimicResult Message Handeling");
                 MimicTrajectoryResultMessage mimicResultMessage = MimicTrajectoryResultMessage.Parse(message);
                 MimicResultReceivedMessageHandler(mimicResultMessage);
+            }
+            else if (topic == roboticTerritoriesTopics.subscribers.realtimeMimicResultTopic)
+            {
+                Debug.Log("MQTT: RealtimeMimicResult Message Handeling");
+                RealtimeMimicResultMessage realtimeMimicResultMessage = RealtimeMimicResultMessage.Parse(message);
+                // RealtimeMimicResultReceivedMessageHandler(realtimeMimicResultMessage);
+                Debug.Log($"MQTT: RealtimeMimicResult Message Handeling: Received {JsonConvert.SerializeObject(realtimeMimicResultMessage)}");
             }
             else
             {
