@@ -38517,7 +38517,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1100007714
 RectTransform:
   m_ObjectHideFlags: 0
@@ -38536,7 +38536,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: -1293.4575}
+  m_AnchoredPosition: {x: 0, y: -84}
   m_SizeDelta: {x: 530.5, y: 482.261}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!43 &1101122138
@@ -52312,7 +52312,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1446144535
 Transform:
   m_ObjectHideFlags: 0
@@ -66976,7 +66976,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: -16, y: 266}
+  m_AnchoredPosition: {x: -16, y: 146}
   m_SizeDelta: {x: 270.4003, y: 88.1889}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1849690351
@@ -78864,7 +78864,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c4d8832d07fa36429d690d119e751f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  brokerAddress: localhost
+  brokerAddress: broker.hivemq.com
   brokerPort: 1883
   isEncrypted: 0
   certificateName: 
