@@ -432,6 +432,113 @@ namespace CompasXR.Core.Data
 
             return meshObject;
         }
+
+        public GameObject GenerateMeshFromRHMeshDebug()
+        {
+            Debug.Log("GenerateMeshFromRHMeshDebug: Starting mesh generation...");
+
+            if (Vertex == null || Vertex.Count == 0)
+            {
+                Debug.LogError("GenerateMeshFromRHMeshDebug: Vertex dictionary is null or empty.");
+                return null;
+            }
+
+            if (Faces == null || Faces.Count == 0)
+            {
+                Debug.LogError("GenerateMeshFromRHMeshDebug: Faces dictionary is null or empty.");
+                return null;
+            }
+
+            Debug.Log($"GenerateMeshFromRHMeshDebug: Found {Vertex.Count} vertices and {Faces.Count} faces.");
+
+            // Sample log the first 3 vertices
+            for (int i = 0; i < Mathf.Min(3, Vertex.Count); i++)
+            {
+                string key = i.ToString();
+                if (Vertex.ContainsKey(key))
+                {
+                    Debug.Log($"Vertex[{key}] = ({Vertex[key].X}, {Vertex[key].Y}, {Vertex[key].Z})");
+                }
+                else
+                {
+                    Debug.LogWarning($"Vertex key '{key}' not found in Vertex dictionary.");
+                }
+            }
+
+            // Sample log the first 3 faces
+            int faceIndex = 0;
+            foreach (var face in Faces)
+            {
+                Debug.Log($"GenerateMeshFromRHMeshDebug: Face[{face.Key}] = {string.Join(", ", face.Value)}");
+                faceIndex++;
+                if (faceIndex >= 3) break;
+            }
+
+            // Convert vertices to Unity Vector3 format
+            Vector3[] vertices = new Vector3[Vertex.Count];
+            for (int i = 0; i < Vertex.Count; i++)
+            {
+                string key = i.ToString();
+                if (!Vertex.ContainsKey(key))
+                {
+                    Debug.LogError($"GenerateMeshFromRHMeshDebug: Missing vertex with key {key}");
+                    return null;
+                }
+
+                Vector3 rhVec = ObjectTransformations.GetPositionFromRightHand(Vertex[key].Values);
+                vertices[i] = rhVec;
+            }
+
+            // Calculate triangles if not already done
+            if (tris == null || tris.Length == 0)
+            {
+                try
+                {
+                    CalculateTriangles();
+                    Debug.Log($"GenerateMeshFromRHMeshDebug: Triangles calculated. Count: {tris.Length / 3} faces.");
+                }
+                catch (System.Exception ex)
+                {
+                    Debug.LogError($"GenerateMeshFromRHMeshDebug: Error calculating triangles: {ex.Message}");
+                    return null;
+                }
+            }
+
+            UnityEngine.Mesh mesh = new UnityEngine.Mesh
+            {
+                name = "TESTING OBJECT",
+                vertices = vertices,
+                triangles = this.tris,
+                normals = this.normals,
+                uv = this.uv
+            };
+
+            if (this.normals == null || this.normals.Length == 0)
+            {
+                Debug.Log("GenerateMeshFromRHMeshDebug: Recalculating normals...");
+                mesh.RecalculateNormals();
+            }
+
+            mesh.RecalculateBounds();
+            Debug.Log("GenerateMeshFromRHMeshDebug: Mesh bounds recalculated.");
+
+            // Create GameObject
+            GameObject meshObject = new GameObject("TESTING OBJECT");
+            MeshFilter meshFilter = meshObject.AddComponent<MeshFilter>();
+            MeshRenderer meshRenderer = meshObject.AddComponent<MeshRenderer>();
+
+            meshFilter.mesh = mesh;
+
+            // Optional sanity cube
+            GameObject debugCube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            debugCube.transform.position = Vector3.zero;
+            debugCube.name = "DEBUG CUBE - Scene Check";
+
+            Debug.Log("GenerateMeshFromRHMesh: Mesh generation complete.");
+
+            return meshObject;
+        }
+
     }
 
     public class Vertex
