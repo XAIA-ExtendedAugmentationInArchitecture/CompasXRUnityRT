@@ -177,20 +177,124 @@ namespace CompasXR.Core.Data
         {
             return jsonDataDict.TryGetValue(key, out var obj) && obj is Dictionary<string, int[]> dict ? dict : new Dictionary<string, int[]>();
         }
-        public static Dictionary<string, object> GetAsDictionary(Dictionary<string, object> jsonDataDict, string key)
+        public static Dictionary<string, object> GetAsDictionary( Dictionary<string, object> jsonDataDict, string key)
         {
-            if (jsonDataDict.TryGetValue(key, out var obj))
+            if (jsonDataDict == null)
             {
-                if (obj is JObject jObj)
-                {
-                    return jObj.ToObject<Dictionary<string, object>>();
-                }
+                return new Dictionary<string, object>();
+            }
+            if (!jsonDataDict.TryGetValue(key, out var obj) || obj == null)
+            {
+                return new Dictionary<string, object>();
+            }
+            if (obj is Dictionary<string, object> dict)
+            {
+                return dict;
+            }
+            if (obj is JObject jObj)
+            {
+                return jObj.ToObject<Dictionary<string, object>>();
+            }
+            if (obj is JToken jToken && jToken.Type == JTokenType.Object)
+            {
+                return ((JObject)jToken).ToObject<Dictionary<string, object>>();
+            }
 
-                if (obj is Dictionary<string, object> dict)
+            try
+            {
+                var json = JsonConvert.SerializeObject(obj);
+                var fallback = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
+                return fallback ?? new Dictionary<string, object>();
+            }
+            catch
+            {
+                return new Dictionary<string, object>();
+            }
+        }
+
+        public static List<Dictionary<string, object>> GetListFromDict(Dictionary<string, object> jsonDataDict, string key)
+        {
+            var result = new List<Dictionary<string, object>>();
+            if (jsonDataDict == null || !jsonDataDict.TryGetValue(key, out var obj) || obj == null)
+                return result;
+
+            if (obj is JArray jArray)
+            {
+                foreach (var token in jArray)
                 {
-                    return dict;
+                    if (token is JObject jo)
+                    {
+                        result.Add(jo.ToObject<Dictionary<string, object>>());
+                    }
+                }
+                return result;
+            }
+
+            if (obj is JToken jt && jt.Type == JTokenType.Array)
+            {
+                foreach (var token in (JArray)jt)
+                {
+                    if (token is JObject jo)
+                    {
+                        result.Add(jo.ToObject<Dictionary<string, object>>());
+                    }
+                }
+                return result;
+            }
+
+            if (obj is List<object> objList)
+            {
+                foreach (var item in objList)
+                {
+                    switch (item)
+                    {
+                        case Dictionary<string, object> dict:
+                            result.Add(dict);
+                            break;
+                        case JObject jo:
+                            result.Add(jo.ToObject<Dictionary<string, object>>());
+                            break;
+                        case JToken token when token.Type == JTokenType.Object:
+                            result.Add(((JObject)token).ToObject<Dictionary<string, object>>());
+                            break;
+                    }
+                }
+                return result;
+            }
+
+            if (obj is Dictionary<string, object> singleDict)
+            {
+                result.Add(singleDict);
+                return result;
+            }
+
+            try
+            {
+                var jo = JObject.FromObject(obj);
+                if (jo.Type == JTokenType.Object)
+                {
+                    result.Add(jo.ToObject<Dictionary<string, object>>());
                 }
             }
+            catch
+            {
+                Debug.LogError($"GetListFromDict: Failed to convert object to JObject for key '{key}'.");
+            }
+
+            return result;
+        }
+        public static Dictionary<string, object> GetListItemAsDictionary(object obj)
+        {
+            if (obj is JArray jArray)
+            {
+                return jArray.ToObject<Dictionary<string, object>>();
+            }
+
+            if (obj is Dictionary<string, object> dict)
+            {
+                return dict;
+            }
+
             return new Dictionary<string, object>();
         }
         public static Dictionary<string, T> GetAsDictionary<T>(Dictionary<string, object> jsonDataDict, string key)
@@ -213,7 +317,27 @@ namespace CompasXR.Core.Data
             // Fallback to empty dictionary
             return new Dictionary<string, T>();
         }
+        public static Dictionary<string, object> ConvertObjectToDictionary(object input)
+        {
+            if (input is Dictionary<string, object> dict)
+            {
+                return dict;
+            }
 
+            if (input is JObject jobj)
+            {
+                return jobj.ToObject<Dictionary<string, object>>();
+            }
+
+            if (input is JToken jtoken && jtoken.Type == JTokenType.Object)
+            {
+                return ((JObject)jtoken).ToObject<Dictionary<string, object>>();
+            }
+
+            // Fallback: serialize-anything → Dictionary<string,object>
+            var json = JsonConvert.SerializeObject(input);
+            return JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
+        }
     }
 
     

@@ -24,6 +24,8 @@ public class URDFParser : MonoBehaviour
         jointObject.transform.position = new Vector3(0, 0, 0);
         jointObject.transform.rotation = Quaternion.Euler(0, 0, 0);
         UrdfJoint urdfJointScript = jointObject.AddComponent<UrdfJointRevolute>();
+        UrdfJointRevolute urdfJointRevoluteScript = jointObject.GetComponent<UrdfJointRevolute>();
+        // urdfJointRevoluteScript.
         jointObject.transform.parent = urdfObject.transform;
 
     }

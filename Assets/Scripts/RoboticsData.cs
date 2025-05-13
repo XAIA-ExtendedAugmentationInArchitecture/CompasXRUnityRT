@@ -325,7 +325,7 @@ namespace CompasXR.Robots.Data
 
         public static AttachedCollisionMesh FromData(Dictionary<string, object> jsonDataDict)
         {
-            Dictionary<string, object> collisionMeshDict = DictionaryHelpers.GetAsDictionary(jsonDataDict, "collision_mesh");
+            Dictionary<string, object> collisionMeshDict = DictionaryHelpersTESTING.GetAsDictionary(jsonDataDict, "collision_mesh");
             CollisionMesh collisionMesh = CollisionMesh.FromData(collisionMeshDict);
             string linkName = jsonDataDict["link_name"] as string;
             List<string> touchLinks = jsonDataDict["touch_links"] as List<string>;
@@ -377,10 +377,10 @@ namespace CompasXR.Robots.Data
         {
             Debug.Log("JOSEEPHHHH" + JsonConvert.SerializeObject(jsonDataDict));
             Debug.Log("JOSEEPHHHH" + jsonDataDict.GetType());
-            var frameDict = DictionaryHelpers.GetAsDictionary(jsonDataDict, "frame");
+            var frameDict = DictionaryHelpersTESTING.GetAsDictionary(jsonDataDict, "frame");
             Frame frame = Frame.FromData(frameDict);
             string id = jsonDataDict["id"] as string;
-            Dictionary<string, object> meshDict = DictionaryHelpers.GetAsDictionary(jsonDataDict, "mesh");
+            Dictionary<string, object> meshDict = DictionaryHelpersTESTING.GetAsDictionary(jsonDataDict, "mesh");
             Debug.Log("JOSEEPHHHH MESH DICT" + JsonConvert.SerializeObject(meshDict));
 
             CompasMesh mesh = CompasMesh.FromData(meshDict);

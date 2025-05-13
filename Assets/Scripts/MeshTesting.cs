@@ -127,7 +127,7 @@ public class MeshTesting : MonoBehaviour
 
         public static AttachedCollisionMesh FromData(Dictionary<string, object> jsonDataDict)
         {
-            Dictionary<string, object> collisionMeshDict = DictionaryHelpers.GetAsDictionary(jsonDataDict, "collision_mesh");
+            Dictionary<string, object> collisionMeshDict = DictionaryHelpersTESTING.GetAsDictionary(jsonDataDict, "collision_mesh");
             CollisionMesh collisionMesh = CollisionMesh.FromData(collisionMeshDict);
             string linkName = jsonDataDict["link_name"] as string;
             List<string> touchLinks = jsonDataDict["touch_links"] as List<string>;
@@ -179,10 +179,10 @@ public class MeshTesting : MonoBehaviour
         {
             Debug.Log("JOSEEPHHHH" + JsonConvert.SerializeObject(jsonDataDict));
             Debug.Log("JOSEEPHHHH" + jsonDataDict.GetType());
-            var frameDict = DictionaryHelpers.GetAsDictionary(jsonDataDict, "frame");
+            var frameDict = DictionaryHelpersTESTING.GetAsDictionary(jsonDataDict, "frame");
             Frame frame = Frame.FromData(frameDict);
             string id = jsonDataDict["id"] as string;
-            Dictionary<string, object> meshDict = DictionaryHelpers.GetAsDictionary(jsonDataDict, "mesh");
+            Dictionary<string, object> meshDict = DictionaryHelpersTESTING.GetAsDictionary(jsonDataDict, "mesh");
             Debug.Log("JOSEEPHHHH MESH DICT" + JsonConvert.SerializeObject(meshDict));
 
             Mesh mesh = Mesh.FromData(meshDict);
@@ -271,7 +271,7 @@ public class MeshTesting : MonoBehaviour
                 throw new ArgumentNullException(nameof(jsonDataDict), "Input data cannot be null.");
             }
 
-            Dictionary<string, object> dataDictionary = DictionaryHelpers.GetAsDictionary(jsonDataDict, "data"); //TODO: This is only needed when it comes from dumping a mesh directly using json_dump
+            Dictionary<string, object> dataDictionary = DictionaryHelpersTESTING.GetAsDictionary(jsonDataDict, "data"); //TODO: This is only needed when it comes from dumping a mesh directly using json_dump
             if (dataDictionary == null || dataDictionary.Count == 0)
             {
                 dataDictionary = jsonDataDict; //TODO: This will cause errors when loading directly from data...
@@ -281,12 +281,12 @@ public class MeshTesting : MonoBehaviour
                 Debug.Log("JOE LOOK FOR ME HERE dataDictionary" + JsonConvert.SerializeObject(dataDictionary));
             }
 
-            var attributes = DictionaryHelpers.GetSafeDictionary(dataDictionary, "attributes");
-            var defaultEdgeAttributes = DictionaryHelpers.GetSafeDictionary(dataDictionary, "default_edge_attributes");
-            var defaultFaceAttributes = DictionaryHelpers.GetSafeDictionary(dataDictionary, "default_face_attributes");
-            var defaultVertexAttributes = DictionaryHelpers.GetSafeDictionary(dataDictionary, "default_vertex_attributes");
+            var attributes = DictionaryHelpersTESTING.GetSafeDictionary(dataDictionary, "attributes");
+            var defaultEdgeAttributes = DictionaryHelpersTESTING.GetSafeDictionary(dataDictionary, "default_edge_attributes");
+            var defaultFaceAttributes = DictionaryHelpersTESTING.GetSafeDictionary(dataDictionary, "default_face_attributes");
+            var defaultVertexAttributes = DictionaryHelpersTESTING.GetSafeDictionary(dataDictionary, "default_vertex_attributes");
             // var faces = GetSafeDictionary<int[]>(dataDictionary, "face");
-            Dictionary<string, object> faces = DictionaryHelpers.GetAsDictionary(dataDictionary, "face");
+            Dictionary<string, object> faces = DictionaryHelpersTESTING.GetAsDictionary(dataDictionary, "face");
 
             Dictionary<string, int[]> facesDict = new Dictionary<string, int[]>();
             foreach (var kvp in faces)
@@ -303,14 +303,14 @@ public class MeshTesting : MonoBehaviour
             }
 
             Debug.Log("JOE LOOK FOR ME HERE faces" + JsonConvert.SerializeObject(facesDict));
-            var faceData = DictionaryHelpers.GetSafeDictionary(dataDictionary, "face_data");
+            var faceData = DictionaryHelpersTESTING.GetSafeDictionary(dataDictionary, "face_data");
 
             int maxFace = dataDictionary.TryGetValue("max_face", out var maxFaceObj) ? Convert.ToInt32(maxFaceObj) : 0;
             int maxVertex = dataDictionary.TryGetValue("max_vertex", out var maxVertexObj) ? Convert.ToInt32(maxVertexObj) : 0;
             Debug.Log("JOE LOOK FOR ME HERE maxFace" + JsonConvert.SerializeObject(maxFaceObj));
             Debug.Log("JOE LOOK FOR ME HERE maxVertex" + JsonConvert.SerializeObject(maxVertexObj));
 
-            Dictionary<string, object> vertexDataDict = DictionaryHelpers.GetAsDictionary(dataDictionary, "vertex");
+            Dictionary<string, object> vertexDataDict = DictionaryHelpersTESTING.GetAsDictionary(dataDictionary, "vertex");
             Dictionary<string, Vertex> vertex = new Dictionary<string, Vertex>();
 
             if (vertexDataDict.Count == 0)
@@ -321,7 +321,7 @@ public class MeshTesting : MonoBehaviour
             {
                 foreach (var kvp in vertexDataDict)
                 {
-                    Dictionary<string, object> individualVertexData = DictionaryHelpers.GetAsDictionary(vertexDataDict, kvp.Key.ToString());
+                    Dictionary<string, object> individualVertexData = DictionaryHelpersTESTING.GetAsDictionary(vertexDataDict, kvp.Key.ToString());
                     if (individualVertexData is Dictionary<string, object>)
                     {
                         double x = DataConverters.ConvertNumericDataToDouble(individualVertexData["x"]);
@@ -999,7 +999,7 @@ public class Vector3DictionaryConverter : JsonConverter
 }
 
 
-    public static class DictionaryHelpers
+    public static class DictionaryHelpersTESTING
     {
 
         public static Dictionary<string, object> GetSafeDictionary(Dictionary<string, object> jsonDataDict, string key)
