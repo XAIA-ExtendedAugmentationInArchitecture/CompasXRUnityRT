@@ -211,7 +211,6 @@ namespace CompasXR.Core.Data
                 return new Dictionary<string, object>();
             }
         }
-
         public static List<Dictionary<string, object>> GetListFromDict(Dictionary<string, object> jsonDataDict, string key)
         {
             var result = new List<Dictionary<string, object>>();

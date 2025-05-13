@@ -13,20 +13,20 @@ namespace CompasXR.Robots.Model
     [Serializable]
     public class Mass
     {
-        public float value { get; set; }
+        public float Value { get; set; }
 
         public static Mass Parse(object jsondata)
         {
-            var d = jsondata as Dictionary<string, object>;
-            if (d == null) throw new ArgumentException("Expected a Dictionary<string, object> for Mass.Parse");
-            return FromData(d);
+            var data = jsondata as Dictionary<string, object>;
+            if (data == null) throw new ArgumentException("Expected a Dictionary<string, object> for Mass.Parse");
+            return FromData(data);
         }
 
         public static Mass FromData(Dictionary<string, object> data)
         {
             return new Mass
             {
-                value = Convert.ToSingle(data.GetValueOrDefault("value") ?? 0f)
+                Value = Convert.ToSingle(data.GetValueOrDefault("value") ?? 0f)
             };
         }
     }
@@ -34,30 +34,30 @@ namespace CompasXR.Robots.Model
     [Serializable]
     public class Inertia
     {
-        public float ixx { get; set; }
-        public float ixy { get; set; }
-        public float ixz { get; set; }
-        public float iyy { get; set; }
-        public float iyz { get; set; }
-        public float izz { get; set; }
+        public float Ixx { get; set; }
+        public float Ixy { get; set; }
+        public float Ixz { get; set; }
+        public float Iyy { get; set; }
+        public float Iyz { get; set; }
+        public float Izz { get; set; }
 
         public static Inertia Parse(object jsondata)
         {
-            var d = jsondata as Dictionary<string, object>;
-            if (d == null) throw new ArgumentException("Expected a Dictionary<string, object> for Inertia.Parse");
-            return FromData(d);
+            var data = jsondata as Dictionary<string, object>;
+            if (data == null) throw new ArgumentException("Expected a Dictionary<string, object> for Inertia.Parse");
+            return FromData(data);
         }
 
         public static Inertia FromData(Dictionary<string, object> data)
         {
             return new Inertia
             {
-                ixx = Convert.ToSingle(data.GetValueOrDefault("ixx") ?? 0f),
-                ixy = Convert.ToSingle(data.GetValueOrDefault("ixy") ?? 0f),
-                ixz = Convert.ToSingle(data.GetValueOrDefault("ixz") ?? 0f),
-                iyy = Convert.ToSingle(data.GetValueOrDefault("iyy") ?? 0f),
-                iyz = Convert.ToSingle(data.GetValueOrDefault("iyz") ?? 0f),
-                izz = Convert.ToSingle(data.GetValueOrDefault("izz") ?? 0f)
+                Ixx = Convert.ToSingle(data.GetValueOrDefault("ixx") ?? 0f),
+                Ixy = Convert.ToSingle(data.GetValueOrDefault("ixy") ?? 0f),
+                Ixz = Convert.ToSingle(data.GetValueOrDefault("ixz") ?? 0f),
+                Iyy = Convert.ToSingle(data.GetValueOrDefault("iyy") ?? 0f),
+                Iyz = Convert.ToSingle(data.GetValueOrDefault("iyz") ?? 0f),
+                Izz = Convert.ToSingle(data.GetValueOrDefault("izz") ?? 0f)
             };
         }
     }
@@ -65,10 +65,10 @@ namespace CompasXR.Robots.Model
     [Serializable]
     public class Inertial
     {
-        public Frame origin { get; set; }
-        public Mass mass { get; set; }
-        public Inertia inertia { get; set; }
-        public Dictionary<string, object> attr { get; set; }
+        public Frame Origin { get; set; }
+        public Mass Mass { get; set; }
+        public Inertia Inertia { get; set; }
+        public Dictionary<string, object> Attr { get; set; }
 
         public static Inertial Parse(object jsondata)
         {
@@ -100,19 +100,19 @@ namespace CompasXR.Robots.Model
             
             return new Inertial
             {
-                origin = origin,
-                mass = mass,
-                inertia = inertia,
-                attr = attrDict ?? new Dictionary<string, object>()
+                Origin = origin,
+                Mass = mass,
+                Inertia = inertia,
+                Attr = attrDict ?? new Dictionary<string, object>()
             };
         }
     }
 
     public class LinkItem
     {
-        public Matrix4x4? init_transformation { get; set; }
-        public Matrix4x4? current_transformation { get; set; }
-        public object native_geometry { get; set; }
+        public Matrix4x4? InitTransformation { get; set; }
+        public Matrix4x4? CurrentTransformation { get; set; }
+        public object NativeGeometry { get; set; }
         public static Matrix4x4 GetTransformationMatrix(Dictionary<string, object> data, string key) //TODO: Put this in the Visual class and check the other classes.
         {
             var tDict = DictionaryHelpers.GetAsDictionary(data, key);
@@ -185,11 +185,11 @@ namespace CompasXR.Robots.Model
     [Serializable]
     public class Visual : LinkItem
     {
-        public MeshDescriptor geometry { get; set; }
-        public Frame origin { get; set; }
-        public string name { get; set; }
-        public Material material { get; set; }
-        public Dictionary<string, object> attr { get; set; }
+        public MeshDescriptor Geometry { get; set; }
+        public Frame Origin { get; set; }
+        public string Name { get; set; }
+        public Material Material { get; set; }
+        public Dictionary<string, object> Attributes { get; set; }
 
         public static Visual Parse(object jsondata)
         {
@@ -241,13 +241,13 @@ namespace CompasXR.Robots.Model
 
             return new Visual
             {
-                geometry = geometry,
-                origin = origin,
-                name = data.GetValueOrDefault("name")?.ToString(),
-                material = material,
-                attr = attrDict ?? new Dictionary<string, object>(),
-                init_transformation = initTransformation,
-                current_transformation = currentTransformation
+                Geometry = geometry,
+                Origin = origin,
+                Name = data.GetValueOrDefault("name")?.ToString(),
+                Material = material,
+                Attributes = attrDict ?? new Dictionary<string, object>(),
+                InitTransformation = initTransformation,
+                CurrentTransformation = currentTransformation
             };
         }
     }
@@ -256,10 +256,10 @@ namespace CompasXR.Robots.Model
     [Serializable]
     public class Collision : LinkItem
     {
-        public object geometry { get; set; }
-        public Frame origin { get; set; }
-        public string name { get; set; }
-        public Dictionary<string, object> attr { get; set; }
+        public object Geometry { get; set; }
+        public Frame Origin { get; set; }
+        public string Name { get; set; }
+        public Dictionary<string, object> Attributes { get; set; }
 
         public static Collision Parse(object jsondata)
         {
@@ -292,12 +292,12 @@ namespace CompasXR.Robots.Model
 
             return new Collision
             {
-                geometry = geometry,
-                origin = origin,
-                name = data.GetValueOrDefault("name")?.ToString(),
-                attr = attrDict ?? new Dictionary<string, object>(),
-                init_transformation = initTransformation,
-                current_transformation = currentTransformation
+                Geometry = geometry,
+                Origin = origin,
+                Name = data.GetValueOrDefault("name")?.ToString(),
+                Attributes = attrDict ?? new Dictionary<string, object>(),
+                InitTransformation = initTransformation,
+                CurrentTransformation = currentTransformation
             };
         }
     }
@@ -305,13 +305,13 @@ namespace CompasXR.Robots.Model
     [Serializable]
     public class Link
     {
-        public string name { get; set; }
-        public string? type { get; set; } 
-        public List<Visual>? visual { get; set; }
-        public List<Collision>? collision { get; set; }
-        public Inertial? inertial { get; set; }
-        public Dictionary<string, object> attr { get; set; }
-        public List<RobotJoint> joints { get; set; }
+        public string Name { get; set; }
+        public string? Type { get; set; } 
+        public List<Visual>? Visual { get; set; }
+        public List<Collision>? Collision { get; set; }
+        public Inertial? Inertial { get; set; }
+        public Dictionary<string, object> Attributes { get; set; }
+        public List<RobotJoint> Joints { get; set; }
 
         public static Link Parse(object jsondata)
         {
@@ -336,7 +336,7 @@ namespace CompasXR.Robots.Model
             {
                 foreach (var visualItem in visualData)
                 {
-                    visualParsed.Add(Visual.FromData(visualItem));
+                    visualParsed.Add(Robots.Model.Visual.FromData(visualItem));
                 }
             }
             List<Collision> collisionParsed = new List<Collision>();
@@ -346,7 +346,7 @@ namespace CompasXR.Robots.Model
                 Debug.Log($"Collision data is  {JsonConvert.SerializeObject(collisionData)}");
                 foreach (var collisionItem in collisionData)
                 {
-                    collisionParsed.Add(Collision.FromData(collisionItem));
+                    collisionParsed.Add(Robots.Model.Collision.FromData(collisionItem));
                 }
             }    
             
@@ -374,13 +374,13 @@ namespace CompasXR.Robots.Model
 
             return new Link
             {
-                name = name,
-                type = type,
-                visual = visualParsed ?? new List<Visual>(),
-                collision = collisionParsed,
-                inertial = inertialParsed ?? new Inertial(),
-                attr = attrDict ?? new Dictionary<string, object>(),
-                joints = jointsParsed ?? new List<RobotJoint>()
+                Name = name,
+                Type = type,
+                Visual = visualParsed ?? new List<Visual>(),
+                Collision = collisionParsed,
+                Inertial = inertialParsed ?? new Inertial(),
+                Attributes = attrDict ?? new Dictionary<string, object>(),
+                Joints = jointsParsed ?? new List<RobotJoint>()
             };
         }
     }
@@ -389,7 +389,7 @@ namespace CompasXR.Robots.Model
     [Serializable]
     public class MeshDescriptor
     {
-        public Dictionary<string, object> Attr { get; set; }
+        public Dictionary<string, object> Attributes { get; set; }
         public ShapeInfo Shape { get; set; }
         public static MeshDescriptor Parse(object jsondata)
         {
@@ -404,7 +404,7 @@ namespace CompasXR.Robots.Model
             var attrDict = DictionaryHelpers.GetAsDictionary(data, "attr");
             var meshesData = new MeshDescriptor
             {
-                Attr  = attrDict ?? new Dictionary<string, object>(),
+                Attributes  = attrDict ?? new Dictionary<string, object>(),
                 Shape = ShapeInfo.FromData(shapeDict),
             };
             return meshesData;
@@ -413,8 +413,8 @@ namespace CompasXR.Robots.Model
         [Serializable]
         public class ShapeInfo
         {
-            public Dictionary<string, object> attr { get; set; }
-            public DataInfo? data { get; set; }
+            public Dictionary<string, object> Attributes { get; set; }
+            public DataInfo? Data { get; set; }
             public string dtype { get; set; }
             public string guid  { get; set; }
 
@@ -433,8 +433,8 @@ namespace CompasXR.Robots.Model
 
                 return new ShapeInfo
                 {
-                    attr  = data.GetValueOrDefault("attr") as Dictionary<string, object> ?? new Dictionary<string, object>(),
-                    data  = dataInfo,
+                    Attributes  = data.GetValueOrDefault("attr") as Dictionary<string, object> ?? new Dictionary<string, object>(),
+                    Data  = dataInfo,
                     dtype = data.GetValueOrDefault("dtype")?.ToString(),
                     guid  = data.GetValueOrDefault("guid")?.ToString()
                 };
@@ -444,10 +444,10 @@ namespace CompasXR.Robots.Model
         [Serializable]
         public class DataInfo
         {
-            public Dictionary<string, object> attr { get; set; }
-            public string filename { get; set; }
-            public List<CompasMesh> meshes { get; set; }
-            public float[] scale { get; set; }
+            public Dictionary<string, object> Attributes { get; set; }
+            public string FileName { get; set; }
+            public List<CompasMesh> Meshes { get; set; }
+            public float[] Scale { get; set; }
 
             public static DataInfo FromData(Dictionary<string, object> data)
             {
@@ -501,10 +501,10 @@ namespace CompasXR.Robots.Model
 
                 return new DataInfo
                 {
-                    attr = attrDict ?? new Dictionary<string, object>(),
-                    filename = data.GetValueOrDefault("filename")?.ToString(),
-                    meshes = meshes, 
-                    scale = scaleArray
+                    Attributes = attrDict ?? new Dictionary<string, object>(),
+                    FileName = data.GetValueOrDefault("filename")?.ToString(),
+                    Meshes = meshes, 
+                    Scale = scaleArray
                 };
             }
         }
