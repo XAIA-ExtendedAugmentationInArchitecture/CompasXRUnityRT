@@ -268,7 +268,7 @@ namespace CompasXR.Robots.Model
                 CurrentTransformation = currentTransformation
             };
         }
-        public GameObject CreateVisualsWithRosSharp(Link link, GameObject parent) //TODO:Naming
+        public GameObject CreateVisualsWithRosSharp(Link link, GameObject parent) //TODO:Naming & Positioning
         {
             GameObject Visuals = new GameObject("Visuals");
             UrdfVisuals urdfVisuals = Visuals.AddComponent<UrdfVisuals>();
@@ -367,7 +367,7 @@ namespace CompasXR.Robots.Model
                 CurrentTransformation = currentTransformation
             };
         }
-        public GameObject CreateColisionsWithRosSharp(Link link, GameObject parent) //TODO:Naming
+        public GameObject CreateColisionsWithRosSharp(Link link, GameObject parent) //TODO:Naming & Positioning
         {
             GameObject Collisions = new GameObject("Collisions");
             UrdfCollisions urdfColisions = Collisions.AddComponent<UrdfCollisions>();
@@ -549,14 +549,22 @@ namespace CompasXR.Robots.Model
                     collision.CreateColisionsWithRosSharp(link, linkObject);
                 }
             }
-            // if (link.Joints.Count > 0) //TODO: I think I need to pass the inertial
-            // {
-            //     foreach (var joint in link.Joints)
-            //     {
-            //         GameObject jointObject = joint.AddRosSharpJointToGameObject(linkObject, joint);
-            //         jointObject.transform.SetParent(linkObject.transform);
-            //     }
-            // }
+            if (link.Joints.Count > 0) //TODO: I think I need to pass the inertial
+            {
+                Debug.Log($"Joint Generation : Link {link.Name} has {link.Joints.Count} joints.");
+                foreach (var joint in link.Joints)
+                {
+                    if(link == null || joint == null)
+                    {
+                        Debug.LogWarning($"CreateLinkGameObjectFromRosSharp: Link or joint is null for link {link.Name}.");
+                    }
+                    else
+                    {
+                        GameObject jointObject = joint.AddRosSharpJointToGameObject(linkObject, joint);
+                        jointObject.transform.SetParent(linkObject.transform);
+                    }
+                }
+            }
             else
             {
                 Debug.LogWarning($"CreateLinkGameObjectFromRosSharp: No joints found for the link {link.Name}.");

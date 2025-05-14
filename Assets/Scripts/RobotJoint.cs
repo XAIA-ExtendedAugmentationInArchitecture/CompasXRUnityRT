@@ -388,41 +388,47 @@ namespace CompasXR.Robots.Model
         {
             switch (joint.Type)
             {
+                //TODO: CHECK THE RIGID BODY... I FEEL LIKE IT SHOULD BE ADDED HERE BUT IT SAYS IT IS ALREADY ADDED...
+                //TODO: THIS NEEDS TO HAVE MORE DETAILS SUCH AS INERTIALS
                 case JointType.Revolute:
                     UrdfJointRevolute revJoint = parent.AddComponent<UrdfJointRevolute>();
+                    revJoint.name = joint.Name;
                     HingeJoint hingeJoint = parent.AddComponent<HingeJoint>();
                     HingeJointAngleCalculator angleCalculator = parent.AddComponent<HingeJointAngleCalculator>();
                     HingeJointLimitsManager limitsManager = parent.AddComponent<HingeJointLimitsManager>();
                     UrdfInertial revinertial = parent.AddComponent<UrdfInertial>();
-                    Rigidbody revRigidBody = parent.AddComponent<Rigidbody>();
+                    Rigidbody revRigidBody = parent.GetComponentInChildren<Rigidbody>();
                     revRigidBody.isKinematic = true;
                     revRigidBody.useGravity = false;
                     return parent;
                 case JointType.Continuous:
                     UrdfJointContinuous contJoint = parent.AddComponent<UrdfJointContinuous>();
+                    contJoint.name = joint.Name;
                     HingeJoint contHingeJoint = parent.AddComponent<HingeJoint>();
                     HingeJointAngleCalculator contAngleCalculator = parent.AddComponent<HingeJointAngleCalculator>();
                     HingeJointLimitsManager contLimitsManager = parent.AddComponent<HingeJointLimitsManager>();
                     UrdfInertial continertial = parent.AddComponent<UrdfInertial>();
-                    Rigidbody contRigidBody = parent.AddComponent<Rigidbody>();
+                    Rigidbody contRigidBody = parent.GetComponentInChildren<Rigidbody>();
                     contRigidBody.isKinematic = true;
                     contRigidBody.useGravity = false;
                     Debug.LogWarning($"Joint type '{joint.Type}' is Work in progress.");
                     return parent;
                 case JointType.Prismatic:
                     UrdfJointPrismatic prismJoint = parent.AddComponent<UrdfJointPrismatic>();
+                    prismJoint.name = joint.Name;
                     ConfigurableJoint configJoint = parent.AddComponent<ConfigurableJoint>();
                     PrismaticJointLimitsManager prismaticLimitsManager = parent.AddComponent<PrismaticJointLimitsManager>();
                     UrdfInertial prisinertial = parent.AddComponent<UrdfInertial>();
-                    Rigidbody prismRigidBody = parent.AddComponent<Rigidbody>();
+                    Rigidbody prismRigidBody = parent.GetComponentInChildren<Rigidbody>();
                     prismRigidBody.isKinematic = true;
                     prismRigidBody.useGravity = false;
                     Debug.LogWarning($"Joint type '{joint.Type}' is Work in progress.");
                     return parent;
                 case JointType.Fixed:
                     UrdfJointFixed fixedJoint = parent.AddComponent<UrdfJointFixed>();
+                    fixedJoint.name = joint.Name;
                     UrdfInertial fixinertial = parent.AddComponent<UrdfInertial>();
-                    Rigidbody fixedRigidBody = parent.AddComponent<Rigidbody>();
+                    Rigidbody fixedRigidBody = parent.GetComponentInChildren<Rigidbody>();
                     fixedRigidBody.isKinematic = true;
                     fixedRigidBody.useGravity = false;
                     Debug.LogWarning($"Joint type '{joint.Type}' is Work in progress.");
