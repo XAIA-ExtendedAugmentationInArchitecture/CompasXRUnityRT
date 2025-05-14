@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using CompasXR.Core.Data;
 using RosSharp.Urdf;
+using RosSharp;
 
 namespace CompasXR.Robots.Model
 {
@@ -382,48 +383,33 @@ namespace CompasXR.Robots.Model
         }
 
     //TODO: COME BACK TO THIS
-    //     public static GameObject CreateRosSharpJoint(RobotJoint joint, GameObject parent)
-    //     {
-    //         GameObject jointObject = new GameObject(joint.Name);
-    //         jointObject.transform.position = Vector3.zero;
-    //         jointObject.transform.rotation = Quaternion.identity;
 
-    //         UrdfJoint urdfJointScript = jointObject.AddComponent<UrdfJointRevolute>();
-    //         urdfJointScript.SetRigidbodiesIsKinematic(true);
-    //         urdfJointScript.SetRigidbodiesUseGravity(false);
-    //         urdfJointScript.SetUseUrdfInertiaData(false);
-
-    //         jointObject.transform.parent = parent.transform;
-    //         return jointObject;
-    //     }
-
-    //     public static GameObject AddRosSharpJointToGameObject(GameObject parent, RobotJoint joint)
-    //     {
-    //         switch (joint.Type)
-    //         {
-    //             case JointType.Revolute:
-    //                 UrdfJointRevolute revJoint = parent.AddComponent<UrdfJointRevolute>();
-                    
-    //                 return CreateRosSharpJoint(joint, parent);
-    //             case JointType.Continuous:
-    //                 return CreateRosSharpJoint(joint, parent);
-    //             case JointType.Prismatic:
-    //                 return CreateRosSharpJoint(joint, parent);
-    //             case JointType.Fixed:
-    //                 return CreateRosSharpJoint(joint, parent);
-    //             case JointType.Unknown:
-    //                 Debug.LogWarning($"Joint type '{joint.Type}' is not recognized. Defaulting to 'Unknown'.");
-    //                 return CreateRosSharpJoint(joint, parent);
-    //             default:
-    //                 Debug.LogWarning($"Joint type '{joint.Type}' is not supported. Defaulting to 'Revolute'.");
-
-    //         GameObject jointObject = CreateRosSharpJoint(joint, parent);
-
-
-    //         UrdfJoint urdfJointScript = jointObject.GetComponent<UrdfJoint>();
-    //         urdfJointScript.SetParent(parent);
-    //         urdfJointScript.SetChild(jointObject);
-    //         return jointObject;
-    //     }
+        public void AddRosSharpJointToGameObject(GameObject parent, RobotJoint joint)
+        {
+            switch (joint.Type)
+            {
+                case JointType.Revolute:
+                    UrdfJointRevolute revJoint = parent.AddComponent<UrdfJointRevolute>();
+                    HingeJoint hingeJoint = parent.AddComponent<HingeJoint>();
+                    HingeJointAngleCalculator angleCalculator = parent.AddComponent<HingeJointAngleCalculator>();
+                    HingeJointLimitsManager limitsManager = parent.AddComponent<HingeJointLimitsManager>();
+                    break;
+                case JointType.Continuous:
+                    Debug.LogWarning($"Joint type '{joint.Type}' is Work in progress.");
+                    break;
+                case JointType.Prismatic:
+                    Debug.LogWarning($"Joint type '{joint.Type}' is Work in progress.");
+                    break;
+                case JointType.Fixed:
+                    Debug.LogWarning($"Joint type '{joint.Type}' is Work in progress.");
+                    break;
+                case JointType.Unknown:
+                    Debug.LogWarning($"Joint type '{joint.Type}' is Work in progress.");
+                    break;
+                default:
+                    Debug.LogWarning($"Joint type '{joint.Type}' is Work in progress.");
+                    break;
+            }
+        }
     }
 }

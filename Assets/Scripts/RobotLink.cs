@@ -6,6 +6,8 @@ using CompasXR.Core.Data;
 using UnityEngine.UIElements;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using RosSharp.Urdf;
+using Unity.VisualScripting;
 
 
 namespace CompasXR.Robots.Model
@@ -21,7 +23,6 @@ namespace CompasXR.Robots.Model
             if (data == null) throw new ArgumentException("Expected a Dictionary<string, object> for Mass.Parse");
             return FromData(data);
         }
-
         public static Mass FromData(Dictionary<string, object> data)
         {
             return new Mass
@@ -47,7 +48,6 @@ namespace CompasXR.Robots.Model
             if (data == null) throw new ArgumentException("Expected a Dictionary<string, object> for Inertia.Parse");
             return FromData(data);
         }
-
         public static Inertia FromData(Dictionary<string, object> data)
         {
             return new Inertia
@@ -86,7 +86,6 @@ namespace CompasXR.Robots.Model
             if (data == null) throw new ArgumentException("Expected a Dictionary<string, object> for Inertial.Parse");
             return FromData(data);
         }
-
         public static Inertial FromData(Dictionary<string, object> data)
         {
             Dictionary<string, object> originDict = DictionaryHelpers.GetAsDictionary(data, "origin");
@@ -207,19 +206,17 @@ namespace CompasXR.Robots.Model
             if (data == null) throw new ArgumentException("Expected a Dictionary<string, object> for Visual.Parse");
             return FromData(data);
         }
-
         public Dictionary<string, object> GetData()
         {
             return new Dictionary<string, object>
             {
-                { "geometry", Geometry },
-                { "origin", Origin },
+                { "geometry", Geometry.GetData() },
+                { "origin", Origin.GetData() },
                 { "name", Name },
-                { "material", Material },
+                { "material", "Material" }, //TODO: Testing Information, Unity Material cannot be seralized...
                 { "attr", Attributes }
             };
         }
-
         public static Material CreateUnityMaterialFromDescription(Dictionary<string, object> description)
         {
             Material material = new Material(Shader.Find("Standard"));
@@ -236,7 +233,6 @@ namespace CompasXR.Robots.Model
             }
             return material;
         }
-
         public static Visual FromData(Dictionary<string, object> data)
         {
             Dictionary<string, object> materialDescription = DictionaryHelpers.GetAsDictionary(data, "material");
@@ -272,35 +268,73 @@ namespace CompasXR.Robots.Model
                 CurrentTransformation = currentTransformation
             };
         }
+        public GameObject CreateVisualsWithRosSharp(Link link, GameObject parent) //TODO:Naming
+        {
+            GameObject Visuals = new GameObject("Visuals");
+            UrdfVisuals urdfVisuals = Visuals.AddComponent<UrdfVisuals>();
+            Visuals.transform.SetParent(parent.transform);
+            GameObject unnamedObject = new GameObject("unnamed");
+            unnamedObject.transform.SetParent(Visuals.transform);
+            UrdfVisual urdfVisual = unnamedObject.AddComponent<UrdfVisual>();
+            GameObject parentContainer = new GameObject("parentContainer");
+            parentContainer.transform.SetParent(unnamedObject.transform);
+            urdfVisual.GeometryType = RosSharp.Urdf.GeometryTypes.Mesh;
+
+            if (link.Visual.Count > 0)
+            {
+                foreach (var visual in link.Visual)
+                {
+                    if (visual.Geometry != null)
+                    {
+                        if(visual.Geometry.Shape.Data.Meshes.Count > 0)
+                        {
+                            List<GameObject> meshesGeo = visual.Geometry.Shape.Data.CreateMeshesFromDataForRosSharp(visual.Material, parentContainer); //, visual.InitTransformation, visual.CurrentTransformation);
+                        }
+                        else
+                        {
+                            Debug.LogWarning("CreateVisualsWithRosSharp: No meshes found for the geometry for link " + link.Name);
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("CreateVisualsWithRosSharp: No geometry found for the link " + link.Name);
+                    }
+                }
+                return Visuals;
+            }
+            else
+            {
+                Debug.LogWarning($"CreateVisualsWithRosSharp: No visuals found for the link {link.Name}.");
+                return Visuals;
+            }
+
+        }
     }
 
 
     [Serializable]
     public class Collision : LinkItem
     {
-        public object Geometry { get; set; }
+        public MeshDescriptor Geometry { get; set; }
         public Frame Origin { get; set; }
         public string Name { get; set; }
         public Dictionary<string, object> Attributes { get; set; }
-
         public static Collision Parse(object jsondata)
         {
             var d = jsondata as Dictionary<string, object>;
             if (d == null) throw new ArgumentException("Expected a Dictionary<string, object> for Collision.Parse");
             return FromData(d);
         }
-
         public Dictionary<string, object> GetData()
         {
             return new Dictionary<string, object>
             {
-                { "geometry", Geometry },
-                { "origin", Origin },
+                { "geometry", Geometry.GetData() },
+                { "origin", Origin.GetData() },
                 { "name", Name },
                 { "attr", Attributes }
             };
         }
-
         public static Collision FromData(Dictionary<string, object> data)
         {
             
@@ -333,6 +367,47 @@ namespace CompasXR.Robots.Model
                 CurrentTransformation = currentTransformation
             };
         }
+        public GameObject CreateColisionsWithRosSharp(Link link, GameObject parent) //TODO:Naming
+        {
+            GameObject Collisions = new GameObject("Collisions");
+            UrdfCollisions urdfColisions = Collisions.AddComponent<UrdfCollisions>();
+            Collisions.transform.SetParent(parent.transform);
+            GameObject unnamedObject = new GameObject("unnamed");
+            unnamedObject.transform.SetParent(Collisions.transform);
+            UrdfCollision urdfCollision = unnamedObject.AddComponent<UrdfCollision>();
+            GameObject parentContainer = new GameObject("parentContainer");
+            parentContainer.transform.SetParent(unnamedObject.transform);
+            urdfCollision.GeometryType = RosSharp.Urdf.GeometryTypes.Mesh;
+
+            if (link.Visual.Count > 0)
+            {
+                foreach (var visual in link.Visual)
+                {
+                    if (visual.Geometry != null)
+                    {
+                        if(visual.Geometry.Shape.Data.Meshes.Count > 0)
+                        {
+                            List<GameObject> meshesGeo = visual.Geometry.Shape.Data.CreateMeshesAsCollisionsForRosSharp(parentContainer); //, visual.InitTransformation, visual.CurrentTransformation);
+                        }
+                        else
+                        {
+                            Debug.LogWarning("CreateVisualsWithRosSharp: No meshes found for the geometry for link " + link.Name);
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("CreateVisualsWithRosSharp: No geometry found for the link " + link.Name);
+                    }
+                }
+                return Collisions;
+            }
+            else
+            {
+                Debug.LogWarning($"CreateVisualsWithRosSharp: No visuals found for the link {link.Name}.");
+                return Collisions;
+            }
+
+        }
     }
 
     [Serializable]
@@ -352,7 +427,6 @@ namespace CompasXR.Robots.Model
             if (data == null) throw new ArgumentException("Expected a Dictionary<string, object> for Link.Parse");
             return FromData(data);
         }
-
         public Dictionary<string, object> GetData()
         {
             return new Dictionary<string, object>
@@ -365,8 +439,7 @@ namespace CompasXR.Robots.Model
                 { "attr", Attributes },
                 { "joints", Joints }
             };
-        }
-        
+        }   
         public List<Dictionary<string, object>> _GetJointData()
         {
             List<Dictionary<string, object>> jointData = new List<Dictionary<string, object>>();
@@ -376,7 +449,6 @@ namespace CompasXR.Robots.Model
             }
             return jointData;
         }
-
         public List<Dictionary<string, object>> _GetVisualData()
         {
             List<Dictionary<string, object>> visualData = new List<Dictionary<string, object>>();
@@ -386,7 +458,6 @@ namespace CompasXR.Robots.Model
             }
             return visualData;
         }
-
         public List<Dictionary<string, object>> _GetCollisionData()
         {
             List<Dictionary<string, object>> collisionData = new List<Dictionary<string, object>>();
@@ -396,7 +467,6 @@ namespace CompasXR.Robots.Model
             }
             return collisionData;
         }
-
         public static Link FromData(Dictionary<string, object> data)
         {
             string name = data.GetValueOrDefault("name")?.ToString();
@@ -460,6 +530,29 @@ namespace CompasXR.Robots.Model
                 Joints = jointsParsed ?? new List<RobotJoint>()
             };
         }
+
+        public GameObject CreateLinkGameObjectFromRosSharp(Link link)
+        {
+            GameObject linkObject = new GameObject(link.Name);
+            if (link.Visual != null)
+            {
+                foreach (var visual in link.Visual)
+                {
+                    GameObject visuals = visual.CreateVisualsWithRosSharp(link, linkObject);
+                    visuals.transform.SetParent(linkObject.transform);
+                }
+            }
+            if (link.Collision != null)
+            {
+                foreach (var collision in link.Collision)
+                {
+                    collision.CreateColisionsWithRosSharp(link, linkObject);
+                }
+            }
+            //TODO: ADD JOINTS AND INERTIALS.
+            return linkObject;
+        }
+
     }
 
 
@@ -468,7 +561,6 @@ namespace CompasXR.Robots.Model
     {
         public Dictionary<string, object> Attributes { get; set; }
         public ShapeInfo Shape { get; set; }
-        
         public Dictionary<string, object> GetData()
         {
             return new Dictionary<string, object>
@@ -483,7 +575,6 @@ namespace CompasXR.Robots.Model
             if (dict == null) throw new ArgumentException("Expected a Dictionary<string,object> for MeshDescriptor.Parse");
             return FromData(dict);
         }
-
         public static MeshDescriptor FromData(Dictionary<string, object> data)
         {
             var shapeDict = DictionaryHelpers.GetAsDictionary(data, "shape");
@@ -505,13 +596,13 @@ namespace CompasXR.Robots.Model
         public string dtype { get; set; }
         public string guid  { get; set; }
 
+
         public static ShapeInfo Parse(object jsondata)
         {
             var data = jsondata as Dictionary<string, object>;
             if (data == null) throw new ArgumentException("Expected a Dictionary<string, object> for ShapeInfo.Parse");
             return FromData(data);
         }
-
         public Dictionary<string, object> GetData()
         {
             return new Dictionary<string, object>
@@ -553,20 +644,45 @@ namespace CompasXR.Robots.Model
         public List<CompasMesh> Meshes { get; set; }
         public float[] Scale { get; set; }
 
+        public List<GameObject> CreateMeshesFromDataForRosSharp(Material material, GameObject parent)
+        {
+            List<GameObject> gameObjects = new List<GameObject>();
+            foreach (var mesh in Meshes)
+            {
+                GameObject meshObj = mesh.GenerateMeshFromRHMesh();
+                meshObj.transform.SetParent(parent.transform);
+                meshObj.GetComponentInChildren<MeshRenderer>().material = material;
+                gameObjects.Add(mesh.GenerateMeshFromRHMesh());
+            
+            }
+            return gameObjects;
+        }
+        public List<GameObject> CreateMeshesAsCollisionsForRosSharp(GameObject parent)
+        {
+            List<GameObject> gameObjects = new List<GameObject>();
+            foreach (var mesh in Meshes)
+            {
+                //TODO : JOIN MESHES.
+                GameObject meshObj = mesh.GenerateMeshFromRHMesh();
+                meshObj.AddComponent<MeshCollider>();
+                gameObjects.Add(mesh.GenerateMeshFromRHMesh());
+                meshObj.transform.SetParent(parent.transform);
+            }
+            return gameObjects;
+        }
         public static DataInfo Parse(object jsondata)
         {
             var data = jsondata as Dictionary<string, object>;
             if (data == null) throw new ArgumentException("Expected a Dictionary<string, object> for DataInfo.Parse");
             return FromData(data);
         }
-
         public Dictionary<string, object> GetData()
         {
             return new Dictionary<string, object>
             {
                 { "attr", Attributes },
                 { "filename", FileName },
-                { "meshes", _GetMeshData() },
+                { "meshes", new List<string>() },//_GetMeshData() },
                 { "scale", Scale }
             };
         }

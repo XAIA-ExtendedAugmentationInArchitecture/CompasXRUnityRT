@@ -39,8 +39,7 @@ namespace CompasXR.Robots.Model
             var data = jsonData as Dictionary<string, object>;
             if (data == null) throw new ArgumentException("Expected a Dictionary<string, object> for Mass.Parse");
             return FromData(data, name);
-        }
-        
+        }    
         public static Robot FromData(Dictionary<string, object> data, string name)
         {
             string robotName = name;
@@ -81,6 +80,33 @@ namespace CompasXR.Robots.Model
                 Links = robotLinkData,
                 Semantics = new Semantics()
             };
+
+            return robot;
+        }
+        public static GameObject CreateRobotAsGameObjectWithRosSharp(string name, Robot roobot, GameObject parent)
+        {
+            GameObject robot = new GameObject(name);
+            robot.transform.SetParent(parent.transform);
+            robot.transform.localPosition = Vector3.zero;
+            robot.transform.localRotation = Quaternion.identity;
+
+            List<GameObject> generatedLinkObjects = new List<GameObject>();
+            foreach (var link in roobot.Links)
+            {
+                GameObject linkObject = link.CreateLinkGameObjectFromRosSharp(link);
+
+                if(generatedLinkObjects.Count > 0)
+                {
+                    GameObject previousLinkObject = generatedLinkObjects[generatedLinkObjects.Count - 1];
+                    linkObject.transform.SetParent(previousLinkObject.transform);
+                }
+                else
+                {
+                    linkObject.transform.SetParent(robot.transform);
+                }
+                generatedLinkObjects.Add(linkObject);
+
+            }
 
             return robot;
         }

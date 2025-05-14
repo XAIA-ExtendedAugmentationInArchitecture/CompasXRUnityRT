@@ -41,84 +41,91 @@ public class RobotMeshGeneration : MonoBehaviour
         Debug.Log($"Parsed robot Joints Count: {robot.Joints.Count}");
         Debug.Log($"Parsed robot Links Count: {robot.Links.Count}");
 
+        Link upperArmLink = robot.Links[3];
+        GameObject upperArmLinkTest = upperArmLink.CreateLinkGameObjectFromRosSharp(upperArmLink);
+        GameObject robotTestParent = new GameObject("RobotParentTEST");
+        GameObject robotTest = Robot.CreateRobotAsGameObjectWithRosSharp(robot.Name, robot, robotTestParent);
+        Debug.Log($"Robot upper arm link Data: {JsonConvert.SerializeObject(upperArmLink.GetData())}");
 
-        GameObject cubeTesting = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        cubeTesting.GetComponent<Renderer>().material.color = Color.red;
-        cubeTesting.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
 
-        foreach(var link in robot.Links)
-        {
-            Debug.Log($"Parsed Link From Robot Model : Joints Count :  {link.Name}: {link.Joints.Count}");
-            Debug.Log($"Parsed Link From Robot Model : Visuals Count : {link.Name}: {link.Visual.Count}");
-            // Debug.Log($"Parsed Link From Robot Model : Meshes Count : {link.Name}: {link.Visual[0].Geometry.Shape.Data.Meshes.Count}");
+        //TODO: ROBOT GENERATION POTITION TESTING ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // GameObject cubeTesting = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        // cubeTesting.GetComponent<Renderer>().material.color = Color.red;
+        // cubeTesting.transform.localScale = new Vector3(0.01f, 0.01f, 0.01f);
 
-            if (link.Visual.Count <= 0)
-            {
-                Debug.LogError($"TEST INSTANTIATION : Link Visual is Null : {link.Name} see {JsonConvert.SerializeObject(link.Visual)} ");
-                continue;
+        // foreach(var link in robot.Links)
+        // {
+        //     Debug.Log($"Parsed Link From Robot Model : Joints Count :  {link.Name}: {link.Joints.Count}");
+        //     Debug.Log($"Parsed Link From Robot Model : Visuals Count : {link.Name}: {link.Visual.Count}");
+        //     // Debug.Log($"Parsed Link From Robot Model : Meshes Count : {link.Name}: {link.Visual[0].Geometry.Shape.Data.Meshes.Count}");
 
-            }
+        //     if (link.Visual.Count <= 0)
+        //     {
+        //         Debug.LogError($"TEST INSTANTIATION : Link Visual is Null : {link.Name} see {JsonConvert.SerializeObject(link.Visual)} ");
+        //         continue;
 
-            if (link.Visual.Count > 0)
-            {
-                foreach (var visual in link.Visual)
-                {
-                    foreach (var mesh in visual.Geometry.Shape.Data.Meshes)
-                    {
-                        mesh.GenerateMeshFromRHMesh(link.Name);
-                    }
-                }
-            }
+        //     }
 
-            Frame Origin = link.Visual[0].Origin;
-            Frame inertialOrigin = link.Inertial.Origin;
+        //     if (link.Visual.Count > 0)
+        //     {
+        //         foreach (var visual in link.Visual)
+        //         {
+        //             foreach (var mesh in visual.Geometry.Shape.Data.Meshes)
+        //             {
+        //                 mesh.GenerateMeshFromRHMesh(link.Name);
+        //             }
+        //         }
+        //     }
 
-            if (inertialOrigin.point != null && inertialOrigin.xaxis != null && inertialOrigin.yaxis != null)
-            {
-                GameObject linkInertialGameObject = GameObject.Instantiate(cubeTesting);
-                linkInertialGameObject.name = link.Name + "_Inertial";
-                linkInertialGameObject.GetComponent<Renderer>().material.color = Color.blue;
-                GameObject inertialObjectInstantation = ObjectInstantiaion.InstantiateObjectFromRightHandFrameData(linkInertialGameObject, inertialOrigin.point, inertialOrigin.xaxis, inertialOrigin.yaxis, false, false);
-                Destroy(linkInertialGameObject);
+        //     Frame Origin = link.Visual[0].Origin;
+        //     Frame inertialOrigin = link.Inertial.Origin;
 
-            }
-            else
-            {
-                Debug.LogError($"TEST INSTANTIATION : Link Inertial Origin is Null : {link.Name} see {JsonConvert.SerializeObject(inertialOrigin)} ");
-            }
-            if (Origin.point != null && Origin.xaxis != null && Origin.yaxis != null)
-            {
-                GameObject linkVisualGameObject = GameObject.Instantiate(cubeTesting);
-                linkVisualGameObject.name = link.Name + "_Visual";
-                linkVisualGameObject.GetComponent<Renderer>().material.color = Color.yellow;
-                GameObject visualObjectInstantation = ObjectInstantiaion.InstantiateObjectFromRightHandFrameData(linkVisualGameObject, Origin.point, Origin.xaxis, Origin.yaxis, false, false);
-                Destroy(linkVisualGameObject);
-            }
-            else
-            {
-                Debug.LogError($"TEST INSTANTIATION : Link Visual Origin is Null : {link.Name} see {JsonConvert.SerializeObject(Origin)} ");
-            }
+        //     if (inertialOrigin.point != null && inertialOrigin.xaxis != null && inertialOrigin.yaxis != null)
+        //     {
+        //         GameObject linkInertialGameObject = GameObject.Instantiate(cubeTesting);
+        //         linkInertialGameObject.name = link.Name + "_Inertial";
+        //         linkInertialGameObject.GetComponent<Renderer>().material.color = Color.blue;
+        //         GameObject inertialObjectInstantation = ObjectInstantiaion.InstantiateObjectFromRightHandFrameData(linkInertialGameObject, inertialOrigin.point, inertialOrigin.xaxis, inertialOrigin.yaxis, false, false);
+        //         Destroy(linkInertialGameObject);
+
+        //     }
+        //     else
+        //     {
+        //         Debug.LogError($"TEST INSTANTIATION : Link Inertial Origin is Null : {link.Name} see {JsonConvert.SerializeObject(inertialOrigin)} ");
+        //     }
+        //     if (Origin.point != null && Origin.xaxis != null && Origin.yaxis != null)
+        //     {
+        //         GameObject linkVisualGameObject = GameObject.Instantiate(cubeTesting);
+        //         linkVisualGameObject.name = link.Name + "_Visual";
+        //         linkVisualGameObject.GetComponent<Renderer>().material.color = Color.yellow;
+        //         GameObject visualObjectInstantation = ObjectInstantiaion.InstantiateObjectFromRightHandFrameData(linkVisualGameObject, Origin.point, Origin.xaxis, Origin.yaxis, false, false);
+        //         Destroy(linkVisualGameObject);
+        //     }
+        //     else
+        //     {
+        //         Debug.LogError($"TEST INSTANTIATION : Link Visual Origin is Null : {link.Name} see {JsonConvert.SerializeObject(Origin)} ");
+        //     }
             
-            if (link.Joints.Count > 0)
-            {
-                foreach (var joint in link.Joints)
-                {
-                    Debug.Log($"TEST INSTANTIATION : Parsed Link From Robot Model : Instantiating Joints Count :  {link.Name}: {joint.Name}");
-                    if (joint.Origin.point != null && joint.Origin.xaxis != null && joint.Origin.yaxis != null)
-                    {
-                        GameObject linkJointGameObject = GameObject.Instantiate(cubeTesting);
-                        linkJointGameObject.name = link.Name + "_Joint_" + joint.Name;
-                        linkJointGameObject.GetComponent<Renderer>().material.color = Color.green;
-                        GameObject jointObjectInstantation = ObjectInstantiaion.InstantiateObjectFromRightHandFrameData(linkJointGameObject, joint.Origin.point, joint.Origin.xaxis, joint.Origin.yaxis, false, false);
-                        Destroy(linkJointGameObject);
-                    }
-                }
-            }
-            else
-            {
-                Debug.LogError($"Link Joint Origin is Null : {link.Name} see {JsonConvert.SerializeObject(Origin)} ");
-            }
-        }
+        //     if (link.Joints.Count > 0)
+        //     {
+        //         foreach (var joint in link.Joints)
+        //         {
+        //             Debug.Log($"TEST INSTANTIATION : Parsed Link From Robot Model : Instantiating Joints Count :  {link.Name}: {joint.Name}");
+        //             if (joint.Origin.point != null && joint.Origin.xaxis != null && joint.Origin.yaxis != null)
+        //             {
+        //                 GameObject linkJointGameObject = GameObject.Instantiate(cubeTesting);
+        //                 linkJointGameObject.name = link.Name + "_Joint_" + joint.Name;
+        //                 linkJointGameObject.GetComponent<Renderer>().material.color = Color.green;
+        //                 GameObject jointObjectInstantation = ObjectInstantiaion.InstantiateObjectFromRightHandFrameData(linkJointGameObject, joint.Origin.point, joint.Origin.xaxis, joint.Origin.yaxis, false, false);
+        //                 Destroy(linkJointGameObject);
+        //             }
+        //         }
+        //     }
+        //     else
+        //     {
+        //         Debug.LogError($"Link Joint Origin is Null : {link.Name} see {JsonConvert.SerializeObject(Origin)} ");
+        //     }
+        // }
 
         
         // //TODO: JOINT PARSING ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
