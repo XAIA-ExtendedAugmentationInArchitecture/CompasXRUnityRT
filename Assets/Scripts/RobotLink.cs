@@ -549,7 +549,18 @@ namespace CompasXR.Robots.Model
                     collision.CreateColisionsWithRosSharp(link, linkObject);
                 }
             }
-            //TODO: ADD JOINTS AND INERTIALS.
+            // if (link.Joints.Count > 0) //TODO: I think I need to pass the inertial
+            // {
+            //     foreach (var joint in link.Joints)
+            //     {
+            //         GameObject jointObject = joint.AddRosSharpJointToGameObject(linkObject, joint);
+            //         jointObject.transform.SetParent(linkObject.transform);
+            //     }
+            // }
+            else
+            {
+                Debug.LogWarning($"CreateLinkGameObjectFromRosSharp: No joints found for the link {link.Name}.");
+            }
             return linkObject;
         }
 
