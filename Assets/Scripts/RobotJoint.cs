@@ -20,6 +20,14 @@ namespace CompasXR.Robots.Model
     {
         public string link { get; set; }
 
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
+            {
+                { "link", link }
+            };
+        }
+        
         public static ParentLink Parse(object jsondata)
         {
             var dict = jsondata as Dictionary<string, object>;
@@ -41,6 +49,14 @@ namespace CompasXR.Robots.Model
     {
         public string link { get; set; }
 
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
+            {
+                { "link", link }
+            };
+        }
+        
         public static ChildLink Parse(object jsondata)
         {
             var dict = jsondata as Dictionary<string, object>;
@@ -64,6 +80,16 @@ namespace CompasXR.Robots.Model
         public float falling { get; set; }
         public float reference_position { get; set; }
 
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
+            {
+                { "rising", rising },
+                { "falling", falling },
+                { "reference_position", reference_position }
+            };
+        }
+        
         public static Calibration Parse(object jsondata)
         {
             var dict = jsondata as Dictionary<string, object>;
@@ -89,6 +115,16 @@ namespace CompasXR.Robots.Model
         public float friction { get; set; }
         public Dictionary<string, object> attr { get; set; }
 
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
+            {
+                { "damping", damping },
+                { "friction", friction },
+                { "attr", attr }
+            };
+        }
+        
         public static Dynamics Parse(object jsondata)
         {
             var dict = jsondata as Dictionary<string, object>;
@@ -116,6 +152,18 @@ namespace CompasXR.Robots.Model
         public float upper { get; set; }
         public Dictionary<string, object> attr { get; set; }
 
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
+            {
+                { "effort", effort },
+                { "velocity", velocity },
+                { "lower", lower },
+                { "upper", upper },
+                { "attr", attr }
+            };
+        }
+        
         public static Limit Parse(object jsondata)
         {
             var dict = jsondata as Dictionary<string, object>;
@@ -143,6 +191,16 @@ namespace CompasXR.Robots.Model
         public float multiplier { get; set; }
         public float offset { get; set; }
 
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
+            {
+                { "joint", joint },
+                { "multiplier", multiplier },
+                { "offset", offset }
+            };
+        }
+
         public static Mimic Parse(object jsondata)
         {
             var dict = jsondata as Dictionary<string, object>;
@@ -150,13 +208,13 @@ namespace CompasXR.Robots.Model
             return FromData(dict);
         }
 
-        public static Mimic FromData(Dictionary<string, object> d)
+        public static Mimic FromData(Dictionary<string, object> data)
         {
             return new Mimic
             {
-                joint = d.GetValueOrDefault("joint")?.ToString(),
-                multiplier = Convert.ToSingle(d.GetValueOrDefault("multiplier") ?? 1f),
-                offset = Convert.ToSingle(d.GetValueOrDefault("offset") ?? 0f)
+                joint = data.GetValueOrDefault("joint")?.ToString(),
+                multiplier = Convert.ToSingle(data.GetValueOrDefault("multiplier") ?? 1f),
+                offset = Convert.ToSingle(data.GetValueOrDefault("offset") ?? 0f)
             };
         }
     }
@@ -196,6 +254,17 @@ namespace CompasXR.Robots.Model
         public float z { get; set; }
         public Dictionary<string, object> attr { get; set; }
 
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
+            {
+                { "x", x },
+                { "y", y },
+                { "z", z },
+                { "attr", attr }
+            };
+        }
+        
         public static Axis Parse(object jsondata)
         {
             var dict = jsondata as Dictionary<string, object>;
@@ -203,14 +272,14 @@ namespace CompasXR.Robots.Model
             return FromData(dict);
         }
 
-        public static Axis FromData(Dictionary<string, object> d)
+        public static Axis FromData(Dictionary<string, object> data)
         {
             return new Axis
             {
-                x = Convert.ToSingle(d.GetValueOrDefault("x") ?? 0f),
-                y = Convert.ToSingle(d.GetValueOrDefault("y") ?? 0f),
-                z = Convert.ToSingle(d.GetValueOrDefault("z") ?? 0f),
-                attr = d.GetValueOrDefault("attr") as Dictionary<string, object> ?? new Dictionary<string, object>()
+                x = Convert.ToSingle(data.GetValueOrDefault("x") ?? 0f),
+                y = Convert.ToSingle(data.GetValueOrDefault("y") ?? 0f),
+                z = Convert.ToSingle(data.GetValueOrDefault("z") ?? 0f),
+                attr = data.GetValueOrDefault("attr") as Dictionary<string, object> ?? new Dictionary<string, object>()
             };
         }
     }
@@ -253,6 +322,21 @@ namespace CompasXR.Robots.Model
             };
         }
 
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
+            {
+                { "name", Name },
+                { "type", Type.ToString().ToLower() },
+                { "position", Position },
+                { "attr", Attr },
+                { "parent", Parent.GetData() },
+                { "child", Child.GetData() },
+                { "origin", Origin.GetData() },
+                { "axis", Axis.GetData() }
+            };
+        }
+        
         public static RobotJoint Parse(object jsondata)
         {
             var data = jsondata as Dictionary<string, object>;

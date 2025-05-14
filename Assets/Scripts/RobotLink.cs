@@ -70,6 +70,16 @@ namespace CompasXR.Robots.Model
         public Inertia Inertia { get; set; }
         public Dictionary<string, object> Attr { get; set; }
 
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
+            {
+                { "origin", Origin },
+                { "mass", Mass },
+                { "inertia", Inertia },
+                { "attr", Attr }
+            };
+        }
         public static Inertial Parse(object jsondata)
         {
             var data = jsondata as Dictionary<string, object>;
@@ -198,6 +208,18 @@ namespace CompasXR.Robots.Model
             return FromData(data);
         }
 
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
+            {
+                { "geometry", Geometry },
+                { "origin", Origin },
+                { "name", Name },
+                { "material", Material },
+                { "attr", Attributes }
+            };
+        }
+
         public static Material CreateUnityMaterialFromDescription(Dictionary<string, object> description)
         {
             Material material = new Material(Shader.Find("Standard"));
@@ -268,6 +290,17 @@ namespace CompasXR.Robots.Model
             return FromData(d);
         }
 
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
+            {
+                { "geometry", Geometry },
+                { "origin", Origin },
+                { "name", Name },
+                { "attr", Attributes }
+            };
+        }
+
         public static Collision FromData(Dictionary<string, object> data)
         {
             
@@ -318,6 +351,50 @@ namespace CompasXR.Robots.Model
             var data = jsondata as Dictionary<string, object>;
             if (data == null) throw new ArgumentException("Expected a Dictionary<string, object> for Link.Parse");
             return FromData(data);
+        }
+
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
+            {
+                { "name", Name },
+                { "type", Type },
+                { "visual", _GetVisualData() },
+                { "collision", _GetCollisionData() },
+                { "inertial", Inertial?.GetData() },
+                { "attr", Attributes },
+                { "joints", Joints }
+            };
+        }
+        
+        public List<Dictionary<string, object>> _GetJointData()
+        {
+            List<Dictionary<string, object>> jointData = new List<Dictionary<string, object>>();
+            foreach (var joint in Joints)
+            {
+                jointData.Add(joint.GetData());
+            }
+            return jointData;
+        }
+
+        public List<Dictionary<string, object>> _GetVisualData()
+        {
+            List<Dictionary<string, object>> visualData = new List<Dictionary<string, object>>();
+            foreach (var visual in Visual)
+            {
+                visualData.Add(visual.GetData());
+            }
+            return visualData;
+        }
+
+        public List<Dictionary<string, object>> _GetCollisionData()
+        {
+            List<Dictionary<string, object>> collisionData = new List<Dictionary<string, object>>();
+            foreach (var collision in Collision)
+            {
+                collisionData.Add(collision.GetData());
+            }
+            return collisionData;
         }
 
         public static Link FromData(Dictionary<string, object> data)
@@ -391,6 +468,15 @@ namespace CompasXR.Robots.Model
     {
         public Dictionary<string, object> Attributes { get; set; }
         public ShapeInfo Shape { get; set; }
+        
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
+            {
+                { "attr", Attributes },
+                { "shape", Shape.GetData() }
+            };
+        }
         public static MeshDescriptor Parse(object jsondata)
         {
             var dict = jsondata as Dictionary<string, object>;
@@ -409,104 +495,147 @@ namespace CompasXR.Robots.Model
             };
             return meshesData;
         }
+    }
 
-        [Serializable]
-        public class ShapeInfo
+    [Serializable]
+    public class ShapeInfo
+    {
+        public Dictionary<string, object> Attributes { get; set; }
+        public DataInfo? Data { get; set; }
+        public string dtype { get; set; }
+        public string guid  { get; set; }
+
+        public static ShapeInfo Parse(object jsondata)
         {
-            public Dictionary<string, object> Attributes { get; set; }
-            public DataInfo? Data { get; set; }
-            public string dtype { get; set; }
-            public string guid  { get; set; }
+            var data = jsondata as Dictionary<string, object>;
+            if (data == null) throw new ArgumentException("Expected a Dictionary<string, object> for ShapeInfo.Parse");
+            return FromData(data);
+        }
 
-            public static ShapeInfo FromData(Dictionary<string, object> data)
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
             {
-                DataInfo dataInfo = new DataInfo();
-                if (data != null && data.ContainsKey("data"))
+                { "attr", Attributes },
+                { "data", Data?.GetData() },
+                { "dtype", dtype },
+                { "guid", guid }
+            };
+        }
+        public static ShapeInfo FromData(Dictionary<string, object> data)
+        {
+            DataInfo dataInfo = new DataInfo();
+            if (data != null && data.ContainsKey("data"))
+            {
+                Dictionary<string, object> dataDict = DictionaryHelpers.GetAsDictionary(data, "data");
+                dataInfo = DataInfo.FromData(dataDict);
+            }
+            else
+            {
+                Debug.LogWarning("ShapeInfo data is null or does not contain 'data' key.");
+            }
+
+            return new ShapeInfo
+            {
+                Attributes  = data.GetValueOrDefault("attr") as Dictionary<string, object> ?? new Dictionary<string, object>(),
+                Data  = dataInfo,
+                dtype = data.GetValueOrDefault("dtype")?.ToString(),
+                guid  = data.GetValueOrDefault("guid")?.ToString()
+            };
+        }
+    }
+
+    [Serializable]
+    public class DataInfo
+    {
+        public Dictionary<string, object> Attributes { get; set; }
+        public string FileName { get; set; }
+        public List<CompasMesh> Meshes { get; set; }
+        public float[] Scale { get; set; }
+
+        public static DataInfo Parse(object jsondata)
+        {
+            var data = jsondata as Dictionary<string, object>;
+            if (data == null) throw new ArgumentException("Expected a Dictionary<string, object> for DataInfo.Parse");
+            return FromData(data);
+        }
+
+        public Dictionary<string, object> GetData()
+        {
+            return new Dictionary<string, object>
+            {
+                { "attr", Attributes },
+                { "filename", FileName },
+                { "meshes", _GetMeshData() },
+                { "scale", Scale }
+            };
+        }
+        public List<Dictionary<string, object>> _GetMeshData()
+        {
+            List<Dictionary<string, object>> meshData = new List<Dictionary<string, object>>();
+            foreach (var mesh in Meshes)
+            {
+                meshData.Add(mesh.GetData());
+            }
+            return meshData;
+        }
+        public static DataInfo FromData(Dictionary<string, object> data)
+        {
+            
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
+            Dictionary<string, object> attrDict = DictionaryHelpers.GetAsDictionary(data, "attr");
+
+            float[] scaleArray = Array.Empty<float>();
+            if (data.TryGetValue("scale", out var rawScale) && rawScale != null) //TODO: the problem is here...
+            {
+                List<object> scaleList = null;
+
+                if (rawScale is List<object> lo)
                 {
-                    Dictionary<string, object> dataDict = DictionaryHelpers.GetAsDictionary(data, "data");
-                    dataInfo = DataInfo.FromData(dataDict);
+                    scaleList = lo;
+                }
+                else if (rawScale is JArray ja)
+                {
+                    scaleList = ja.ToObject<List<object>>();
+                }
+                else if (rawScale is JToken jt && jt.Type == JTokenType.Array)
+                {
+                    scaleList = ((JArray)jt).ToObject<List<object>>();
+                }
+
+                if (scaleList != null)
+                {
+                    // your converter now gets a proper List<object>
+                    scaleArray = DataConverters.ConvertDatatoFloatArray(scaleList);
                 }
                 else
                 {
-                    Debug.LogWarning("ShapeInfo data is null or does not contain 'data' key.");
+                    Debug.LogWarning($"Unexpected type for 'scale': {rawScale.GetType()}. Using empty array.");
                 }
-
-                return new ShapeInfo
-                {
-                    Attributes  = data.GetValueOrDefault("attr") as Dictionary<string, object> ?? new Dictionary<string, object>(),
-                    Data  = dataInfo,
-                    dtype = data.GetValueOrDefault("dtype")?.ToString(),
-                    guid  = data.GetValueOrDefault("guid")?.ToString()
-                };
             }
-        }
-
-        [Serializable]
-        public class DataInfo
-        {
-            public Dictionary<string, object> Attributes { get; set; }
-            public string FileName { get; set; }
-            public List<CompasMesh> Meshes { get; set; }
-            public float[] Scale { get; set; }
-
-            public static DataInfo FromData(Dictionary<string, object> data)
+            
+            
+            List<Dictionary<string, object>> meshesData = DictionaryHelpers.GetListFromDict(data, "meshes");
+            List<CompasMesh> meshes = new List<CompasMesh>();
+            if (meshesData != null)
             {
-                
-                if (data == null)
+                foreach (var mesh in meshesData)
                 {
-                    throw new ArgumentNullException(nameof(data));
+                    meshes.Add(CompasMesh.FromData(mesh));
                 }
-
-                Dictionary<string, object> attrDict = DictionaryHelpers.GetAsDictionary(data, "attr");
-
-                float[] scaleArray = Array.Empty<float>();
-                if (data.TryGetValue("scale", out var rawScale) && rawScale != null) //TODO: the problem is here...
-                {
-                    List<object> scaleList = null;
-
-                    if (rawScale is List<object> lo)
-                    {
-                        scaleList = lo;
-                    }
-                    else if (rawScale is JArray ja)
-                    {
-                        scaleList = ja.ToObject<List<object>>();
-                    }
-                    else if (rawScale is JToken jt && jt.Type == JTokenType.Array)
-                    {
-                        scaleList = ((JArray)jt).ToObject<List<object>>();
-                    }
-
-                    if (scaleList != null)
-                    {
-                        // your converter now gets a proper List<object>
-                        scaleArray = DataConverters.ConvertDatatoFloatArray(scaleList);
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"Unexpected type for 'scale': {rawScale.GetType()}. Using empty array.");
-                    }
-                }
-                
-                
-                List<Dictionary<string, object>> meshesData = DictionaryHelpers.GetListFromDict(data, "meshes");
-                List<CompasMesh> meshes = new List<CompasMesh>();
-                if (meshesData != null)
-                {
-                    foreach (var mesh in meshesData)
-                    {
-                        meshes.Add(CompasMesh.FromData(mesh));
-                    }
-                }
-
-                return new DataInfo
-                {
-                    Attributes = attrDict ?? new Dictionary<string, object>(),
-                    FileName = data.GetValueOrDefault("filename")?.ToString(),
-                    Meshes = meshes, 
-                    Scale = scaleArray
-                };
             }
+
+            return new DataInfo
+            {
+                Attributes = attrDict ?? new Dictionary<string, object>(),
+                FileName = data.GetValueOrDefault("filename")?.ToString(),
+                Meshes = meshes, 
+                Scale = scaleArray
+            };
         }
     }
 }
