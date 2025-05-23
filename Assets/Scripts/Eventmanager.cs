@@ -25,6 +25,7 @@ namespace CompasXR.Core
         public GameObject qrLocalizationObject;
         public GameObject mqttTrajectoryReceiverObject;
         public GameObject trajectoryVisualizerObject;
+        public GameObject zoneHapticsManagerObject;
 
         //Settings Database Reference
         public DatabaseReference dbReferenceSettings;
@@ -34,20 +35,20 @@ namespace CompasXR.Core
 
         //////////////////////////// Monobehaviour Methods //////////////////////////////
         void Awake()
-        {            
+        {
             //Initilization functionalities for the application.
             Caching.ClearCache();
             FirebaseDatabase.DefaultInstance.SetPersistenceEnabled(false);
-            dbReferenceSettings =  FirebaseDatabase.DefaultInstance.GetReference("ApplicationSettings");
-            
+            dbReferenceSettings = FirebaseDatabase.DefaultInstance.GetReference("ApplicationSettings");
+
             //Add script components to objects in the scene
-            databaseManager = databaseManagerObject.AddComponent<DatabaseManager>();  
+            databaseManager = databaseManagerObject.AddComponent<DatabaseManager>();
             InstantiateObjects instantiateObjects = instantiateObjectsObject.AddComponent<InstantiateObjects>();
             CheckFirebase checkFirebase = checkFirebaseObject.AddComponent<CheckFirebase>();
             QRLocalization qrLocalization = qrLocalizationObject.GetComponent<QRLocalization>();
             MqttTrajectoryManager mqttTrajectoryReceiver = mqttTrajectoryReceiverObject.GetComponent<MqttTrajectoryManager>();
             TrajectoryVisualizer trajectoryVisualizer = trajectoryVisualizerObject.GetComponent<TrajectoryVisualizer>();
-            
+
             //Establish Global Event Listeners
             checkFirebase.FirebaseInitialized += DBInitializedFetchSettings;
             databaseManager.ApplicationSettingUpdate += databaseManager.FetchRoboticTerritoriesData;
@@ -56,11 +57,12 @@ namespace CompasXR.Core
 
             //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
             databaseManager.RobotBaseFrameReceived += trajectoryVisualizer.OnRobotBaseFrameReceived;
+            instantiateObjects.InitialZonesPlaced += addZoneHapticsManager;
             //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
-            
+
             databaseManager.ZonesInfoReceived += instantiateObjects.OnZonesReceived;
             instantiateObjects.InitialZonesPlaced += databaseManager.AddListenersRoboticTerritories;
-            databaseManager.ModeZonesUpdate += instantiateObjects.OnModeZonesUpdate;    
+            databaseManager.ModeZonesUpdate += instantiateObjects.OnModeZonesUpdate;
 
             // databaseManager.ApplicationSettingUpdate += databaseManager.FetchData;
             // databaseManager.ApplicationSettingUpdate += mqttTrajectoryReceiver.SetCompasXRTopics;
@@ -78,7 +80,16 @@ namespace CompasXR.Core
             * once the connection has been initilized.
             */
             databaseManager.FetchSettingsData(dbReferenceSettings);
-        }  
+        }
+
+        public void addZoneHapticsManager(object sender, EventArgs e)
+        {
+            /*
+            * Method is used to add the zone haptics manager to the event manager
+            * once the zones have been placed.
+            */
+            ZoneHapticsManager zoneHapticsManager = zoneHapticsManagerObject.AddComponent<ZoneHapticsManager>();
+        }
 
     }
 }
