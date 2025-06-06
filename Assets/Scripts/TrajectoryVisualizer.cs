@@ -712,23 +712,25 @@ namespace CompasXR.Robots
         }
 
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////////////////////////////
+
+        //TODO: This needs to be updaeted to fix robots based on the children (based on the robot name.)
         public void OnRobotBaseFrameReceived(object source, RobotBaseFrameReceivedEventArgs e)
         {
             /*
             OnRobotBaseFrameReceived is responsible for setting the robot base frame in the scene.
             */
-            if(uiFunctionalities.SetActiveRobotToggleObject.GetComponent<Toggle>().isOn)
+            if (uiFunctionalities.SetActiveRobotToggleObject.GetComponent<Toggle>().isOn)
             {
                 URDFManagement.SetRobotLocalPositionandRotationFromFrame(e.RobotBaseFrame, ActiveRobot);
-                if(ActiveRobot != null)
+                if (ActiveRobot != null)
                 {
                     //TODO: ADDED FOR TESTING...
                     //TODO: THiS SERVICE MANAGER NEEDS TO BE UPDATED AS THE COMPAS XR ONE DOES...
                     if (databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
                     {
-                        AddReachabilitlyToHumanZone(ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName), 
-                        databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, 
-                        databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, 
+                        AddReachabilitlyToHumanZone(ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName),
+                        databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject,
+                        databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject,
                         uiFunctionalities.ReachabilityToggleObject.GetComponentInChildren<Toggle>().isOn);
                     }
                 }

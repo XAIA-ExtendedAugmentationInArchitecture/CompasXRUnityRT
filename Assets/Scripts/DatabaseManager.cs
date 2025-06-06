@@ -264,9 +264,14 @@ namespace CompasXR.Core
             dbReferenceZones = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("zones");
             dbReferenceQRCodes = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("QRFrames").Child("graph").Child("node");
             dbReferenceCurrentMode = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("CurrentMode");
-            dbRefernceRobotBaseFrame = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("robot_base_frame");
 
-            await FetchRTDDatawithEventHandler(dbReferenceQRCodes, snapshot => DeserializeAssemblyDataSnapshot(snapshot, QRCodeDataDict), "TrackingDict");
+            //TODO: This is a temporary fix to get the UR20 data from the Firebase Realtime Database. //////////////////////////////////////////////////////
+            dbRefernceRobotBaseFrame = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("robot_base_frame").Child("UR20");
+
+            // The real reference should be the baseframe reference then deserialize the data. by key.
+            //TODO: This is a temporary fix to get the UR20 data from the Firebase Realtime Database. //////////////////////////////////////////////////////
+
+
             await DataHandlers.FetchDataFromDatabaseReference(dbReferenceZones, snapshot => DeserializeZoneDataSnapshot(snapshot, ProjectZones));
             await DataHandlers.FetchDataFromDatabaseReference(dbRefernceRobotBaseFrame, snapshot => DeserilizeRobotBaseFrameSnapshot(snapshot));
         }    
@@ -382,6 +387,7 @@ namespace CompasXR.Core
             dbReferenceQRCodes.ChildChanged += OnQRCodesInformationChanged;
             dbReferenceQRCodes.ChildRemoved += OnQRCodesInformationChanged;
 
+            //TODO: THIS NEEDS TO BE UPDATED TO HANDLE ALL ROBOTS.
             dbRefernceRobotBaseFrame.ChildChanged += OnRobotBaseFrameChanged;
             dbRefernceRobotBaseFrame.ChildRemoved += OnRobotBaseFrameChanged;
             dbRefernceRobotBaseFrame.ChildAdded += OnRobotBaseFrameChanged;
@@ -508,6 +514,10 @@ namespace CompasXR.Core
             if (childSnapshot != null && key != null)
             {
                 Debug.Log("OnProjectInfoChangedUpdate: Robot Base Frame Changed");
+                //TODO: This is a temporaty fix. //////////////////////////////////////////////////////////////////////////////////////////////////
+                // DatabaseReference tempDBRefernceChild = dbRefernceRobotBaseFrame.Child(key);
+                //TODO: This is a temporaty fix. //////////////////////////////////////////////////////////////////////////////////////////////////
+
                 await DataHandlers.FetchDataFromDatabaseReference(dbRefernceRobotBaseFrame, snapshot => DeserilizeRobotBaseFrameSnapshot(snapshot));
             }
             else
