@@ -15,6 +15,7 @@ public class ZoneHapticsManager : MonoBehaviour
     public ProjectZones projectZones;
     public AudioClip entrySound;
     public AudioClip exitSound;
+    public AudioClip continousSound;
     public bool isInsideHumanMimicZoneNow = false;
 
     public bool wasInsideHumanMimicZoneLastFrame = false;
@@ -44,8 +45,9 @@ public class ZoneHapticsManager : MonoBehaviour
         MimicZoneAudioSource = GetComponentInChildren<AudioSource>();
 
         GameObject ZoneHapticsManagerObject = GameObject.Find("ZoneHapticsManager");
-        entrySound = ZoneHapticsManagerObject.FindObject("ZoneEntry").GetComponent<AudioSource>().clip;
-        exitSound = ZoneHapticsManagerObject.FindObject("ZoneEntry").GetComponent<AudioSource>().clip;
+        entrySound = ZoneHapticsManagerObject.FindObject("ZoneEntrySound").GetComponent<AudioSource>().clip;
+        exitSound = ZoneHapticsManagerObject.FindObject("ZoneEntrySound").GetComponent<AudioSource>().clip;
+        continousSound = ZoneHapticsManagerObject.FindObject("ZoneContinuousSound").GetComponent<AudioSource>().clip;
 
         if (entrySound == null)
         {
@@ -59,7 +61,6 @@ public class ZoneHapticsManager : MonoBehaviour
         //Get the arCamera
         arCamera = GameObject.Find("XR Origin").FindObject("Camera Offset").FindObject("Main Camera").GetComponent<Camera>();
     }
-
     public void ZoneHapticsUpdateMethod()
     {
 
@@ -95,7 +96,6 @@ public class ZoneHapticsManager : MonoBehaviour
         }
 
     }
-
     public void SoundControlerForZoneEntry(Vector3 cameraPosition, GameObject zoneObject, ref bool isInsideZone, ref bool wasInsideHumanMimicZoneLastFrame)
     {
         // Play sound for zone entry
@@ -108,19 +108,20 @@ public class ZoneHapticsManager : MonoBehaviour
             // Play sound for entering the zone
             Debug.Log("ZoneHapticsManager: Entered zone. Playing entry sound.");
             // Add your sound playing logic here
-            PlayEntrySoundFromAudioSource(ref MimicZoneAudioSource, entrySound);
+            // PlayEntrySoundFromAudioSource(ref MimicZoneAudioSource, entrySound);
+            PlaySoundContinuously(MimicZoneAudioSource, continousSound, isInsideZone);
         }
         else if (!isInsideZone && wasInsideHumanMimicZoneLastFrame)
         {
             // Play sound for exiting the zone
             Debug.Log("ZoneHapticsManager: Exited zone. Playing exit sound.");
             // Add your sound playing logic here
-            PlayEntrySoundFromAudioSource(ref MimicZoneAudioSource, exitSound);
+            // PlayEntrySoundFromAudioSource(ref MimicZoneAudioSource, exitSound);
+            PlaySoundContinuously(MimicZoneAudioSource, continousSound, isInsideZone);
         }
 
         wasInsideHumanMimicZoneLastFrame = isInsideZone;
     }
-
     public void PlayEntrySoundFromAudioSource(ref AudioSource audioSource, AudioClip audioClip)
     {
         if (audioSource != null && audioClip != null)
@@ -132,5 +133,24 @@ public class ZoneHapticsManager : MonoBehaviour
             Debug.LogError("ZoneHapticsControler: AudioSource is null. Cannot play sound.");
         }
     }
-
+    public void PlaySoundContinuously(AudioSource audioSource, AudioClip audioClip, bool isPlaying)
+    {
+        if (audioSource != null && audioClip != null)
+        {
+            if (isPlaying && !audioSource.isPlaying)
+            {
+                audioSource.clip = audioClip;
+                audioSource.loop = true;
+                audioSource.Play();
+            }
+            if (!isPlaying && audioSource.isPlaying)
+            {
+                audioSource.Stop();
+            }
+        }
+        else
+        {
+            Debug.LogError("ZoneHapticsControler: AudioSource is null. Cannot play sound.");
+        }
+    }
 }

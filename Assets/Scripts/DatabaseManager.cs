@@ -65,7 +65,16 @@ namespace CompasXR.Core
         public string Key { get; set; }
     }
 
+    public class UserZoneInfoUpdated : EventArgs
+    {
+        /*
+        * UserInfoDataItemsDictEventArgs : Class inherits from EventArgs &
+        * it is used to send the UserInfo Class on events.
+        */
+        public UserZoneInfo UserZoneInfo { get; set; }
+        public string UserDeviceID { get; set; }
 
+    }
 
     //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -116,10 +125,11 @@ namespace CompasXR.Core
         * Additionally it is designed to handle the database events, and allow users to fetch and push data to the database.
         * The primary goal of the DatabaseManager class is to handle data from the Firebase RealtimeDatabase and Storage.
         */
-        
+
         // TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         public DatabaseReference dbReferenceZones;
         public DatabaseReference dbReferenceCurrentMode;
+        public DatabaseReference dbReferenceUserInformation;
         public DatabaseReference dbRefernceRobotBaseFrame;
         public ProjectZones ProjectZones = new ProjectZones();
 
@@ -131,7 +141,7 @@ namespace CompasXR.Core
         public delegate void RobotBaseFrameReceivedEventHandler(object source, RobotBaseFrameReceivedEventArgs e);
         public event RobotBaseFrameReceivedEventHandler RobotBaseFrameReceived;
 
-        public delegate void UpdateZonesDatatDict(object source, ModeZonesUpdateEventArgs e); 
+        public delegate void UpdateZonesDatatDict(object source, ModeZonesUpdateEventArgs e);
         public event UpdateZonesDatatDict ModeZonesUpdate;
 
         public InstantiateObjects instantiateObjects;
@@ -166,18 +176,18 @@ namespace CompasXR.Core
         public ApplicationSettings applicationSettings;
 
         // Define event delegates and events
-        public delegate void StoreDataDictEventHandler(object source, BuildingPlanDataDictEventArgs e); 
+        public delegate void StoreDataDictEventHandler(object source, BuildingPlanDataDictEventArgs e);
         public event StoreDataDictEventHandler DatabaseInitializedDict;
 
-        public delegate void TrackingDataDictEventHandler(object source, TrackingDataDictEventArgs e); 
+        public delegate void TrackingDataDictEventHandler(object source, TrackingDataDictEventArgs e);
         public event TrackingDataDictEventHandler TrackingDictReceived;
 
-        public delegate void UpdateDataDictEventHandler(object source, UpdateDataItemsDictEventArgs e); 
+        public delegate void UpdateDataDictEventHandler(object source, UpdateDataItemsDictEventArgs e);
         public event UpdateDataDictEventHandler DatabaseUpdate;
 
         public delegate void StoreApplicationSettings(object source, ApplicationSettingsEventArgs e);
         public event StoreApplicationSettings ApplicationSettingUpdate;
-        
+
         public delegate void UpdateUserInfoEventHandler(object source, UserInfoDataItemsDictEventArgs e);
         public event UpdateUserInfoEventHandler UserInfoUpdate;
 
@@ -189,7 +199,9 @@ namespace CompasXR.Core
         public string TempDatabaseLastBuiltStep;
         public string CurrentPriority = null;
 
-    /////////////////////// Monobehaviour Methods /////////////////////////////////
+        public UserZoneInfo UserZoneInfo = new UserZoneInfo();
+
+        /////////////////////// Monobehaviour Methods /////////////////////////////////
         void Awake()
         {
             /*
@@ -215,7 +227,7 @@ namespace CompasXR.Core
 
         }
 
-    /////////////////////// FETCH AND PUSH DATA /////////////////////////////////
+        /////////////////////// FETCH AND PUSH DATA /////////////////////////////////
         private void OnAwakeInitilization()
         {
             /*
@@ -251,8 +263,8 @@ namespace CompasXR.Core
                     DeserializeSettingsData(snapshot);
                 }
             });
-        }    
-        
+        }
+
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         public async void FetchRoboticTerritoriesData(object source, ApplicationSettingsEventArgs e)
         {
@@ -264,6 +276,7 @@ namespace CompasXR.Core
             dbReferenceZones = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("zones");
             dbReferenceQRCodes = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("QRFrames").Child("graph").Child("node");
             dbReferenceCurrentMode = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("CurrentMode");
+            dbReferenceUserInformation = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("Users");
 
             //TODO: This is a temporary fix to get the UR20 data from the Firebase Realtime Database. //////////////////////////////////////////////////////
             dbRefernceRobotBaseFrame = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("robot_base_frame").Child("UR20");
@@ -274,7 +287,8 @@ namespace CompasXR.Core
 
             await DataHandlers.FetchDataFromDatabaseReference(dbReferenceZones, snapshot => DeserializeZoneDataSnapshot(snapshot, ProjectZones));
             await DataHandlers.FetchDataFromDatabaseReference(dbRefernceRobotBaseFrame, snapshot => DeserilizeRobotBaseFrameSnapshot(snapshot));
-        }    
+
+        }
         private void DeserilizeRobotBaseFrameSnapshot(DataSnapshot snapshot) //TODO: CHECK WITH FRAME STRUCTURE.
         {
             /*
@@ -309,7 +323,7 @@ namespace CompasXR.Core
             OnZonesReceived(ProjectZones);
         }
         public Dictionary<string, Zone> DeserilizeModeZones(DataSnapshot childSnapshot, ProjectZones Zones)
-        {      
+        {
             /*
             * Method is used to deserialize the Zone data from the Firebase Realtime Database.
             * It is designed to take a snapshot of the Zone data reference and iterate through them parsing the information for the individual modes.
@@ -327,9 +341,9 @@ namespace CompasXR.Core
             }
 
             switch (ZoneKey)
-            {   
+            {
                 case "tele_mimic_zone":
-                    if(Zones.TelemimicZones.Count > 0)
+                    if (Zones.TelemimicZones.Count > 0)
                     {
                         Zones.TelemimicZones.Clear();
                     }
@@ -337,7 +351,7 @@ namespace CompasXR.Core
                     Zones.TelemimicZones = ZonesDict;
                     return Zones.TelemimicZones;
                 case "mimic_zones":
-                    if(Zones.MimicZones.Count > 0)
+                    if (Zones.MimicZones.Count > 0)
                     {
                         Zones.MimicZones.Clear();
                     }
@@ -345,7 +359,7 @@ namespace CompasXR.Core
                     Zones.MimicZones = ZonesDict;
                     return Zones.MimicZones;
                 case "inference_zones":
-                    if(Zones.InferenceZones.Count > 0)
+                    if (Zones.InferenceZones.Count > 0)
                     {
                         Zones.InferenceZones.Clear();
                     }
@@ -353,7 +367,7 @@ namespace CompasXR.Core
                     Zones.InferenceZones = ZonesDict;
                     return Zones.InferenceZones;
                 case "boundary_zone":
-                    if(Zones.BoundaryZone.Count > 0)
+                    if (Zones.BoundaryZone.Count > 0)
                     {
                         Zones.BoundaryZone.Clear();
                     }
@@ -373,7 +387,7 @@ namespace CompasXR.Core
             Debug.Log($"Boundary Zones: {JsonConvert.SerializeObject(zones.BoundaryZone)}");
         }
         public void AddListenersRoboticTerritories(object source, EventArgs args)
-        {          
+        {
             /*
             * Method is used to add event listeners to the Firebase Realtime Database Events.
             * It is designed to listen for changes in the database and trigger events to update the data.
@@ -418,12 +432,14 @@ namespace CompasXR.Core
         public void OnZonesInformationChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
         {
 
-            if (args.DatabaseError != null) {
-            Debug.LogError($"OnZonesChanged: Database error: {args.DatabaseError}");
-            return;
+            if (args.DatabaseError != null)
+            {
+                Debug.LogError($"OnZonesChanged: Database error: {args.DatabaseError}");
+                return;
             }
 
-            if (args.Snapshot == null) {
+            if (args.Snapshot == null)
+            {
                 Debug.LogWarning("OnZonesChanged: Snapshot is null. Ignoring the child change.");
                 return;
             }
@@ -448,6 +464,28 @@ namespace CompasXR.Core
                 Debug.LogWarning("OnZonesChanged: Snapshot or key is null. Ignoring the child change.");
             }
         }
+        public void OnUserInformationChanged(object sender, Firebase.Database.ChildChangedEventArgs args) //TODO: UPDATE THIS.
+        {
+            /*
+            * Method is used to handle the Child Changed event from the Firebase Realtime Database.
+            * It is designed to take the snapshot of the child changed event and parse the information.
+            */
+            // if (args.DatabaseError != null)
+            // {
+            //     Debug.LogError(args.DatabaseError.Message);
+            //     return;
+            // }
+
+            // var key = args.Snapshot.Key;
+            // var childSnapshot = args.Snapshot.GetValue(true);
+            // Debug.Log($"OnUserInformationChanged: A child changed event was triggered for the key: {key} in the users reference.");
+
+            // if (childSnapshot != null && key != null)
+            // {
+            //     UserCurrentInfo userInfo = UserCurrentInfo.Parse(key, childSnapshot);
+            //     // OnUserInfoUpdate(userInfo, key);
+            // }
+        }
 
         //EVENTS
         protected virtual void OnZonesReceived(ProjectZones ProjectZones)
@@ -458,10 +496,10 @@ namespace CompasXR.Core
             */
             UnityEngine.Assertions.Assert.IsNotNull(ZonesInfoReceived, "Database dict is null!");
             Debug.Log("ZonesReceived: Sending Zones to the respective classes");
-            ZonesInfoReceived(this, new ZonesInfoReceivedEventArgs() {Zones = ProjectZones});
+            ZonesInfoReceived(this, new ZonesInfoReceivedEventArgs() { Zones = ProjectZones });
 
         }
-        protected virtual void OnZonesUpdate(Dictionary<string, Zone> ModeZonesDict,string key)
+        protected virtual void OnZonesUpdate(Dictionary<string, Zone> ModeZonesDict, string key)
         {
             /*
             * Method is used to trigger the Zones Update Event.
@@ -469,16 +507,18 @@ namespace CompasXR.Core
             */
             UnityEngine.Assertions.Assert.IsNotNull(ModeZonesUpdate, "Modes dict is null!");
             Debug.Log("ZonesUpdate: Sending Zones to the respective classes");
-            ModeZonesUpdate(this, new ModeZonesUpdateEventArgs() {Zones = ModeZonesDict, Key = key});
+            ModeZonesUpdate(this, new ModeZonesUpdateEventArgs() { Zones = ModeZonesDict, Key = key });
         }
         protected async void OnQRCodesInformationChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
         {
-            if (args.DatabaseError != null) {
+            if (args.DatabaseError != null)
+            {
                 Debug.LogError($"OnQRCodesChanged: Database error: {args.DatabaseError}");
                 return;
             }
 
-            if (args.Snapshot == null) {
+            if (args.Snapshot == null)
+            {
                 Debug.LogWarning("OnQRCodesChanged: Snapshot is null. Ignoring the child change.");
                 return;
             }
@@ -498,12 +538,14 @@ namespace CompasXR.Core
         }
         protected async void OnRobotBaseFrameChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
         {
-            if (args.DatabaseError != null) {
+            if (args.DatabaseError != null)
+            {
                 Debug.LogError($"OnQRCodesChanged: Database error: {args.DatabaseError}");
                 return;
             }
 
-            if (args.Snapshot == null) {
+            if (args.Snapshot == null)
+            {
                 Debug.LogWarning("OnQRCodesChanged: Snapshot is null. Ignoring the child change.");
                 return;
             }
@@ -533,7 +575,128 @@ namespace CompasXR.Core
             */
             UnityEngine.Assertions.Assert.IsNotNull(RobotBaseFrameReceived, "Tracking Dict is null!");
             Debug.Log("OnTrackingDataReceived: Tracking Data Received");
-            RobotBaseFrameReceived(this, new RobotBaseFrameReceivedEventArgs() {RobotBaseFrame = RobotBaseFrame});
+            RobotBaseFrameReceived(this, new RobotBaseFrameReceivedEventArgs() { RobotBaseFrame = RobotBaseFrame });
+        }
+        protected virtual void OnZoneUserZoneInfoUpdated(UserCurrentInfo newValue, string key) //TODO: MAKE THIS WORK.
+        {
+            /*
+            * Method is used to trigger the User Info Updated Event.
+            * It is designed to trigger the event and send the User Info Data to the respective classes.
+            */
+            UnityEngine.Assertions.Assert.IsNotNull(UserInfoUpdate, "new dict is null!");
+            UserInfoUpdate(this, new UserInfoDataItemsDictEventArgs() { UserInfo = newValue, Key = key });
+        }
+
+        //USER TRACKING INFORMATION ////////////////////////////////////////////////////////////////////////
+        public void OnUserZoneChildAdded(object sender, Firebase.Database.ChildChangedEventArgs args) //TODO: MAKE THIS WORK.
+        {
+            /*
+            * Method is used to handle the User Child Added event from the Firebase Realtime Database.
+            * It is designed to take the snapshot of the User Current Step and parse the information.
+            * Additionally it checks the validity of the step and adds it to the dictoinary if it is.
+            */
+            if (args.DatabaseError != null)
+            {
+                Debug.LogError($"OnUserChildAdded: Database error: {args.DatabaseError}");
+                return;
+            }
+            if (args.Snapshot == null)
+            {
+                Debug.LogWarning("OnUserChildAdded: Snapshot is null. Ignoring the child change.");
+                return;
+            }
+
+            string key = args.Snapshot.Key;
+            var childSnapshot = args.Snapshot.GetValue(true);
+
+            if (childSnapshot != null)
+            {
+                UserCurrentInfo newValue = UserCurrentInfo.Parse(childSnapshot);
+                if (newValue != null)
+                {
+                    if (UserCurrentStepDict.ContainsKey(key))
+                    {
+                        Debug.Log($"OnUserChildAdded: This User {key} already exists in the dictionary");
+                    }
+                    else
+                    {
+                        Debug.Log($"OnUserChildAdded: The key '{key}' does not exist in the dictionary");
+                        UserCurrentStepDict.Add(key, newValue);
+                        OnUserInfoUpdated(newValue, key);
+                    }
+                }
+            }
+        }
+        public void OnUserZoneChildChanged(object sender, Firebase.Database.ChildChangedEventArgs args) //TODO: MAKE THIS WORK.
+        {
+            /*
+            * Method is used to handle the User Child Changed event from the Firebase Realtime Database.
+            * It is designed to take the snapshot of the User Current Information and parse the information.
+            * Additionally it triggers event changes to remove or update the Users Object.
+            */
+            if (args.DatabaseError != null)
+            {
+                Debug.LogError($"OnUserChildChanged: Database error: {args.DatabaseError}");
+                return;
+            }
+
+            if (args.Snapshot == null)
+            {
+                Debug.LogWarning("OnUserChildChanged: Snapshot is null. Ignoring the child change.");
+                return;
+            }
+
+            string key = args.Snapshot.Key;
+            var childSnapshot = args.Snapshot.GetValue(true);
+
+            if (childSnapshot != null)
+            {
+                UserCurrentInfo newValue = UserCurrentInfo.Parse(childSnapshot);
+                if (key != SystemInfo.deviceUniqueIdentifier)
+                {
+                    if (newValue != null)
+                    {
+                        UserCurrentStepDict[key] = newValue;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"OnUserChildChanged: User info data for '{key}' is null. Not added to the dictionary.");
+                    }
+                    OnUserInfoUpdated(newValue, key);
+                }
+            }
+        }
+        public void OnUserZoneChildRemoved(object sender, Firebase.Database.ChildChangedEventArgs args)
+        {
+            /*
+            * Method is used to handle the User Child Removed event from the Firebase Realtime Database.
+            * It is designed to take the snapshot of the User Current Information and parse the information.
+            * Additionally it triggers event changes to remove the Users Object.
+            */
+            if (args.DatabaseError != null)
+            {
+                Debug.LogError($"OnUserChildRemoved: Database error: {args.DatabaseError}");
+                return;
+            }
+
+            string key = args.Snapshot.Key;
+            string childSnapshot = args.Snapshot.GetRawJsonValue();
+
+            if (!string.IsNullOrEmpty(childSnapshot))
+            {
+                if (UserCurrentStepDict.ContainsKey(key))
+                {
+                    UserCurrentInfo newValue = null;
+                    Debug.Log($"OnUserChildRemoved: User {key} left and will be removed from the scene.");
+                    UserCurrentStepDict.Remove(key);
+                    OnUserInfoUpdated(newValue, key);
+                }
+                else
+                {
+                    Debug.Log($"OnUserChildRemoved: User {key} doesn't exist in the dictionary.");
+                }
+            }
+
         }
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
@@ -595,15 +758,15 @@ namespace CompasXR.Core
 
             if (eventname != null && eventname == "BuildingPlanDataDict")
             {
-                OnDatabaseInitializedDict(BuildingPlanDataItem); 
+                OnDatabaseInitializedDict(BuildingPlanDataItem);
             }
             if (eventname != null && eventname == "TrackingDict")
             {
                 OnTrackingDataReceived(QRCodeDataDict);
             }
-        }      
+        }
         public void PushAllDataBuildingPlan(string key)
-        {        
+        {
             /*
             * Method is used to push the data to the Firebase Realtime Database.
             * It particulararly is used to push all of the BuildingPlanData Information.
@@ -615,7 +778,7 @@ namespace CompasXR.Core
             dbReferenceBuildingPlan.SetRawJsonValueAsync(data);
         }
 
-    /////////////////////////// DATA DESERIALIZATION ///////////////////////////////////////
+        /////////////////////////// DATA DESERIALIZATION ///////////////////////////////////////
         private void DeserializeSettingsData(DataSnapshot snapshot)
         {
             /*  
@@ -636,9 +799,9 @@ namespace CompasXR.Core
             {
                 Debug.LogWarning("You did not set your settings data properly");
             }
-        
+
             OnSettingsUpdate(applicationSettings);
-        } 
+        }
         private void DeserializeAssemblyDataSnapshot(DataSnapshot snapshot, Dictionary<string, Node> dataDict)
         {
             /*
@@ -667,7 +830,7 @@ namespace CompasXR.Core
             Debug.Log($"DeserializeAssemblyDataSnapshot: The number of nodes stored in the Assembly Dict is {dataDict.Count}");
         }
         private void DesearializeStringItem(DataSnapshot snapshot, ref string tempStringStorage)
-        {  
+        {
             /*
             * Method is used to deserialize a string item from the Firebase Realtime Database.
             * It is designed to take a snapshot of the a string data reference and parse the information.
@@ -710,20 +873,20 @@ namespace CompasXR.Core
             {
                 Debug.LogWarning("You did not set your building plan data properly");
             }
-            
+
         }
 
-    /////////////////////////// INTERNAL DATA MANAGERS //////////////////////////////////////
+        /////////////////////////// INTERNAL DATA MANAGERS //////////////////////////////////////
         public void FindInitialElement()
         {
             /*
             * Method is used to find the initial element in the Building Plan Data.
             * It is designed to iterate through the Building Plan Data and find the first element that is not built.
             */
-            for (int i =0 ; i < BuildingPlanDataItem.steps.Count; i++)
+            for (int i = 0; i < BuildingPlanDataItem.steps.Count; i++)
             {
                 Step step = BuildingPlanDataItem.steps[i.ToString()];
-                if(step.data.is_built == false)
+                if (step.data.is_built == false)
                 {
                     UIFunctionalities.SetCurrentPriority(step.data.priority.ToString());
                     UIFunctionalities.SetCurrentStep(i.ToString());
@@ -732,7 +895,7 @@ namespace CompasXR.Core
             }
         }
         public int OtherUserPriorityChecker(Step step, string stepKey)
-        {        
+        {
             /*
             * Method is used to check the priority of the step changed by someone else and compare it to the current priority.
             * It is designed to check if the priority is the same as the current priority
@@ -743,15 +906,15 @@ namespace CompasXR.Core
                 List<string> UnbuiltElements = new List<string>();
                 List<string> PriorityDataItem = BuildingPlanDataItem.PriorityTreeDictionary[CurrentPriority];
 
-                foreach(string element in PriorityDataItem)
+                foreach (string element in PriorityDataItem)
                 {
                     Step stepToCheck = BuildingPlanDataItem.steps[element];
-                    if(!stepToCheck.data.is_built)
+                    if (!stepToCheck.data.is_built)
                     {
                         UnbuiltElements.Add(element);
                     }
                 }
-                if(UnbuiltElements.Count == 0)
+                if (UnbuiltElements.Count == 0)
                 {
                     Debug.Log($"OtherUserPriorityCheck: Current Priority is complete. Unlocking Next Priority.");
                     return 2;
@@ -770,9 +933,9 @@ namespace CompasXR.Core
 
         }
 
-    /////////////////////////////// EVENT HANDLING ////////////////////////////////////////
+        /////////////////////////////// EVENT HANDLING ////////////////////////////////////////
         public void AddListeners(object source, EventArgs args)
-        {          
+        {
             /*
             * Method is used to add event listeners to the Firebase Realtime Database Events.
             * It is designed to listen for changes in the database and trigger events to update the data.
@@ -780,7 +943,7 @@ namespace CompasXR.Core
             // dbReferenceSteps.ChildAdded += OnStepsChildAdded;
             // dbReferenceSteps.ChildChanged += OnStepsChildChanged;
             // dbReferenceSteps.ChildRemoved += OnStepsChildRemoved;
-            
+
             // dbReferenceUsersCurrentSteps.ChildAdded += OnUserChildAdded; 
             // dbReferenceUsersCurrentSteps.ChildChanged += OnUserChildChanged;
             // dbReferenceUsersCurrentSteps.ChildRemoved += OnUserChildRemoved;
@@ -792,7 +955,7 @@ namespace CompasXR.Core
             // dbRefrenceProject.ChildRemoved += OnProjectInfoChangedUpdate;
         }
         public void RemoveListners()
-        {        
+        {
             /*
             * Method is used to remove event listeners to the Firebase Realtime Database Events.
             * It is used on restart and other methods in which I cause resubscription to new references.
@@ -800,7 +963,7 @@ namespace CompasXR.Core
             // dbReferenceSteps.ChildAdded += OnStepsChildAdded;
             // dbReferenceSteps.ChildChanged += OnStepsChildChanged;
             // dbReferenceSteps.ChildRemoved += OnStepsChildRemoved;
-            
+
             // dbReferenceUsersCurrentSteps.ChildAdded += OnUserChildAdded; 
             // dbReferenceUsersCurrentSteps.ChildChanged += OnUserChildChanged;
             // dbReferenceUsersCurrentSteps.ChildRemoved += OnUserChildRemoved;
@@ -811,7 +974,7 @@ namespace CompasXR.Core
             // dbRefrenceProject.ChildChanged += OnProjectInfoChangedUpdate;
             // dbRefrenceProject.ChildRemoved += OnProjectInfoChangedUpdate;
         }
-        public void OnStepsChildAdded(object sender, Firebase.Database.ChildChangedEventArgs args) 
+        public void OnStepsChildAdded(object sender, Firebase.Database.ChildChangedEventArgs args)
         {
             /*
             * Method is used to handle the Child Added event from the Firebase Realtime Database.
@@ -831,7 +994,7 @@ namespace CompasXR.Core
             if (childSnapshot != null)
             {
                 Step newValue = Step.Parse(childSnapshot);
-            
+
                 if (newValue.IsValidStep())
                 {
                     if (BuildingPlanDataItem.steps.ContainsKey(key))
@@ -852,7 +1015,7 @@ namespace CompasXR.Core
                             BuildingPlanDataItem.PriorityTreeDictionary[newValue.data.priority.ToString()] = new List<string>();
                             BuildingPlanDataItem.PriorityTreeDictionary[newValue.data.priority.ToString()].Add(key);
                         }
-                        OnDatabaseUpdate(newValue, key);                        
+                        OnDatabaseUpdate(newValue, key);
                     }
                 }
                 else
@@ -860,20 +1023,23 @@ namespace CompasXR.Core
                     Debug.LogWarning($"OnStepsChildAdded: The Changed key is no longer valid and will not be added to the dictionary");
                 }
             }
-        } 
-        public void OnStepsChildChanged(object sender, Firebase.Database.ChildChangedEventArgs args) 
+        }
+        public void OnStepsChildChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
         {
-            if (args.DatabaseError != null) {
-            Debug.LogError($"OnStepsChildChanged: Database error: {args.DatabaseError}");
-            return;
+            if (args.DatabaseError != null)
+            {
+                Debug.LogError($"OnStepsChildChanged: Database error: {args.DatabaseError}");
+                return;
             }
-            if (args.Snapshot == null) {
+            if (args.Snapshot == null)
+            {
                 Debug.LogWarning("OnStepsChildChanged: Snapshot is null. Ignoring the child change.");
                 return;
             }
 
             string key = args.Snapshot.Key;
-            if (key == null) {
+            if (key == null)
+            {
                 Debug.LogWarning("OnStepsChildChanged: Snapshot key is null. Ignoring the child change.");
                 return;
             }
@@ -884,7 +1050,7 @@ namespace CompasXR.Core
             {
                 Step newValue = Step.Parse(childSnapshot);
                 if (!Step.AreEqualSteps(newValue, BuildingPlanDataItem.steps[key]))
-                {    
+                {
                     if (newValue.data.device_id != null)
                     {
                         //TODO: This is in the case that we want to switch to pushing one item at a time... however for now it is un needed.
@@ -893,8 +1059,8 @@ namespace CompasXR.Core
                             return;
                         }
                         else
-                        {    
-                            if(newValue.IsValidStep())
+                        {
+                            if (newValue.IsValidStep())
                             {
                                 if (newValue.data.priority != BuildingPlanDataItem.steps[key].data.priority)
                                 {
@@ -935,10 +1101,10 @@ namespace CompasXR.Core
                     else
                     {
                         Debug.LogWarning($"OnStepsChildChanged: Device ID is null: the change for key {key} happened from gh or manually.");
-                        if(newValue.IsValidStep())
+                        if (newValue.IsValidStep())
                         {
                             if (newValue.data.priority != BuildingPlanDataItem.steps[key].data.priority)
-                            {                            
+                            {
                                 BuildingPlanDataItem.PriorityTreeDictionary[BuildingPlanDataItem.steps[key].data.priority.ToString()].Remove(key);
                                 if (BuildingPlanDataItem.PriorityTreeDictionary[BuildingPlanDataItem.steps[key].data.priority.ToString()].Count == 0)
                                 {
@@ -998,7 +1164,7 @@ namespace CompasXR.Core
                     {
                         BuildingPlanDataItem.PriorityTreeDictionary.Remove(BuildingPlanDataItem.steps[key].data.priority.ToString());
                     }
-                    
+
                     //Remove the step from the building plan dictionary
                     BuildingPlanDataItem.steps.Remove(key);
                     OnDatabaseUpdate(newValue, key);
@@ -1008,7 +1174,7 @@ namespace CompasXR.Core
                     Debug.Log($"OnStepsChildRemoved: The key: {key} did not exist in the dictionary.");
                 }
             }
-        }  
+        }
         public async void OnLastBuiltIndexChanged(object sender, Firebase.Database.ValueChangedEventArgs args)
         {
             /*
@@ -1016,21 +1182,23 @@ namespace CompasXR.Core
             * It is designed to take the snapshot of the Last Built Index and parse the information.
             * Additionally it checks the priority of this step and updates my current priority as needed.
             */
-            if (args.DatabaseError != null) {
-            Debug.LogError($"Database error: {args.DatabaseError}");
-            return;
+            if (args.DatabaseError != null)
+            {
+                Debug.LogError($"Database error: {args.DatabaseError}");
+                return;
             }
 
-            if (args.Snapshot == null) {
+            if (args.Snapshot == null)
+            {
                 Debug.LogWarning("Snapshot is null. Ignoring the child change.");
                 return;
             }
-            
+
             TempDatabaseLastBuiltStep = null;
             await FetchRTDDatawithEventHandler(dbReferenceLastBuiltIndex, snapshot => DesearializeStringItem(snapshot, ref TempDatabaseLastBuiltStep));
             if (TempDatabaseLastBuiltStep != null)
             {
-                if(TempDatabaseLastBuiltStep != BuildingPlanDataItem.LastBuiltIndex)
+                if (TempDatabaseLastBuiltStep != BuildingPlanDataItem.LastBuiltIndex)
                 {
                     BuildingPlanDataItem.LastBuiltIndex = TempDatabaseLastBuiltStep;
                     Debug.Log($"Last Built Index is now {BuildingPlanDataItem.LastBuiltIndex}");
@@ -1054,8 +1222,8 @@ namespace CompasXR.Core
 
                         //If my CurrentStep Priority is the same as New Current Priority then update UI graphics
                         Step localCurrentStep = BuildingPlanDataItem.steps[UIFunctionalities.CurrentStep];
-                        if(localCurrentStep.data.priority.ToString() == CurrentPriority)
-                        {    
+                        if (localCurrentStep.data.priority.ToString() == CurrentPriority)
+                        {
                             UIFunctionalities.IsBuiltButtonGraphicsControler(localCurrentStep.data.is_built, localCurrentStep.data.priority);
                         }
 
@@ -1071,7 +1239,7 @@ namespace CompasXR.Core
                 }
 
             }
-        }    
+        }
         public void OnUserChildAdded(object sender, Firebase.Database.ChildChangedEventArgs args)
         {
             /*
@@ -1079,11 +1247,13 @@ namespace CompasXR.Core
             * It is designed to take the snapshot of the User Current Step and parse the information.
             * Additionally it checks the validity of the step and adds it to the dictoinary if it is.
             */
-            if (args.DatabaseError != null) {
-            Debug.LogError($"OnUserChildAdded: Database error: {args.DatabaseError}");
-            return;
+            if (args.DatabaseError != null)
+            {
+                Debug.LogError($"OnUserChildAdded: Database error: {args.DatabaseError}");
+                return;
             }
-            if (args.Snapshot == null) {
+            if (args.Snapshot == null)
+            {
                 Debug.LogWarning("OnUserChildAdded: Snapshot is null. Ignoring the child change.");
                 return;
             }
@@ -1116,12 +1286,14 @@ namespace CompasXR.Core
             * It is designed to take the snapshot of the User Current Information and parse the information.
             * Additionally it triggers event changes to remove or update the Users Object.
             */
-            if (args.DatabaseError != null) {
-            Debug.LogError($"OnUserChildChanged: Database error: {args.DatabaseError}");
-            return;
+            if (args.DatabaseError != null)
+            {
+                Debug.LogError($"OnUserChildChanged: Database error: {args.DatabaseError}");
+                return;
             }
 
-            if (args.Snapshot == null) {
+            if (args.Snapshot == null)
+            {
                 Debug.LogWarning("OnUserChildChanged: Snapshot is null. Ignoring the child change.");
                 return;
             }
@@ -1133,8 +1305,8 @@ namespace CompasXR.Core
             {
                 UserCurrentInfo newValue = UserCurrentInfo.Parse(childSnapshot);
                 if (key != SystemInfo.deviceUniqueIdentifier)
-                {    
-                    if(newValue != null)
+                {
+                    if (newValue != null)
                     {
                         UserCurrentStepDict[key] = newValue;
                     }
@@ -1153,14 +1325,15 @@ namespace CompasXR.Core
             * It is designed to take the snapshot of the User Current Information and parse the information.
             * Additionally it triggers event changes to remove the Users Object.
             */
-            if (args.DatabaseError != null) {
-            Debug.LogError($"OnUserChildRemoved: Database error: {args.DatabaseError}");
-            return;
+            if (args.DatabaseError != null)
+            {
+                Debug.LogError($"OnUserChildRemoved: Database error: {args.DatabaseError}");
+                return;
             }
-            
+
             string key = args.Snapshot.Key;
             string childSnapshot = args.Snapshot.GetRawJsonValue();
-            
+
             if (!string.IsNullOrEmpty(childSnapshot))
             {
                 if (UserCurrentStepDict.ContainsKey(key))
@@ -1187,12 +1360,14 @@ namespace CompasXR.Core
             * It will clear my currently stored information and fetch the new data.
             */
 
-            if (args.DatabaseError != null) {
-            Debug.LogError($"OnProjectInfoChangedUpdate: Database error: {args.DatabaseError}");
-            return;
+            if (args.DatabaseError != null)
+            {
+                Debug.LogError($"OnProjectInfoChangedUpdate: Database error: {args.DatabaseError}");
+                return;
             }
 
-            if (args.Snapshot == null) {
+            if (args.Snapshot == null)
+            {
                 Debug.LogWarning("OnProjectInfoChangedUpdate: Snapshot is null. Ignoring the child change.");
                 return;
             }
@@ -1202,33 +1377,33 @@ namespace CompasXR.Core
 
             if (childSnapshot != null && key != null)
             {
-                if(key == "assembly")
+                if (key == "assembly")
                 {
                     Debug.Log("OnProjectInfoChangedUpdate: Assembly Changed");
                     await FetchRTDDatawithEventHandler(dbReferenceAssembly, snapshot => DeserializeAssemblyDataSnapshot(snapshot, AssemblyDataDict));
                 }
-                else if(key == "QRFrames")
+                else if (key == "QRFrames")
                 {
                     Debug.Log("OnProjectInfoChangedUpdate: QRFrames Changed");
                     await FetchRTDDatawithEventHandler(dbReferenceQRCodes, snapshot => DeserializeAssemblyDataSnapshot(snapshot, QRCodeDataDict), "TrackingDict");
                 }
-                else if(key == "beams")
+                else if (key == "beams")
                 {
                     Debug.Log("OnProjectInfoChangedUpdate: Beams Changed");
                 }
-                else if(key == "joints")
+                else if (key == "joints")
                 {
                     Debug.Log("OnProjectInfoChangedUpdate: Joints Changed");
                 }
-                else if(key == "parts")
+                else if (key == "parts")
                 {
                     Debug.Log("OnProjectInfoChangedUpdate: Parts changed");
                 }
-                else if(key == "building_plan")
+                else if (key == "building_plan")
                 {
                     Debug.Log("OnProjectInfoChangedUpdate: BuildingPlan and should be handled by other listners");
                 }
-                else if(key == "UsersCurrentStep")
+                else if (key == "UsersCurrentStep")
                 {
                     Debug.Log("OnProjectInfoChangedUpdate: User Current Step Changed this should be handled by other listners");
                 }
@@ -1246,7 +1421,7 @@ namespace CompasXR.Core
             */
             UnityEngine.Assertions.Assert.IsNotNull(DatabaseInitializedDict, "Database dict is null!");
             Debug.Log("OnDatabaseInitializedDict: Building Plan Data Received");
-            DatabaseInitializedDict(this, new BuildingPlanDataDictEventArgs() {BuildingPlanDataItem = BuildingPlanDataItem});
+            DatabaseInitializedDict(this, new BuildingPlanDataDictEventArgs() { BuildingPlanDataItem = BuildingPlanDataItem });
         }
         protected virtual void OnTrackingDataReceived(Dictionary<string, Node> QRCodeDataDict)
         {
@@ -1256,7 +1431,7 @@ namespace CompasXR.Core
             */
             UnityEngine.Assertions.Assert.IsNotNull(TrackingDictReceived, "Tracking Dict is null!");
             Debug.Log("OnTrackingDataReceived: Tracking Data Received");
-            TrackingDictReceived(this, new TrackingDataDictEventArgs() {QRCodeDataDict = QRCodeDataDict});
+            TrackingDictReceived(this, new TrackingDataDictEventArgs() { QRCodeDataDict = QRCodeDataDict });
         }
         protected virtual void OnDatabaseUpdate(Step newValue, string key)
         {
@@ -1265,7 +1440,7 @@ namespace CompasXR.Core
             * It is designed to trigger the event and send the Step Data to the respective classes.
             */
             UnityEngine.Assertions.Assert.IsNotNull(DatabaseInitializedDict, "new dict is null!");
-            DatabaseUpdate(this, new UpdateDataItemsDictEventArgs() {NewValue = newValue, Key = key });
+            DatabaseUpdate(this, new UpdateDataItemsDictEventArgs() { NewValue = newValue, Key = key });
         }
         protected virtual void OnUserInfoUpdated(UserCurrentInfo newValue, string key)
         {
@@ -1274,7 +1449,7 @@ namespace CompasXR.Core
             * It is designed to trigger the event and send the User Info Data to the respective classes.
             */
             UnityEngine.Assertions.Assert.IsNotNull(UserInfoUpdate, "new dict is null!");
-            UserInfoUpdate(this, new UserInfoDataItemsDictEventArgs() {UserInfo = newValue, Key = key });
+            UserInfoUpdate(this, new UserInfoDataItemsDictEventArgs() { UserInfo = newValue, Key = key });
         }
         protected virtual void OnSettingsUpdate(ApplicationSettings settings)
         {
@@ -1282,8 +1457,10 @@ namespace CompasXR.Core
             * Method is used to trigger the Settings Update Event.
             * It is designed to trigger the event and send the Settings Data to the ApplicationSettings class.
             */
-            ApplicationSettingUpdate(this, new ApplicationSettingsEventArgs(){Settings = settings});
+            ApplicationSettingUpdate(this, new ApplicationSettingsEventArgs() { Settings = settings });
         }
+
+
 
     }
 

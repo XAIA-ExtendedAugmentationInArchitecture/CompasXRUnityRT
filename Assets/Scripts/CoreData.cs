@@ -6,13 +6,13 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace CompasXR.Core.Data
-{   
+{
     /*
     * CompasXR.Core.Data : A namespace to define and controll various data structures and data processing methods.
     * This namespace is used to define the data structures that corelate to Compas data structures
     */
 
-   ///////////// Class for Handeling Data conversion Inconsistencies /////////////// 
+    ///////////// Class for Handeling Data conversion Inconsistencies /////////////// 
 
     [System.Serializable]
     public static class DataConverters
@@ -165,7 +165,7 @@ namespace CompasXR.Core.Data
             }
         }
 
-    } 
+    }
 
     public static class DictionaryHelpers
     {
@@ -177,7 +177,7 @@ namespace CompasXR.Core.Data
         {
             return jsonDataDict.TryGetValue(key, out var obj) && obj is Dictionary<string, int[]> dict ? dict : new Dictionary<string, int[]>();
         }
-        public static Dictionary<string, object> GetAsDictionary( Dictionary<string, object> jsonDataDict, string key)
+        public static Dictionary<string, object> GetAsDictionary(Dictionary<string, object> jsonDataDict, string key)
         {
             if (jsonDataDict == null)
             {
@@ -339,7 +339,7 @@ namespace CompasXR.Core.Data
         }
     }
 
-    
+
 
     /////////////Classes for general Mesh Support.///////////////
     public class CompasMesh
@@ -353,7 +353,7 @@ namespace CompasXR.Core.Data
         public int MaxFace { get; set; }
         public int MaxVertex { get; set; }
         public Dictionary<string, Vertex> Vertex { get; set; }
-        
+
         //TODO: ADDED FOR EASE DO NOT KNOW IF I NEED THEM...
         private int[] tris { get; set; }
         public Vector3[] normals { get; set; }
@@ -407,7 +407,7 @@ namespace CompasXR.Core.Data
             };
             return data;
         }
-        
+
         public static CompasMesh Parse(string jsonData)
         {
             Dictionary<string, object> jsonDataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
@@ -517,7 +517,7 @@ namespace CompasXR.Core.Data
             Vector3[] vertices = new Vector3[Vertex.Count];
             for (int i = 0; i < Vertex.Count; i++)
             {
-                
+
                 Vector3 rhVec = ObjectTransformations.GetPositionFromRightHand(Vertex[i.ToString()].Values);
                 vertices[i] = rhVec;
             }
@@ -707,7 +707,7 @@ namespace CompasXR.Core.Data
     }
 
 
-   /////////////Classes for Assembly Desearialization./////////////// 
+    /////////////Classes for Assembly Desearialization./////////////// 
     [System.Serializable]
     public class Node
     {
@@ -768,7 +768,7 @@ namespace CompasXR.Core.Data
                     break;
 
                 case "compas.geometry/Box":
-                    
+
                     node.part.dtype = dtype;
                     node.part.frame = Frame.Parse(dataDict["frame"]);
 
@@ -782,7 +782,7 @@ namespace CompasXR.Core.Data
                     break;
 
                 case "compas.geometry/Frame":
-                    
+
                     node.part.dtype = dtype;
                     node.part.frame = Frame.FromData(dataDict);
 
@@ -873,7 +873,7 @@ namespace CompasXR.Core.Data
                     break;
 
                 case "compas.geometry/Box":
-                    
+
                     node.part.dtype = dtype;
                     node.part.frame = Frame.Parse(shapeDataDict["frame"]);
 
@@ -885,7 +885,7 @@ namespace CompasXR.Core.Data
                     node.attributes.height = zsize;
 
                     break;
-                
+
                 case "compas.datastructures/Mesh":
 
                     node.part.dtype = dtype;
@@ -909,7 +909,7 @@ namespace CompasXR.Core.Data
                     break;
 
                 case "compas.geometry/Frame":
-                    
+
                     node.part.dtype = dtype;
                     node.part.frame = Frame.FromData(shapeDataDict);
 
@@ -921,7 +921,7 @@ namespace CompasXR.Core.Data
                     if (attributesDict.TryGetValue("name", out object name))
                     {
                         string nameString = name.ToString();
-                        if(nameString.StartsWith("QR_"))
+                        if (nameString.StartsWith("QR_"))
                         {
                             node.part.dtype = "compas_xr/QRCode";
                         }
@@ -932,11 +932,11 @@ namespace CompasXR.Core.Data
                 default:
                     Debug.LogError($"PartDesctiptionSelector: No Part Deserilization type for dtype {dtype}.");
                     break;
-                
+
             }
         }
         public bool IsValidNode()
-        {   
+        {
             /*
             * Method to check if the node contains all valid information.
             */
@@ -950,7 +950,7 @@ namespace CompasXR.Core.Data
                     Debug.Log("This is a timbers Joint and should be ignored");
                     return false;
                 }
-                else if (part.dtype != "compas.geometry/Frame" || 
+                else if (part.dtype != "compas.geometry/Frame" ||
                         part.dtype != "compas.datastructures/Mesh" ||
                         part.dtype != "compas_xr/QRCode")
                 {
@@ -996,7 +996,7 @@ namespace CompasXR.Core.Data
         public float length { get; set; }
         public float width { get; set; }
         public float height { get; set; }
-    } 
+    }
 
     [System.Serializable]
     public class Frame
@@ -1014,11 +1014,11 @@ namespace CompasXR.Core.Data
             /*
             * Method to create an instance of a the Frame class from a json string.
             */
-            Dictionary<string, object> frameDataDict = jsondata as Dictionary<string, object>;;
+            Dictionary<string, object> frameDataDict = jsondata as Dictionary<string, object>; ;
             return FromData(frameDataDict);
         }
         public static Frame FromData(Dictionary<string, object> frameDataDict)
-        {            
+        {
             /*
             * Method to create an instance of a the Frame class from a dictionary.
             */
@@ -1084,7 +1084,7 @@ namespace CompasXR.Core.Data
     }
 
     /////////////// Classes For Building Plan Desearialization///////////////////
-    
+
     [System.Serializable]
     public class BuildingPlanData
     {
@@ -1125,12 +1125,12 @@ namespace CompasXR.Core.Data
                 buidingPlanData.LastBuiltIndex = null;
             }
             List<object> stepsList = jsonDataDict["steps"] as List<object>;
-            for(int i =0 ; i < stepsList.Count; i++)
+            for (int i = 0; i < stepsList.Count; i++)
             {
                 string key = i.ToString();
                 var json_data = stepsList[i];
                 Step step_data = Step.Parse(json_data);
-                
+
                 if (step_data.IsValidStep())
                 {
                     buidingPlanData.steps[key] = step_data;
@@ -1154,7 +1154,7 @@ namespace CompasXR.Core.Data
             return buidingPlanData;
         }
     }
-    
+
     [System.Serializable]
     public class Step
     {
@@ -1188,7 +1188,7 @@ namespace CompasXR.Core.Data
             step.data = Data.FromData(dataDict);
             return step;
         }
-        public static bool AreEqualSteps(Step step ,Step NewStep)
+        public static bool AreEqualSteps(Step step, Step NewStep)
         {
             /*
             * Method to compare two steps and check if they are equal.
@@ -1293,7 +1293,7 @@ namespace CompasXR.Core.Data
     }
 
     ////////////////Classes for User Current Informatoin/////////////////////
-    
+
     [System.Serializable]
     public class UserCurrentInfo
     {
@@ -1317,6 +1317,37 @@ namespace CompasXR.Core.Data
             return userCurrentInfo;
         }
 
+    }
+
+    [System.Serializable]
+    public class UserZoneInfo
+    {
+        public bool IsPerforming { get; set; }
+        public string CurrentZone { get; set; }
+        public List<string> CurrentSelectedRobots { get; set; }
+        public static UserZoneInfo Parse(object jsondata)
+        {
+            Dictionary<string, object> jsonDataDict = jsondata as Dictionary<string, object>;
+            return FromData(jsonDataDict);
+        }
+        public Dictionary<string, object> GetData()
+        {
+            //Convert the UserZoneInfo class to a dictionary
+            return new Dictionary<string, object>
+            {
+                { "CurrentZone", CurrentZone },
+                { "CurrentSelectedRobots", CurrentSelectedRobots }
+            };
+        }
+
+        public static UserZoneInfo FromData(Dictionary<string, object> jsonDataDict)
+        {
+            //Create class instances of node elements
+            UserZoneInfo userZoneInfo = new UserZoneInfo();
+            userZoneInfo.CurrentZone = (string)jsonDataDict["CurrentZone"];
+            userZoneInfo.CurrentSelectedRobots = jsonDataDict["CurrentSelectedRobots"] as List<string>;
+            return userZoneInfo;
+        }
     }
 
 

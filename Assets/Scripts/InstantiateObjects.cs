@@ -638,6 +638,7 @@ namespace CompasXR.Core
             else
             {
                 Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.right); //TODO: CHECK THIS IDK WHATS UP.
+                // Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.forward); //TODO: CHECK THIS IDK WHATS UP.
                 Quaternion mirrorRotation = MirrorQuaternion(rotation, humanZone.transform.right);
                 mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, mirroredPosition);
                 mappedRotation = mirrorRotation;
@@ -1111,6 +1112,7 @@ namespace CompasXR.Core
         }
         else
         {
+            // Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.forward); //TODO: CHECK THIS IDK WHATS UP.
             Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.right); //TODO: CHECK THIS IDK WHATS UP.
             Quaternion mirrorRotation = MirrorQuaternion(rotation, humanZone.transform.right);
             mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, mirroredPosition);
