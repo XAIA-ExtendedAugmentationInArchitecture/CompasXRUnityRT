@@ -13,6 +13,7 @@ using CompasXR.RoboticTerritories.Data;
 using Newtonsoft.Json;
 using CompasXR.Robots;
 using CompasXR.Robots.Data;
+using Vuforia;
 
 
 namespace CompasXR.Core
@@ -123,20 +124,34 @@ namespace CompasXR.Core
         public delegate void InitialZonesCreated(object source, EventArgs e);
         public event InitialZonesCreated InitialZonesPlaced;
 
+        //TODO: VUFORIA TESTING
+        DevicePoseBehaviour devicePoseBehavior;
+
+
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
-    /////////////////////////////// Monobehaviour Methods //////////////////////////////////////////
+        /////////////////////////////// Monobehaviour Methods //////////////////////////////////////////
         public void Awake()
         {
             OnAwakeInitilization();
+
         }
 
         public void Update()
         {
             //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
+            if (devicePoseBehavior == null)
+            {
+                devicePoseBehavior = VuforiaBehaviour.Instance.DevicePoseBehaviour;
+                if (devicePoseBehavior == null)
+                {
+                    Debug.LogError("DevicePoseBehaviour not found in the scene. Please check Vuforia setup.");
+                }
+            }
+
             //Update the position of the Mimic Lines if they are on.
-            if(databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
+            if (databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
             {
                 UpdateLinePositionsByGameObjectPositionsList(MimicHumanPoints, MimicHumanLine);
                 UpdateLinePositionsByGameObjectPositionsList(MimicRobotPoints, MimicRobotLine);
@@ -376,7 +391,16 @@ namespace CompasXR.Core
             * Method is used to create the mimic points in the AR space
             */
 
-            Vector3 position = cameraPositionObject.transform.position;
+            // Vector3 position = cameraPositionObject.transform.position;
+            if (devicePoseBehavior == null)
+            {
+                Debug.LogError("CreateMimicPoints: DevicePoseBehavior is null. Please check the Vuforia setup.");
+                return;
+            }
+            Vector3 position = devicePoseBehavior.transform.position;
+
+            Debug.Log($"CreateMimicPoint: Reference before adding Rotation {position} with rotation {cameraPositionObject.transform.rotation}");
+
             Quaternion rotation = AddAdditionalRotationForEndEffector(cameraPositionObject); //TODO: Check this
             float radius = 0.1f;
             Color humanColor = new Color(1.0f, 1.0f, 0.0f, 1.0f);
@@ -617,6 +641,7 @@ namespace CompasXR.Core
         bool Mirror=false)
         {
             GameObject humanPoint = CreateSphereAtPositionAndRotation(position, rotation, radius, humanColor, humanPointName);//$"{humanPoints.Count}_MimicPoint");
+            Debug.Log($"CreateSpheresForMimic: Human Point Created at {position} with rotation {rotation}");
             humanPoint.transform.SetParent(humanParent.transform, true);
             if(addToPointsList)
             {
@@ -637,7 +662,8 @@ namespace CompasXR.Core
             }
             else
             {
-                Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.right); //TODO: CHECK THIS IDK WHATS UP.
+                Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position); //TODO: CHECK THIS IDK WHATS UP.
+                // Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.right); //TODO: CHECK THIS IDK WHATS UP.
                 // Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.forward); //TODO: CHECK THIS IDK WHATS UP.
                 Quaternion mirrorRotation = MirrorQuaternion(rotation, humanZone.transform.right);
                 mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, mirroredPosition);
@@ -967,60 +993,78 @@ namespace CompasXR.Core
         }
 
     //TODO: THIS NEEDS TO BE CHECKED AND THOUGHT ABOUT FOR ROBOT SPACE CONVERSION. See Notes
-    public static Vector3 MirrorPositionAcrossBox(GameObject box, Vector3 pointPosition, Vector3 mirrorDirection)
+    // public static Vector3 MirrorPositionAcrossBox(GameObject box, Vector3 pointPosition, Vector3 mirrorDirection)
+    // {
+    //     if (box == null)
+    //     {
+    //         Debug.LogError("MirrorPositionAndRotationAcrossBox: Box GameObject is null.");
+    //         Vector3 zeroPosition = Vector3.zero;
+    //         // mirroredRotation = Quaternion.identity;
+    //         return zeroPosition;
+    //     }
+
+    //     BoxCollider boxCollider = box.GetComponent<BoxCollider>();
+
+    //     if (boxCollider == null)
+    //     {
+    //         Debug.LogError("MirrorPositionAndRotationAcrossBox: The box does not have a BoxCollider.");
+    //         Vector3 zeroPosition = Vector3.zero;
+    //         // mirroredRotation = Quaternion.identity;
+    //         return zeroPosition;
+    //     }
+
+    //     // Convert point position to local space relative to the box
+    //     Vector3 localPosition = box.transform.InverseTransformPoint(pointPosition);
+
+    //     // Mirror across the box's center, but only in the direction of mirrorDirection
+    //     Vector3 mirroredLocalPosition = new Vector3(
+    //         mirrorDirection.x != 0 ? (2 * boxCollider.center.x - localPosition.x) : localPosition.x, // Mirror X if direction.x != 0
+    //         localPosition.y, // Keep Y the same (no height change)
+    //         mirrorDirection.z != 0 ? (2 * boxCollider.center.z - localPosition.z) : localPosition.z  // Mirror Z if direction.z != 0
+    //     );
+
+    //     // Convert mirrored local position back to world space
+    //     Vector3 mirroredPosition = box.transform.TransformPoint(mirroredLocalPosition);
+
+    //     // // **Corrected: Use Quaternion Reflection Instead of Euler Angles**
+    //     // Vector3 normal = mirrorDirection.normalized; // Ensure it's a unit vector
+    //     // Quaternion reflectionQuaternion = Quaternion.AngleAxis(180f, normal);
+    //     // mirroredRotation = reflectionQuaternion * pointRotation; // Reflect the rotation
+
+    //     Debug.Log($"MirrorPositionAndRotationAcrossBox: Mirrored {pointPosition} to {mirroredPosition} in {box.name} along {mirrorDirection}");
+    //     return mirroredPosition;
+    // }
+    
+    public static Vector3 MirrorPositionAcrossBox(GameObject box, Vector3 worldPoint)
     {
-        if (box == null)
-        {
-            Debug.LogError("MirrorPositionAndRotationAcrossBox: Box GameObject is null.");
-            Vector3 zeroPosition = Vector3.zero;
-            // mirroredRotation = Quaternion.identity;
-            return zeroPosition;
-        }
+        var col = box.GetComponent<BoxCollider>();
+        if (col == null) return worldPoint;
 
-        BoxCollider boxCollider = box.GetComponent<BoxCollider>();
+        // 1) Bring into the *local* coordinates of the box
+        Vector3 local = box.transform.InverseTransformPoint(worldPoint);
 
-        if (boxCollider == null)
-        {
-            Debug.LogError("MirrorPositionAndRotationAcrossBox: The box does not have a BoxCollider.");
-            Vector3 zeroPosition = Vector3.zero;
-            // mirroredRotation = Quaternion.identity;
-            return zeroPosition;
-        }
+        // 2) Reflect across the box’s center plane (X axis in local space)
+        //    (if your “long” axis is different, use Y or Z instead)
+        local.x = 2f * col.center.x - local.x;
 
-        // Convert point position to local space relative to the box
-        Vector3 localPosition = box.transform.InverseTransformPoint(pointPosition);
-
-        // Mirror across the box's center, but only in the direction of mirrorDirection
-        Vector3 mirroredLocalPosition = new Vector3(
-            mirrorDirection.x != 0 ? (2 * boxCollider.center.x - localPosition.x) : localPosition.x, // Mirror X if direction.x != 0
-            localPosition.y, // Keep Y the same (no height change)
-            mirrorDirection.z != 0 ? (2 * boxCollider.center.z - localPosition.z) : localPosition.z  // Mirror Z if direction.z != 0
-        );
-
-        // Convert mirrored local position back to world space
-        Vector3 mirroredPosition = box.transform.TransformPoint(mirroredLocalPosition);
-
-        // // **Corrected: Use Quaternion Reflection Instead of Euler Angles**
-        // Vector3 normal = mirrorDirection.normalized; // Ensure it's a unit vector
-        // Quaternion reflectionQuaternion = Quaternion.AngleAxis(180f, normal);
-        // mirroredRotation = reflectionQuaternion * pointRotation; // Reflect the rotation
-
-        Debug.Log($"MirrorPositionAndRotationAcrossBox: Mirrored {pointPosition} to {mirroredPosition} in {box.name} along {mirrorDirection}");
-        return mirroredPosition;
+        // 3) Send back out to world space
+        return box.transform.TransformPoint(local);
     }
+
+
     public static Quaternion MirrorQuaternion(Quaternion pointRotation, Vector3 normal)
-    {
+        {
 
-        // Create a pure quaternion representing the plane normal
-        Quaternion n = new Quaternion(normal.x, normal.y, normal.z, 0);
+            // Create a pure quaternion representing the plane normal
+            Quaternion n = new Quaternion(normal.x, normal.y, normal.z, 0);
 
-        Quaternion R = Quaternion.AngleAxis(180, normal);
+            Quaternion R = Quaternion.AngleAxis(180, normal);
 
-        // Compute mirrored quaternion
-        Quaternion mirrored = R * pointRotation * n;
-        return mirrored;
+            // Compute mirrored quaternion
+            Quaternion mirrored = R * pointRotation * n;
+            return mirrored;
 
-    }
+        }
     public static Quaternion MirrorRotationAcrossCenter(Transform centerTransform, Quaternion pointARotation)
     {
         // Step 1: Compute relative rotation of pointA to center
@@ -1113,7 +1157,8 @@ namespace CompasXR.Core
         else
         {
             // Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.forward); //TODO: CHECK THIS IDK WHATS UP.
-            Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.right); //TODO: CHECK THIS IDK WHATS UP.
+            Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position); //TODO: CHECK THIS IDK WHATS UP.
+            // Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.right); //TODO: CHECK THIS IDK WHATS UP.
             Quaternion mirrorRotation = MirrorQuaternion(rotation, humanZone.transform.right);
             mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, mirroredPosition);
             mappedRotation = mirrorRotation;

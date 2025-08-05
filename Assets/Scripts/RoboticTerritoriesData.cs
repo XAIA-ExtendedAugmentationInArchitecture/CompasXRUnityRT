@@ -149,7 +149,8 @@ namespace CompasXR.RoboticTerritories.Data
 
             //ADD Collider to the object            
             BoxCollider boxCollider = boxObject.AddComponent<BoxCollider>();
-            Vector3 boxColliderSize = new Vector3(boxCollider.size.x*1.1f, boxCollider.size.y*1.2f, boxCollider.size.z*1.2f);
+            Vector3 boxColliderSize = new Vector3(boxCollider.size.x, boxCollider.size.y, boxCollider.size.z);
+            // Vector3 boxColliderSize = new Vector3(boxCollider.size.x*1.1f, boxCollider.size.y*1.2f, boxCollider.size.z*1.2f);
             boxCollider.size = boxColliderSize;
 
             //Assign the position and rotation to the object

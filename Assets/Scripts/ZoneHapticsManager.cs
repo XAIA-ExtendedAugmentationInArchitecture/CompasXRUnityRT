@@ -6,6 +6,8 @@ using CompasXR.RoboticTerritories.Data;
 using UnityEngine;
 using UnityEngine.UI;
 using CompasXR.Core.Extentions;
+using UnityEngine.XR.ARFoundation.VisualScripting;
+using Vuforia;
 
 
 public class ZoneHapticsManager : MonoBehaviour
@@ -21,6 +23,15 @@ public class ZoneHapticsManager : MonoBehaviour
     public bool wasInsideHumanMimicZoneLastFrame = false;
     AudioSource MimicZoneAudioSource;
     public Camera arCamera;
+
+    public GameObject trackablesObject;
+
+    //TODO: TESTING
+
+    DevicePoseBehaviour devicePoseBehavior;
+
+    public GameObject MimicSetPointGreenScreen;
+    public float MimicSetandUndoFlashDuration = 0.5f;
 
     // Start is called before the first frame update
     void Start()
@@ -49,6 +60,10 @@ public class ZoneHapticsManager : MonoBehaviour
         exitSound = ZoneHapticsManagerObject.FindObject("ZoneEntrySound").GetComponent<AudioSource>().clip;
         continousSound = ZoneHapticsManagerObject.FindObject("ZoneContinuousSound").GetComponent<AudioSource>().clip;
 
+        //TODO: TESTING
+        MimicSetPointGreenScreen = GameObject.Find("ZonesARPrefabs").FindObject("RANDOMTESTCUBE");
+        devicePoseBehavior = VuforiaBehaviour.Instance.DevicePoseBehaviour;
+
         if (entrySound == null)
         {
             Debug.LogWarning("ZoneHapticsManager: Entry sound is null. Cannot play sound.");
@@ -60,6 +75,8 @@ public class ZoneHapticsManager : MonoBehaviour
 
         //Get the arCamera
         arCamera = GameObject.Find("XR Origin").FindObject("Camera Offset").FindObject("Main Camera").GetComponent<Camera>();
+        trackablesObject = GameObject.Find("XR Origin").FindObject("Trackables");
+
     }
     public void ZoneHapticsUpdateMethod()
     {
@@ -87,8 +104,12 @@ public class ZoneHapticsManager : MonoBehaviour
             GameObject humanZoneObject = humanZone.ZoneObject;
 
             // Additional logic for both zones can go here
-            Vector3 cameraPositionObject = arCamera.transform.position;
-            SoundControlerForZoneEntry(cameraPositionObject, humanZoneObject, ref isInsideHumanMimicZoneNow, ref wasInsideHumanMimicZoneLastFrame);
+            // Vector3 cameraPositionObject = arCamera.transform.position;
+            // Vector3 TrackablesPosition = trackablesObject.transform.position;
+            Vector3 devicePosePosition = devicePoseBehavior.transform.position;
+
+            // SoundControlerForZoneEntry(TrackablesPosition, humanZoneObject, ref isInsideHumanMimicZoneNow, ref wasInsideHumanMimicZoneLastFrame);
+            SoundControlerForZoneEntry(devicePosePosition, humanZoneObject, ref isInsideHumanMimicZoneNow, ref wasInsideHumanMimicZoneLastFrame);
         }
         else
         {
@@ -106,17 +127,19 @@ public class ZoneHapticsManager : MonoBehaviour
         if (isInsideZone && !wasInsideHumanMimicZoneLastFrame)
         {
             // Play sound for entering the zone
-            Debug.Log("ZoneHapticsManager: Entered zone. Playing entry sound.");
-            // Add your sound playing logic here
-            // PlayEntrySoundFromAudioSource(ref MimicZoneAudioSource, entrySound);
+            MimicSetPointGreenScreen.SetActive(true);
             PlaySoundContinuously(MimicZoneAudioSource, continousSound, isInsideZone);
         }
         else if (!isInsideZone && wasInsideHumanMimicZoneLastFrame)
         {
             // Play sound for exiting the zone
             Debug.Log("ZoneHapticsManager: Exited zone. Playing exit sound.");
+            Debug.Log("Position Set From Trackables: " + cameraPosition);
+
             // Add your sound playing logic here
             // PlayEntrySoundFromAudioSource(ref MimicZoneAudioSource, exitSound);
+            MimicSetPointGreenScreen.SetActive(false);
+
             PlaySoundContinuously(MimicZoneAudioSource, continousSound, isInsideZone);
         }
 

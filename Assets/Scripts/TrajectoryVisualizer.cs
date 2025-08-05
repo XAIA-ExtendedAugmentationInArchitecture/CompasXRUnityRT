@@ -247,7 +247,8 @@ namespace CompasXR.Robots
                     Vector3 tempPos = reachabilityObject.transform.position;
                     if(uiFunctionalities.MimicMirrorToggle.isOn)
                     {
-                        tempPos = InstantiateObjects.MirrorPositionAcrossBox(robotZoneObject, reachabilityObject.transform.position, robotZoneObject.transform.right); //TODO: CHECK THIS IDK WHATS UP.
+                        tempPos = InstantiateObjects.MirrorPositionAcrossBox(robotZoneObject, reachabilityObject.transform.position); //TODO: CHECK THIS IDK WHATS UP.
+                        // tempPos = InstantiateObjects.MirrorPositionAcrossBox(robotZoneObject, reachabilityObject.transform.position, robotZoneObject.transform.right); //TODO: CHECK THIS IDK WHATS UP.
                     }
                     Vector3 position = InstantiateObjects.MapPointBetweenBoxes(robotZoneObject, humanZoneObject, tempPos);
                     humanZoneReachability.transform.position = position;

@@ -22,7 +22,7 @@ using Unity.XR.CoreUtils;
 using CompasXR.Robots.Data;
 using RosSharp.RosBridgeClient;
 using System.Collections;
-// using Vuforia;
+using Vuforia;
 
 namespace CompasXR.UI
 {
@@ -229,6 +229,10 @@ namespace CompasXR.UI
         public GameObject RealtimeMimicEditorTestToggleObject;
         public int TEMPORARYCOUNTERREALTIMEMIMIC = 0;
 
+        //TODO: TESTING
+        DevicePoseBehaviour devicePoseBehavior;
+
+
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////////// Monobehaviour Methods ///////////////////////////////////////////////////////////        
@@ -239,6 +243,7 @@ namespace CompasXR.UI
             */
             // OnAwakeInitilization();
             OnAwakeInitilizationRoboticTerritories();
+            devicePoseBehavior = VuforiaBehaviour.Instance.DevicePoseBehaviour;
         }
         void Update()
         {
@@ -298,7 +303,6 @@ namespace CompasXR.UI
             OnScreenErrorMessagePrefab = MessagesParent.FindObject("Prefabs").FindObject("OnScreenErrorMessagePrefab");
             OnScreenInfoMessagePrefab = MessagesParent.FindObject("Prefabs").FindObject("OnScreenInfoMessagePrefab");
             ActiveRobotUpdatedFromPlannerMessageObject = MessagesParent.FindObject("Prefabs").FindObject("ActiveRobotUpdatedFromPlannerMessage");
-
 
             //TODO: Mimic remap testing ////////////////////////////////////////////////////////////////////////////////////////
             MimicRemapPointsToRobotReachabilityMessage = MessagesParent.FindObject("Prefabs").FindObject("RemapMimicPointsMessage");
@@ -989,8 +993,11 @@ namespace CompasXR.UI
 
                     // Additional logic for both zones can go here
                     Vector3 cameraPositionObject = arCamera.transform.position;
+                    Vector3 devicePosePosition = devicePoseBehavior.transform.position; //TODO: IMPLEMENT THIS CHANGE.
+                    Debug.Log("SetMimicPoint: Camera Position Object: " + cameraPositionObject + "Rotation: " + arCamera.transform.rotation);
 
-                    if(ObjectInstantiaion.IsPositionWithinObject(humanZoneObject, cameraPositionObject)) //TODO: Write method to create mimic points etc.
+
+                    if (ObjectInstantiaion.IsPositionWithinObject(humanZoneObject, cameraPositionObject)) //TODO: Write method to create mimic points etc.
                     {
                         Debug.Log("SetMimicPoint: Camera Position is within the Human Zone Object.");
                         //Set Lines active and Points active
@@ -1755,12 +1762,12 @@ namespace CompasXR.UI
                 if (builtStatus)
                 {
                     IsbuiltButtonImage.SetActive(true);
-                    IsBuiltButtonObject.GetComponent<Image>().color = TranspGrey;
+                    IsBuiltButtonObject.GetComponent<UnityEngine.UI.Image>().color = TranspGrey;
                 }
                 else
                 {
                     IsbuiltButtonImage.SetActive(false);
-                    IsBuiltButtonObject.GetComponent<Image>().color = TranspWhite;
+                    IsBuiltButtonObject.GetComponent<UnityEngine.UI.Image>().color = TranspWhite;
                 }
             }
         }
@@ -3217,7 +3224,7 @@ namespace CompasXR.UI
             /*
             * Set UI Object Color is used to set the color of the UI object.
             */
-            Button.GetComponent<Image>().color = color;
+            Button.GetComponent<UnityEngine.UI.Image>().color = color;
         }
         public static void FindButtonandSetOnClickAction(GameObject searchObject, ref GameObject buttonParentObjectReference, string unityObjectName, UnityAction customAction)
         {
@@ -3344,7 +3351,7 @@ namespace CompasXR.UI
 
             GameObject panel = new GameObject($"{messageGameObjectName}Panel");
 	        panel.AddComponent<CanvasRenderer>();
-	        Image panelImage = panel.AddComponent<Image>();
+	        UnityEngine.UI.Image panelImage = panel.AddComponent<UnityEngine.UI.Image>();
 	        panelImage.color = messagePanelColor;
 	        panel.transform.SetParent(newCanvas.transform, false);
             RectTransform panelRect = panel.GetComponent<RectTransform>();
@@ -3376,7 +3383,7 @@ namespace CompasXR.UI
             buttonRectObject.anchoredPosition = new Vector2(0, buttonYLocation);
             buttonRectObject.sizeDelta = new Vector2(buttonWidth, buttonHeight);
             Button buttonComponent = buttonObject.AddComponent<Button>();
-            Image buttonImage = buttonObject.AddComponent<Image>();
+            UnityEngine.UI.Image buttonImage = buttonObject.AddComponent<UnityEngine.UI.Image>();
             buttonImage.color = buttonColor;
 
             GameObject buttonTextObject = new GameObject($"{messageGameObjectName}ButtonText");
