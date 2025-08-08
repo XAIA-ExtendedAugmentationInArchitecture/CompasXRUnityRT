@@ -875,13 +875,14 @@ namespace CompasXR.UI
                                 return;
                             }
                         }
-                        
+
                         //TODO: ADD METHOD TO RETURN IF THRESHOLD IS NOT MET.
-                        float DRAWINGTHRESHOLD = 0.1f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
+                        // float DRAWINGTHRESHOLD = 0.035f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
+                        float DRAWINGTHRESHOLD = 0.038f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
                         if (instantiateObjects.RealtimeMimicHumanPoints.Count >= 1 && instantiateObjects.RealtimeMimicRobotPoints.Count >= 1)
                         {
                             Vector3 lastRealtimeMimicPointPosition = instantiateObjects.RealtimeMimicHumanPoints[instantiateObjects.RealtimeMimicHumanPoints.Count - 1].transform.position;
-                            if(lastRealtimeMimicPointPosition == null)
+                            if (lastRealtimeMimicPointPosition == null)
                             {
                                 Debug.LogError("CreateRealtimeMimicPointsBasicTEMPORARY: Last Realtime Mimic Point is null.");
                                 return;
@@ -892,7 +893,7 @@ namespace CompasXR.UI
                             }
 
                             Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Last Realtime Mimic Point Position: {lastRealtimeMimicPointPosition} Camera Position: {cameraPositionObjectPosition} Distance: {Vector3.Distance(cameraPositionObjectPosition, lastRealtimeMimicPointPosition)} Bool Value: {ObjectInstantiaion.Vector3sAreCloserThenThreshold(cameraPositionObjectPosition, lastRealtimeMimicPointPosition, DRAWINGTHRESHOLD)}");
-                            if(ObjectInstantiaion.Vector3sAreCloserThenThreshold(cameraPositionObjectPosition, lastRealtimeMimicPointPosition, DRAWINGTHRESHOLD))
+                            if (ObjectInstantiaion.Vector3sAreCloserThenThreshold(cameraPositionObjectPosition, lastRealtimeMimicPointPosition, DRAWINGTHRESHOLD))
                             {
                                 Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Points are closer than threshold, not creating new points.");
                                 return;
@@ -903,9 +904,9 @@ namespace CompasXR.UI
                                 //Set Lines active and Points active
                                 instantiateObjects.RealtimeMimicObjects.SetActive(true);
 
-                                instantiateObjects.CreateRealtimeMimicPointsBasicTEMPORARY(humanZoneObject, robotZoneObject, 
-                                ref instantiateObjects.RealtimeMimicHumanPoints, ref instantiateObjects.RealtimeMimicRobotPoints, 
-                                instantiateObjects.RealtimeMimicHumanPointsParent, instantiateObjects.RealtimeMimicRobotPointsParent, 
+                                instantiateObjects.CreateRealtimeMimicPointsBasicTEMPORARY(humanZoneObject, robotZoneObject,
+                                ref instantiateObjects.RealtimeMimicHumanPoints, ref instantiateObjects.RealtimeMimicRobotPoints,
+                                instantiateObjects.RealtimeMimicHumanPointsParent, instantiateObjects.RealtimeMimicRobotPointsParent,
                                 instantiateObjects.RealtimeMimicHumanLine, instantiateObjects.RealtimeMimicRobotLine, MimicMirrorToggle.isOn);
 
                                 //TODO: CONVERT TO FRAME FROM LAST GAMEOBJECT IN ROBOT POINTS LIST.
@@ -932,9 +933,9 @@ namespace CompasXR.UI
                             //Set Lines active and Points active
                             instantiateObjects.RealtimeMimicObjects.SetActive(true);
 
-                            instantiateObjects.CreateRealtimeMimicPointsBasicTEMPORARY(humanZoneObject, robotZoneObject, 
-                            ref instantiateObjects.RealtimeMimicHumanPoints, ref instantiateObjects.RealtimeMimicRobotPoints, 
-                            instantiateObjects.RealtimeMimicHumanPointsParent, instantiateObjects.RealtimeMimicRobotPointsParent, 
+                            instantiateObjects.CreateRealtimeMimicPointsBasicTEMPORARY(humanZoneObject, robotZoneObject,
+                            ref instantiateObjects.RealtimeMimicHumanPoints, ref instantiateObjects.RealtimeMimicRobotPoints,
+                            instantiateObjects.RealtimeMimicHumanPointsParent, instantiateObjects.RealtimeMimicRobotPointsParent,
                             instantiateObjects.RealtimeMimicHumanLine, instantiateObjects.RealtimeMimicRobotLine, MimicMirrorToggle.isOn);
 
                             //TODO: CONVERT TO FRAME FROM LAST GAMEOBJECT IN ROBOT POINTS LIST.
