@@ -127,7 +127,7 @@ public class ZoneHapticsManager : MonoBehaviour
         if (isInsideZone && !wasInsideHumanMimicZoneLastFrame)
         {
             // Play sound for entering the zone
-            MimicSetPointGreenScreen.SetActive(true);
+            // MimicSetPointGreenScreen.SetActive(true);
             PlaySoundContinuously(MimicZoneAudioSource, continousSound, isInsideZone);
         }
         else if (!isInsideZone && wasInsideHumanMimicZoneLastFrame)
@@ -138,7 +138,7 @@ public class ZoneHapticsManager : MonoBehaviour
 
             // Add your sound playing logic here
             // PlayEntrySoundFromAudioSource(ref MimicZoneAudioSource, exitSound);
-            MimicSetPointGreenScreen.SetActive(false);
+            // MimicSetPointGreenScreen.SetActive(false);
 
             PlaySoundContinuously(MimicZoneAudioSource, continousSound, isInsideZone);
         }
