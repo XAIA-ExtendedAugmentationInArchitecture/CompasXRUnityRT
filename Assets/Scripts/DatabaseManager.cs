@@ -116,18 +116,29 @@ namespace CompasXR.Core
         public Dictionary<string, ObservedGeometry> ObservedGeometriesDict { get; set; }
 
     }
+    
+    public class UpdateObservedGeometryEventArgs : EventArgs
+    {
+        /*
+        * UpdateObservedGeometryEventArgs : Class inherits from EventArgs &
+        * it is used to send the ObservedGeometry Class on events.
+        */
+        public Dictionary<string, ObservedGeometry> ObservedGeometryDict { get; set; }
+        public ObservedGeometry NewObservedGeometry { get; set; }
+        public string Key { get; set; }
+    }
 
     //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
-        public class ApplicationSettingsEventArgs : EventArgs
-        {
-            /*
-            * ApplicationSettingsEventArgs : Class inherits from EventArgs &
-            * it is used to send the ApplicationSettings Class on events.
-            */
+    public class ApplicationSettingsEventArgs : EventArgs
+    {
+        /*
+        * ApplicationSettingsEventArgs : Class inherits from EventArgs &
+        * it is used to send the ApplicationSettings Class on events.
+        */
 
-            public ApplicationSettings Settings { get; set; }
-        }
+        public ApplicationSettings Settings { get; set; }
+    }
 
     public class DatabaseManager : MonoBehaviour
     {
@@ -207,6 +218,10 @@ namespace CompasXR.Core
 
         public delegate void UpdateUserInfoEventHandler(object source, UserInfoDataItemsDictEventArgs e);
         public event UpdateUserInfoEventHandler UserInfoUpdate;
+
+        //TODO:ROBOTICTERRITORIES OBSERVED GEOMETRY TESTING......
+        public delegate void UpdateObvservedGeometryEventHandler(object source, UpdateObservedGeometryEventArgs e);
+        public event UpdateObvservedGeometryEventHandler UpdateObvservedGeometry;
 
         //Other Scripts
         public UIFunctionalities UIFunctionalities;
@@ -443,7 +458,9 @@ namespace CompasXR.Core
             dbRefernceRobotBaseFrame.ChildRemoved += OnRobotBaseFrameChanged;
             dbRefernceRobotBaseFrame.ChildAdded += OnRobotBaseFrameChanged;
 
-
+            // dbReferenceObservedGeometries.ChildAdded += OnObservedGeometryChanged;
+            // dbReferenceObservedGeometries.ChildChanged += OnObservedGeometryChanged;
+            // dbReferenceObservedGeometries.ChildRemoved += OnObservedGeometryChanged;
         }
 
         //Event Listners
@@ -524,6 +541,41 @@ namespace CompasXR.Core
             // }
         }
 
+        public void OnObservedGeometryChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
+        {
+            /*
+            * Method is used to handle the Child Changed event from the Firebase Realtime Database.
+            * It is designed to take the snapshot of the child changed event and parse the information.
+            */
+            if (args.DatabaseError != null)
+            {
+                Debug.LogError($"OnObservedGeometryChanged: Database error: {args.DatabaseError}");
+                return;
+            }
+
+            if (args.Snapshot == null)
+            {
+                Debug.LogWarning("OnObservedGeometryChanged: Snapshot is null. Ignoring the child change.");
+                return;
+            }
+
+            string key = args.Snapshot.Key;
+            var childSnapshot = args.Snapshot.GetValue(true);
+
+            if (childSnapshot != null && key != null)
+            {
+                Debug.Log("OnObservedGeometryChanged: Observed Geometry Changed");
+                ObservedGeometry observedGeometry = ObservedGeometry.Parse(childSnapshot);
+                OnObservedGeometryUpdate(observedGeometriesDict, observedGeometry, key);
+            }
+            else
+            {
+                Debug.LogWarning("OnObservedGeometryChanged: Snapshot or key is null. Ignoring the child change.");
+                OnObservedGeometryUpdate(observedGeometriesDict, null, key);
+            }
+        }
+
+
         //EVENTS //TODO: UPDATE EVENT FOR GEOMETRY INFORMATOIN.
         protected virtual void OnZonesReceived(ProjectZones ProjectZones)
         {
@@ -555,6 +607,17 @@ namespace CompasXR.Core
             UnityEngine.Assertions.Assert.IsNotNull(ModeZonesUpdate, "Modes dict is null!");
             Debug.Log("ZonesUpdate: Sending Zones to the respective classes");
             ModeZonesUpdate(this, new ModeZonesUpdateEventArgs() { Zones = ModeZonesDict, Key = key });
+        }
+
+        protected virtual void OnObservedGeometryUpdate(Dictionary<string, ObservedGeometry> observedGeoDict, ObservedGeometry newObservedGeometry, string key)
+        {
+            /*
+            * Method is used to trigger the Zones Update Event.
+            * It is designed to trigger the event and send the Zones to the respective classes.
+            */
+            UnityEngine.Assertions.Assert.IsNotNull(UpdateObvservedGeometry, "Updating Observed Geometry!");
+            Debug.Log("ZonesUpdate: Sending Zones to the respective classes");
+            UpdateObvservedGeometry(this, new UpdateObservedGeometryEventArgs() { ObservedGeometryDict = observedGeoDict, NewObservedGeometry = newObservedGeometry, Key = key });
         }
         protected async void OnQRCodesInformationChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
         {

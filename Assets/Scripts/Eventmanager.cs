@@ -64,6 +64,7 @@ namespace CompasXR.Core
             instantiateObjects.InitialZonesPlaced += databaseManager.AddListenersRoboticTerritories;
             databaseManager.ModeZonesUpdate += instantiateObjects.OnModeZonesUpdate;
             databaseManager.FetchedObservedGeometries += instantiateObjects.OnObservedGeometriesFetched;
+            // databaseManager.UpdateObvservedGeometry += instantiateObjects.OnObservedObjectsChangedWrapper;
             // databaseManager.ApplicationSettingUpdate += databaseManager.FetchData;
             // databaseManager.ApplicationSettingUpdate += mqttTrajectoryReceiver.SetCompasXRTopics;
             // databaseManager.DatabaseInitializedDict += instantiateObjects.OnDatabaseInitializedDict;
