@@ -106,17 +106,28 @@ namespace CompasXR.Core
         public string Key { get; set; }
     }
 
+    public class ObservedGeometriesFetchedEventArgs : EventArgs
+    {
+        //TODO: ROBOTIC Testing Geometry following.
+        /*
+        * ObservedGeometriesFetchedEventArgs : Class inherits from EventArgs &
+        * it is used to send the ObservedGeometries Class on events.
+        */
+        public Dictionary<string, ObservedGeometry> ObservedGeometriesDict { get; set; }
+
+    }
+
     //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
-    public class ApplicationSettingsEventArgs : EventArgs
-    {
-        /*
-        * ApplicationSettingsEventArgs : Class inherits from EventArgs &
-        * it is used to send the ApplicationSettings Class on events.
-        */
-        
-        public ApplicationSettings Settings { get; set; }
-    }
+        public class ApplicationSettingsEventArgs : EventArgs
+        {
+            /*
+            * ApplicationSettingsEventArgs : Class inherits from EventArgs &
+            * it is used to send the ApplicationSettings Class on events.
+            */
+
+            public ApplicationSettings Settings { get; set; }
+        }
 
     public class DatabaseManager : MonoBehaviour
     {
@@ -131,6 +142,7 @@ namespace CompasXR.Core
         public DatabaseReference dbReferenceCurrentMode;
         public DatabaseReference dbReferenceUserInformation;
         public DatabaseReference dbRefernceRobotBaseFrame;
+        public DatabaseReference dbReferenceObservedGeometries;
         public ProjectZones ProjectZones = new ProjectZones();
 
         //EVENTS
@@ -280,13 +292,13 @@ namespace CompasXR.Core
 
             //TODO: This is a temporary fix to get the UR20 data from the Firebase Realtime Database. //////////////////////////////////////////////////////
             dbRefernceRobotBaseFrame = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("robot_base_frame").Child("UR20");
-
             // The real reference should be the baseframe reference then deserialize the data. by key.
             //TODO: This is a temporary fix to get the UR20 data from the Firebase Realtime Database. //////////////////////////////////////////////////////
-
+            dbReferenceObservedGeometries = FirebaseDatabase.DefaultInstance.GetReference(e.Settings.project_name).Child("geometry").Child("observed_geometries");
 
             await DataHandlers.FetchDataFromDatabaseReference(dbReferenceZones, snapshot => DeserializeZoneDataSnapshot(snapshot, ProjectZones));
             await DataHandlers.FetchDataFromDatabaseReference(dbRefernceRobotBaseFrame, snapshot => DeserilizeRobotBaseFrameSnapshot(snapshot));
+            await DataHandlers.FetchDataFromDatabaseReference(dbReferenceObservedGeometries, snapshot => DeserializeObservedGeometriesSnapshot(snapshot, e.Settings));
 
         }
         private void DeserilizeRobotBaseFrameSnapshot(DataSnapshot snapshot) //TODO: CHECK WITH FRAME STRUCTURE.
@@ -321,6 +333,25 @@ namespace CompasXR.Core
             }
 
             OnZonesReceived(ProjectZones);
+        }
+
+        private void DeserializeObservedGeometriesSnapshot(DataSnapshot snapshot, ApplicationSettings settings)
+        {
+            /*
+            * Method is used to deserialize the Observed Geometries data from the Firebase Realtime Database.
+            * It is designed to take a snapshot of the Observed Geometries data reference and iterate through them parsing the information.
+            */
+            Dictionary<string, ObservedGeometry> observedGeometriesDict = new Dictionary<string, ObservedGeometry>();
+
+            foreach (DataSnapshot childSnapshot in snapshot.Children)
+            {
+                string key = childSnapshot.Key;
+                var json_data = childSnapshot.GetValue(true);
+                ObservedGeometry observedGeometry = ObservedGeometry.Parse(json_data);
+                observedGeometriesDict.Add(key, observedGeometry);
+            }
+
+            Debug.Log($"DeserializeObservedGeometriesSnapshot: Observed Geometries Count: {observedGeometriesDict.Count}");
         }
         public Dictionary<string, Zone> DeserilizeModeZones(DataSnapshot childSnapshot, ProjectZones Zones)
         {
@@ -1459,9 +1490,6 @@ namespace CompasXR.Core
             */
             ApplicationSettingUpdate(this, new ApplicationSettingsEventArgs() { Settings = settings });
         }
-
-
-
     }
 
     public static class DataHandlers

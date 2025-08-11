@@ -5,6 +5,7 @@ using CompasXR.Core.Data;
 using System.Linq;
 using System;
 using CompasXR.Core;
+using Newtonsoft.Json;
 
 namespace CompasXR.RoboticTerritories.Data
 {   
@@ -82,6 +83,41 @@ namespace CompasXR.RoboticTerritories.Data
         }
 
     }
+
+    [System.Serializable]
+    public class ObservedGeometry
+    {
+        /*
+        * ObservedGeometry : A class to define the structure of the observed geometry in the assembly data structure.
+        * It is based off the Compas data structure for a geometry.
+        */
+        public Box Box { get; set; }
+        public string MarkerType { get; set; }
+        public GameObject GeometryObject { get; set; }
+
+        public static ObservedGeometry Parse(object jsondata)
+        {
+            /*
+            * Method to create an instance of a the ObservedGeometry class from a json string.
+            */
+            Dictionary<string, object> jsonDataDict = jsondata as Dictionary<string, object>;
+            return FromData(jsonDataDict);
+        }
+        public static ObservedGeometry FromData(Dictionary<string, object> jsonDataDict)
+        {
+            /*
+            * Method to create an instance of a the ObservedGeometry class from a dictionary.
+            */
+            ObservedGeometry observedGeometry = new ObservedGeometry();
+            Dictionary<string, object> boxData = jsonDataDict["box"] as Dictionary<string, object>;
+            Debug.Log($"ObservedGeometry FromData: {JsonConvert.SerializeObject(boxData)}" );
+            Dictionary<string, object> Data = jsonDataDict["data"] as Dictionary<string, object>;
+            observedGeometry.Box = Box.FromData(Data);
+            observedGeometry.MarkerType = jsonDataDict["marker_type"] as string;
+            return observedGeometry;
+        }
+    }
+
 
     [System.Serializable]
     public class Box
