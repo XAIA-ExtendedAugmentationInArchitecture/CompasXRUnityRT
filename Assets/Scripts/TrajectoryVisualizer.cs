@@ -309,8 +309,8 @@ namespace CompasXR.Robots
             {
                 InstatintaiteRobotFromTrajectoryList(trajectoryList, mimicResult.RobotBaseFrame, robotToConfigure, URDFLinks, parentObject, visibility);
                 // InstantiateRobotTrajectoryFromJointTrajectoryPoints(trajectoryPointsList, mimicResult.RobotBaseFrame, robotToConfigure, URDFLinks, parentObject, visibility);
-                AttachedCollisionMesh attachedCollisionMesh = mimicResult.Trajectories[0].AttachedCollisionMeshes[0];
-                attachedCollisionMesh.CollisionMesh.Mesh.GenerateMeshFromRHMesh();
+                // AttachedCollisionMesh attachedCollisionMesh = mimicResult.Trajectories[0].AttachedCollisionMeshes[0];
+                // attachedCollisionMesh.CollisionMesh.Mesh.GenerateMeshFromRHMesh();
             }
             else
             {
@@ -656,13 +656,16 @@ namespace CompasXR.Robots
                 {
                     Debug.Log($"ColorRobotConfigfromSliderInputCompoundTrajectories: Previous Trajectory {previoustrajectoryIndex} is null.");
                 }
+
+
+                //TODO: FIX ME... THIS IS NOT WORKING PROPERLY.
                 List<AttachedCollisionMesh> previousAttachedCollisionMeshes = previousTrajectory.AttachedCollisionMeshes;
-                if(previousAttachedCollisionMeshes != null)
+                if (previousAttachedCollisionMeshes.Count > 0)
                 {
                     foreach (AttachedCollisionMesh previousattachedCollisionMesh in previousAttachedCollisionMeshes)
                     {
                         GameObject previousAttachedGameObject = previousRobotGameObject.FindObject(previousattachedCollisionMesh.CollisionMesh.Id);
-                        if(previousAttachedGameObject != null)
+                        if (previousAttachedGameObject != null)
                         {
                             previousAttachedGameObject.GetComponentInChildren<Renderer>().material = inactiveMaterial;
                         }
