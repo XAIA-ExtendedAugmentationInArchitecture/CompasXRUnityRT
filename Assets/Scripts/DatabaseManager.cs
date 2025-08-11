@@ -524,7 +524,7 @@ namespace CompasXR.Core
             // }
         }
 
-        //EVENTS
+        //EVENTS //TODO: UPDATE EVENT FOR GEOMETRY INFORMATOIN.
         protected virtual void OnZonesReceived(ProjectZones ProjectZones)
         {
             /*
@@ -536,7 +536,6 @@ namespace CompasXR.Core
             ZonesInfoReceived(this, new ZonesInfoReceivedEventArgs() { Zones = ProjectZones });
 
         }
-
         protected virtual void OnObservedGeometryReceived(Dictionary<string, ObservedGeometry> observedGeometriesDict)
         {
             /*
