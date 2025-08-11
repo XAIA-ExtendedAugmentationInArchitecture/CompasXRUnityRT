@@ -90,6 +90,13 @@ namespace CompasXR.Core
         public Material PickZoneMaterial;
         public Material BoundaryMaterial;
 
+        //TODO: Robotic Territories Materials //////////////////////////////////////////
+        public Material ObservedGeometryMaterial;
+        public Material AnchorCubeMaterial;
+
+        //TODO: Robotic Territories Materials //////////////////////////////////////////
+
+
         //Mimic GameObjects
         public GameObject MimicHumanObjects;
         public GameObject MimicHumanPointsParent;
@@ -110,6 +117,7 @@ namespace CompasXR.Core
 
         //Zones AR Prefabs
         public GameObject ZonesARPrefabObjects;
+        public GameObject GeometriesParentObject;
 
         //TODO: REALTIME MIMIC OBJECT TESTING
         public GameObject RealtimeMimicObjects;
@@ -176,9 +184,87 @@ namespace CompasXR.Core
             }
         }
 
-    /////////////////////////////// INSTANTIATE OBJECTS //////////////////////////////////////////
+        /////////////////////////////// INSTANTIATE OBJECTS //////////////////////////////////////////
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+        public void OnObservedGeometriesFetched(object source, ObservedGeometriesFetchedEventArgs e)
+        {
+            /*
+            * Method is used to handle the event when the observed geometries are fetched from the database.
+            */
+            Debug.Log("OnObservedGeometriesFetched: Observed Geometries Fetched");
+            InstantiateObservedGeometries(e.ObservedGeometriesDict);
+        }
+
+        public void InstantiateObservedGeometries(Dictionary<string, ObservedGeometry> observedGeometriesDict)
+        {
+            /*
+            * Method is used to instantiate the observed geometries in the AR space.
+            */
+            if (observedGeometriesDict != null && observedGeometriesDict.Count > 0)
+            {
+                Debug.Log("InstanteObservedGeometries: Instantiating Observed Geometries");
+                foreach (KeyValuePair<string, ObservedGeometry> entry in observedGeometriesDict)
+                {
+                    ObservedGeometry observedGeometry = entry.Value;
+                    observedGeometry.Name = entry.Key;
+                    GameObject observedGeometryObject = observedGeometry.Box.CreateBoxObject();
+                    observedGeometry.GeometryObject = observedGeometryObject;
+                    observedGeometry.GeometryObject.name = observedGeometry.Name;
+                    observedGeometryObject.transform.SetParent(GeometriesParentObject.transform, false);
+                }
+                ColorObservedGeometries(observedGeometriesDict);
+            }
+            else
+            {
+                Debug.LogWarning("InstanteObservedGeometries: Observed Geometries Dict is null or empty");
+            }
+        }
+
+        public void ColorObservedGeometries(Dictionary<string, ObservedGeometry> observedGeometriesDict)
+        {
+            /*
+            * Method is used to color the observed geometries in the AR space.
+            */
+            if (observedGeometriesDict != null && observedGeometriesDict.Count > 0)
+            {
+                Debug.Log("ColorObservedGeometries: Coloring Observed Geometries");
+                foreach (KeyValuePair<string, ObservedGeometry> entry in observedGeometriesDict)
+                {
+                    ObservedGeometry observedGeometry = entry.Value;
+                    if (observedGeometry.GeometryObject != null)
+                    {
+                        Renderer renderers = observedGeometry.GeometryObject.GetComponentInChildren<Renderer>();
+                        if (renderers != null)
+                        {
+                            if (observedGeometry.Name != "AnchorCube")
+                            {
+                                renderers.material = ObservedGeometryMaterial;
+                            }
+                            else
+                            {
+                                renderers.material = AnchorCubeMaterial;
+                            }                      
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"ColorObservedGeometries: Renderer for {observedGeometry.Name} is null");
+                        }
+
+
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"ColorObservedGeometries: Geometry Object for {observedGeometry.Name} is null");
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogWarning("ColorObservedGeometries: Observed Geometries Dict is null or empty");
+            }
+        }
+
         public void OnZonesReceived(object source, ZonesInfoReceivedEventArgs e)
         {
             /*
@@ -990,52 +1076,8 @@ namespace CompasXR.Core
                 text, textObjectName, fontSize,
                 TextAlignmentOptions.Center, Color.white, offsetPosition,
                 Quaternion.identity, true, true, gameObject);
-        }
-
-    //TODO: THIS NEEDS TO BE CHECKED AND THOUGHT ABOUT FOR ROBOT SPACE CONVERSION. See Notes
-    // public static Vector3 MirrorPositionAcrossBox(GameObject box, Vector3 pointPosition, Vector3 mirrorDirection)
-    // {
-    //     if (box == null)
-    //     {
-    //         Debug.LogError("MirrorPositionAndRotationAcrossBox: Box GameObject is null.");
-    //         Vector3 zeroPosition = Vector3.zero;
-    //         // mirroredRotation = Quaternion.identity;
-    //         return zeroPosition;
-    //     }
-
-    //     BoxCollider boxCollider = box.GetComponent<BoxCollider>();
-
-    //     if (boxCollider == null)
-    //     {
-    //         Debug.LogError("MirrorPositionAndRotationAcrossBox: The box does not have a BoxCollider.");
-    //         Vector3 zeroPosition = Vector3.zero;
-    //         // mirroredRotation = Quaternion.identity;
-    //         return zeroPosition;
-    //     }
-
-    //     // Convert point position to local space relative to the box
-    //     Vector3 localPosition = box.transform.InverseTransformPoint(pointPosition);
-
-    //     // Mirror across the box's center, but only in the direction of mirrorDirection
-    //     Vector3 mirroredLocalPosition = new Vector3(
-    //         mirrorDirection.x != 0 ? (2 * boxCollider.center.x - localPosition.x) : localPosition.x, // Mirror X if direction.x != 0
-    //         localPosition.y, // Keep Y the same (no height change)
-    //         mirrorDirection.z != 0 ? (2 * boxCollider.center.z - localPosition.z) : localPosition.z  // Mirror Z if direction.z != 0
-    //     );
-
-    //     // Convert mirrored local position back to world space
-    //     Vector3 mirroredPosition = box.transform.TransformPoint(mirroredLocalPosition);
-
-    //     // // **Corrected: Use Quaternion Reflection Instead of Euler Angles**
-    //     // Vector3 normal = mirrorDirection.normalized; // Ensure it's a unit vector
-    //     // Quaternion reflectionQuaternion = Quaternion.AngleAxis(180f, normal);
-    //     // mirroredRotation = reflectionQuaternion * pointRotation; // Reflect the rotation
-
-    //     Debug.Log($"MirrorPositionAndRotationAcrossBox: Mirrored {pointPosition} to {mirroredPosition} in {box.name} along {mirrorDirection}");
-    //     return mirroredPosition;
-    // }
-    
-    public static Vector3 MirrorPositionAcrossBox(GameObject box, Vector3 worldPoint)
+        }  
+        public static Vector3 MirrorPositionAcrossBox(GameObject box, Vector3 worldPoint)
     {
         var col = box.GetComponent<BoxCollider>();
         if (col == null) return worldPoint;
@@ -1050,7 +1092,6 @@ namespace CompasXR.Core
         // 3) Send back out to world space
         return box.transform.TransformPoint(local);
     }
-
 
     public static Quaternion MirrorQuaternion(Quaternion pointRotation, Vector3 normal)
         {
@@ -1214,6 +1255,7 @@ namespace CompasXR.Core
             //Find Parent Objects
             ZonesParentObject = GameObject.Find("ZonesParent");
             ZonesARPrefabObjects = GameObject.Find("ZonesARPrefabs");
+            GeometriesParentObject = GameObject.Find("GeometriesParent");
 
             BoundaryZoneParent = ZonesParentObject.FindObject("BoundaryZoneParent");
             InferenceZonesParent = ZonesParentObject.FindObject("InferenceZonesParent");
@@ -1231,6 +1273,8 @@ namespace CompasXR.Core
             CollaborationZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("CollaborationZone").GetComponentInChildren<Renderer>().material;
             PickZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("PickZone").GetComponentInChildren<Renderer>().material;
             BoundaryMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("BoundaryMaterial").GetComponentInChildren<Renderer>().material;
+            ObservedGeometryMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("ObservedBoxLocations").GetComponentInChildren<Renderer>().material;
+            AnchorCubeMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("AnchorCubeLocation").GetComponentInChildren<Renderer>().material;
 
             //FindObjects for Mimic Controls
             MimicHumanObjects = ZonesARPrefabObjects.FindObject("HumanObjects");
@@ -1248,7 +1292,6 @@ namespace CompasXR.Core
             {
                 Debug.LogWarning("MimicHumanSystemProposedPointsParent or MimicRobotSystemProposedPointsParent is null");
             }
-
 
             //TODO: TEMPORARY ROBOTIC TERRITORIES TESTING REALTIME MIMIC
             RealtimeMimicObjects = ZonesARPrefabObjects.FindObject("RealtimeMimicObjectsTEMPORARY");

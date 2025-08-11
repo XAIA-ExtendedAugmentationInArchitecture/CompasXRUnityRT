@@ -156,7 +156,12 @@ namespace CompasXR.Core
         public delegate void UpdateZonesDatatDict(object source, ModeZonesUpdateEventArgs e);
         public event UpdateZonesDatatDict ModeZonesUpdate;
 
+        public delegate void ObservedGeometriesReceived(object source, ObservedGeometriesFetchedEventArgs e);
+        public event ObservedGeometriesReceived FetchedObservedGeometries;
+
+
         public InstantiateObjects instantiateObjects;
+        public Dictionary<string, ObservedGeometry> observedGeometriesDict = new Dictionary<string, ObservedGeometry>();
 
         // //TODO: Needed to add materials here because they are stored in the class structure itself. It is dumb but will work for now.
         // public Material HumanZoneMaterial;
@@ -298,7 +303,7 @@ namespace CompasXR.Core
 
             await DataHandlers.FetchDataFromDatabaseReference(dbReferenceZones, snapshot => DeserializeZoneDataSnapshot(snapshot, ProjectZones));
             await DataHandlers.FetchDataFromDatabaseReference(dbRefernceRobotBaseFrame, snapshot => DeserilizeRobotBaseFrameSnapshot(snapshot));
-            await DataHandlers.FetchDataFromDatabaseReference(dbReferenceObservedGeometries, snapshot => DeserializeObservedGeometriesSnapshot(snapshot, e.Settings));
+            await DataHandlers.FetchDataFromDatabaseReference(dbReferenceObservedGeometries, snapshot => DeserializeObservedGeometriesSnapshot(snapshot, observedGeometriesDict));
 
         }
         private void DeserilizeRobotBaseFrameSnapshot(DataSnapshot snapshot) //TODO: CHECK WITH FRAME STRUCTURE.
@@ -335,13 +340,13 @@ namespace CompasXR.Core
             OnZonesReceived(ProjectZones);
         }
 
-        private void DeserializeObservedGeometriesSnapshot(DataSnapshot snapshot, ApplicationSettings settings)
+        private void DeserializeObservedGeometriesSnapshot(DataSnapshot snapshot, Dictionary<string, ObservedGeometry> observedGeometriesDict)
         {
             /*
             * Method is used to deserialize the Observed Geometries data from the Firebase Realtime Database.
             * It is designed to take a snapshot of the Observed Geometries data reference and iterate through them parsing the information.
             */
-            Dictionary<string, ObservedGeometry> observedGeometriesDict = new Dictionary<string, ObservedGeometry>();
+            observedGeometriesDict.Clear();
 
             foreach (DataSnapshot childSnapshot in snapshot.Children)
             {
@@ -352,6 +357,7 @@ namespace CompasXR.Core
             }
 
             Debug.Log($"DeserializeObservedGeometriesSnapshot: Observed Geometries Count: {observedGeometriesDict.Count}");
+            OnObservedGeometryReceived(observedGeometriesDict);
         }
         public Dictionary<string, Zone> DeserilizeModeZones(DataSnapshot childSnapshot, ProjectZones Zones)
         {
@@ -529,6 +535,17 @@ namespace CompasXR.Core
             Debug.Log("ZonesReceived: Sending Zones to the respective classes");
             ZonesInfoReceived(this, new ZonesInfoReceivedEventArgs() { Zones = ProjectZones });
 
+        }
+
+        protected virtual void OnObservedGeometryReceived(Dictionary<string, ObservedGeometry> observedGeometriesDict)
+        {
+            /*
+            * Method is used to trigger the Observed Geometries Received Event.
+            * It is designed to trigger the event and send the Observed Geometries to the respective classes.
+            */
+            UnityEngine.Assertions.Assert.IsNotNull(FetchedObservedGeometries, "Observed Geometries dict is null!");
+            Debug.Log("OnObservedGeometryReceived: Sending Observed Geometries to the respective classes");
+            FetchedObservedGeometries(this, new ObservedGeometriesFetchedEventArgs() { ObservedGeometriesDict=observedGeometriesDict });
         }
         protected virtual void OnZonesUpdate(Dictionary<string, Zone> ModeZonesDict, string key)
         {

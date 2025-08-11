@@ -93,6 +93,8 @@ namespace CompasXR.RoboticTerritories.Data
         */
         public Box Box { get; set; }
         public string MarkerType { get; set; }
+
+        public String Name { get; set; }
         public GameObject GeometryObject { get; set; }
 
         public static ObservedGeometry Parse(object jsondata)
@@ -110,8 +112,7 @@ namespace CompasXR.RoboticTerritories.Data
             */
             ObservedGeometry observedGeometry = new ObservedGeometry();
             Dictionary<string, object> boxData = jsonDataDict["box"] as Dictionary<string, object>;
-            Debug.Log($"ObservedGeometry FromData: {JsonConvert.SerializeObject(boxData)}" );
-            Dictionary<string, object> Data = jsonDataDict["data"] as Dictionary<string, object>;
+            Dictionary<string, object> Data = boxData["data"] as Dictionary<string, object>;
             observedGeometry.Box = Box.FromData(Data);
             observedGeometry.MarkerType = jsonDataDict["marker_type"] as string;
             return observedGeometry;
