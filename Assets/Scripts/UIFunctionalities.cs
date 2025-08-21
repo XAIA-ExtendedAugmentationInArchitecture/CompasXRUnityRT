@@ -229,6 +229,8 @@ namespace CompasXR.UI
         public GameObject RealtimeMimicEditorTestToggleObject;
         public int TEMPORARYCOUNTERREALTIMEMIMIC = 0;
 
+        public GameObject RealtimeMimicIOToggleGameObject;
+
         //TODO: TESTING
         DevicePoseBehaviour devicePoseBehavior;
 
@@ -322,6 +324,10 @@ namespace CompasXR.UI
             Button TESTINGBUTTON = TESTBUTTON.GetComponentInChildren<Button>();
             TESTINGBUTTON.onClick.AddListener(PrintobservedGeometryDictInformation);
 
+            RealtimeMimicIOToggleGameObject = RoboticTerritoriesCanvasItems.FindObject("IOTestToggle");
+            Toggle RealtimeMimicIOToggle = RealtimeMimicIOToggleGameObject.GetComponentInChildren<Toggle>();
+            RealtimeMimicIOToggle.onValueChanged.AddListener(ToggleIOForRealtimeMimicMethod);
+
 
             if (FollowMeButtonHeldEventComponent == null)
             {
@@ -412,6 +418,35 @@ namespace CompasXR.UI
                 {
                     Debug.LogWarning($"PrintobservedGeometryDictInformation JOEEE: {item.Key}, Value: null");
                 }
+            }
+        }
+
+        public void ToggleIOForRealtimeMimicMethod(bool toggle)
+        {
+            /*
+            * Method is used to toggle the IO for the Realtime Mimic.
+            */
+            Debug.Log($"ToggleIOForRealtimeMimicMethod: Toggling IO for Realtime Mimic to {toggle}");
+            if (RealtimeMimicIOToggleGameObject != null)
+            {
+                int signal = 1;
+                bool gripperToggle;
+                if (toggle)
+                {
+                    gripperToggle = true;
+                }
+                else
+                {
+                    gripperToggle = false;
+                }
+                RealtimeMimicIOToggleRequestMessage realtimeMimmicIOToggleMessage = new RealtimeMimicIOToggleRequestMessage
+                (
+                    signal,
+                    gripperToggle
+                );
+                mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicIOToggleRequestTopic, realtimeMimmicIOToggleMessage.GetData());
+                Debug.Log($"ToggleIOForRealtimeMimicMethod: Sending Realtime Mimic IO Toggle Request with signal: {signal}, gripperToggle: {gripperToggle}");
+
             }
         }
 

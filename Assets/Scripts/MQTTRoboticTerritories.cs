@@ -43,11 +43,13 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public string mimicRequestTopic { get; set; }
         public string mimicExecuteTrajectoryRequestTopic { get; set; }
         public string realtimeMimicRequestTopic { get; set; }
+        public string realtimeMimicIOToggleRequestTopic { get; set; }
         public RTPublishers(string projectName)
         {
             mimicRequestTopic = $"robotic_territories/mimic_request/{projectName}";
             mimicExecuteTrajectoryRequestTopic = $"robotic_territories/mimic_execute_trajectory/{projectName}";
             realtimeMimicRequestTopic = $"robotic_territories/real_time_mimic_request/{projectName}";
+            realtimeMimicIOToggleRequestTopic = $"robotic_territories/real_time_mimic_io_toggle_request/{projectName}";
         }
 
     }
@@ -124,7 +126,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             return trajectoriesData;
         }
 
-        
+
         public static List<Frame> _parseDataFromFramesList(List<Dictionary<string, object>> framesData)
         {
             /*
@@ -213,10 +215,10 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         */
         public string DeviceID { get; private set; }
         public string TimeStamp { get; private set; }
-        public Header(string deviceID=null, string timeStamp=null)
-        {   
-            if(deviceID != null && timeStamp != null)
-            {    
+        public Header(string deviceID = null, string timeStamp = null)
+        {
+            if (deviceID != null && timeStamp != null)
+            {
                 DeviceID = deviceID;
                 TimeStamp = timeStamp;
             }
@@ -225,7 +227,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 DeviceID = GetDeviceID();
                 TimeStamp = GetTimeStamp();
             }
-        } 
+        }
         public Dictionary<string, object> GetData()
         {
             /*
@@ -264,7 +266,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             return new Header(deviceID, timeStamp);
         }
     }
-    
+
     [System.Serializable]
     public class MimicTrajectoryRequestMessage
     {
@@ -277,7 +279,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public List<Frame> HumanFrames { get; private set; }
         public List<Frame> RobotFrames { get; private set; }
         public string RobotName { get; private set; }
-        public MimicTrajectoryRequestMessage(List<Frame> humanFrames, List<Frame> robotFrames, string robotName, Header header=null)
+        public MimicTrajectoryRequestMessage(List<Frame> humanFrames, List<Frame> robotFrames, string robotName, Header header = null)
         {
             Header = header ?? new Header();
             HumanFrames = humanFrames;
@@ -331,7 +333,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public Frame RobotBaseFrame { get; private set; }
         public List<JointTrajectoryPoint> CombinedTrajectoryPoints { get; private set; }
         public string RobotName { get; private set; }
-        public MimicTrajectoryResultMessage(List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header=null)
+        public MimicTrajectoryResultMessage(List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header = null)
         {
             Header = header ?? new Header();
             Trajectories = trajectories;
@@ -342,7 +344,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
 
         public static List<JointTrajectoryPoint> _GetJointTRajectoryPoints(List<Trajectory> trajectories)
         {
-            if(trajectories.Count == 0)
+            if (trajectories.Count == 0)
             {
                 Debug.LogWarning("MimicTrajectoryResultMessage: No trajectories found in the message returning null list.");
                 return new List<JointTrajectoryPoint>();
@@ -378,7 +380,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
 
             var trajectoriesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["trajectories"].ToString());
             List<Trajectory> trajectories = new List<Trajectory>();
-            if(trajectoriesData.Count > 0)
+            if (trajectoriesData.Count > 0)
             {
                 foreach (Dictionary<string, object> trajectoryData in trajectoriesData)
                 {
@@ -400,7 +402,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             }
 
             Frame robotBaseFrame = MessageHandelingExtensions._getBaseFrameFromMessage(jsonObject);
-            if(robotBaseFrame == null)
+            if (robotBaseFrame == null)
             {
                 Debug.LogWarning("MimicTrajectoryResultMessage: Parse: Robot base frame not found in the message.");
             }
@@ -431,7 +433,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public List<JointTrajectoryPoint> CombinedTrajectoryPoints { get; private set; }
         public string RobotName { get; private set; }
         public Frame RobotBaseFrame { get; private set; }
-        public ExacuteMimicTrajectoryRequestMessage(List<Trajectory> trajectories, List<JointTrajectoryPoint> combinedTrajectoryPoints, string robotName, Frame robotBaseFrame, Header header=null)
+        public ExacuteMimicTrajectoryRequestMessage(List<Trajectory> trajectories, List<JointTrajectoryPoint> combinedTrajectoryPoints, string robotName, Frame robotBaseFrame, Header header = null)
         {
             Header = header ?? new Header();
             Trajectories = trajectories;
@@ -482,7 +484,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             List<JointTrajectoryPoint> combinedTrajectoryPoints = MessageHandelingExtensions._parseJointTrajectoryPointFromDataList(combinedTrajectoryPointsData);
 
             Frame robotBaseFrame = MessageHandelingExtensions._getBaseFrameFromMessage(jsonObject);
-            if(robotBaseFrame == null)
+            if (robotBaseFrame == null)
             {
                 Debug.LogWarning("ExacuteMimicTrajectoryRequestMessage: Parse: Robot base frame not found in the message.");
             }
@@ -515,7 +517,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public string RobotName { get; private set; }
         public string Message { get; private set; }
         public bool InitialRequest { get; private set; }
-        public RealtimeMimicRequestMessage(Frame requestedRobotFrame, string robotName, string message, Header header=null, bool initialRequest=false)
+        public RealtimeMimicRequestMessage(Frame requestedRobotFrame, string robotName, string message, Header header = null, bool initialRequest = false)
         {
             Header = header ?? new Header();
             RequestedRobotFrame = requestedRobotFrame;
@@ -551,7 +553,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             Header header = Header.Parse(headerInfo);
 
             Dictionary<string, object> requestedRobotFrameDict = jsonObject["requested_robot_frame"] as Dictionary<string, object>;
-            Frame requestedFrame = Frame.FromData(requestedRobotFrameDict); 
+            Frame requestedFrame = Frame.FromData(requestedRobotFrameDict);
             // var humanFramesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["human_frames"].ToString());
             // List<Frame> humanFrames = Frame._parseFramesData(humanFramesData);
 
@@ -580,7 +582,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         // public List<AttachedCollisionMesh> AttachedCollisionMeshes { get; private set; }
         public string RobotName { get; private set; }
         public string ReturnMessage { get; private set; }
-        public RealtimeMimicResultMessage(string robotName, string returnMessage, Header header=null) //List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header=null)
+        public RealtimeMimicResultMessage(string robotName, string returnMessage, Header header = null) //List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header=null)
         {
             Header = header ?? new Header();
             // Trajectories = trajectories;
@@ -640,5 +642,70 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             //     Debug.Log($"ExacuteMimicTrajectoryRequestMessage: Robot Base Frame Parsed Successfully: {JsonConvert.SerializeObject(robotBaseFrame)}");
         }
     }
+
+    [System.Serializable]
+    public class RealtimeMimicIOToggleRequestMessage
+    {
+        /*
+        * GetTrajectoryRequest : Class is used to manage the GetTrajectoryRequest message for Compas XR communication.
+        * It is designed to store the element ID, robot name, and header for the message.
+        * It is sent to the CAD when a user requests a trajectory.
+        */
+        public Header Header { get; private set; }
+        public int Signal { get; private set; }
+        public int Value { get; private set; }
+        public RealtimeMimicIOToggleRequestMessage(int signal, bool gripperToggle, Header header=null) //List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header=null)
+        {
+            Header = header ?? new Header();
+            Signal = signal;
+            if(gripperToggle)
+            {
+                Value = 1; // 1 for gripper open
+            }
+            else
+            {
+                Value = 0; // 0 for gripper close
+            }
+        }
+        public Dictionary<string, object> GetData()
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            return new Dictionary<string, object>
+            {
+                { "header", Header.GetData() },
+                { "signal", Signal },
+                { "value", Value }
+            };
+        }
+        public static RealtimeMimicIOToggleRequestMessage Parse(string jsonString)
+        {
+            /*
+            * Method is used to parse an instance of the class from a JSON string.
+            */
+            var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+            var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
+            Header header = Header.Parse(headerInfo);
+            var signal = Convert.ToInt32(jsonObject["signal"]);
+            var value = Convert.ToInt32(jsonObject["value"]);
+            bool gripperToggle = false;
+            if (value != 0 && value != 1)
+            {
+                Debug.LogError("RealtimeMimicIOToggleRequestMessage: Parse: Value must be either 0 or 1.");
+                return null;
+            }
+            else if (signal == 0)
+            {
+                gripperToggle = false;
+            }
+            else if (signal == 1)
+            {
+                gripperToggle = true;
+            }
+            return new RealtimeMimicIOToggleRequestMessage(signal, gripperToggle, header);
+        }
+    }
+
 
 }

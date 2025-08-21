@@ -1005,7 +1005,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8241043475438800458}
   m_Layer: 0
-  m_Name: Goal02Parent
+  m_Name: Goal02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

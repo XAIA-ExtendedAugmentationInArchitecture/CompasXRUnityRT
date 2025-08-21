@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 4290552110462801232}
   - component: {fileID: 7872298997550407472}
   m_Layer: 0
-  m_Name: G5
+  m_Name: G8
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -28,7 +28,7 @@ Transform:
   m_GameObject: {fileID: 720933785368946454}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1.7540002}
+  m_LocalPosition: {x: -0.706, y: 0, z: 2.1048}
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -224,7 +224,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8076211572409889134}
   m_Layer: 0
-  m_Name: Goal01
+  m_Name: Goal04
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -366,7 +366,7 @@ GameObject:
   - component: {fileID: 2144830343878207377}
   - component: {fileID: 3681008883640844118}
   m_Layer: 0
-  m_Name: G8
+  m_Name: G5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -381,7 +381,7 @@ Transform:
   m_GameObject: {fileID: 4691837526716221113}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 2.8064003}
+  m_LocalPosition: {x: -0.70160013, y: 0, z: 1.0524}
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -580,7 +580,7 @@ GameObject:
   - component: {fileID: 4541789501532029816}
   - component: {fileID: 7260218322858156731}
   m_Layer: 0
-  m_Name: G7
+  m_Name: G3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -595,7 +595,7 @@ Transform:
   m_GameObject: {fileID: 6096168958867180353}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 2.4556003}
+  m_LocalPosition: {x: 0, y: 0, z: 1.0524001}
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -687,7 +687,7 @@ GameObject:
   - component: {fileID: 4279145600804117295}
   - component: {fileID: 3571215948783729380}
   m_Layer: 0
-  m_Name: G4
+  m_Name: G7
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -702,7 +702,7 @@ Transform:
   m_GameObject: {fileID: 7849811700287736736}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1.4032001}
+  m_LocalPosition: {x: -0.706, y: 0, z: 1.754}
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -794,7 +794,7 @@ GameObject:
   - component: {fileID: 4328109288147508578}
   - component: {fileID: 2450330891859161600}
   m_Layer: 0
-  m_Name: G3
+  m_Name: G4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -809,7 +809,7 @@ Transform:
   m_GameObject: {fileID: 7876508348372416324}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 1.0524001}
+  m_LocalPosition: {x: -0.35080016, y: 0, z: 1.0524001}
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -916,7 +916,7 @@ Transform:
   m_GameObject: {fileID: 7999804558911043045}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 2.1048002}
+  m_LocalPosition: {x: -0.7016001, y: 0, z: 1.4032001}
   m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -1005,7 +1005,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8241043475438800458}
   m_Layer: 0
-  m_Name: Goal01
+  m_Name: Goal04
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1027,11 +1027,11 @@ Transform:
   - {fileID: 7495811881305555398}
   - {fileID: 6564431371390284631}
   - {fileID: 236360535860418609}
+  - {fileID: 5280262076917903412}
   - {fileID: 8653572124046086829}
+  - {fileID: 3339464397794459017}
+  - {fileID: 2536609944117560723}
   - {fileID: 8675938773544598926}
   - {fileID: 991126232027777682}
-  - {fileID: 2536609944117560723}
-  - {fileID: 5280262076917903412}
-  - {fileID: 3339464397794459017}
   m_Father: {fileID: 8076211572409889134}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}
