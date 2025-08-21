@@ -114,6 +114,7 @@ namespace CompasXR.RoboticTerritories.Data
             Dictionary<string, object> boxData = jsonDataDict["box"] as Dictionary<string, object>;
             Dictionary<string, object> Data = boxData["data"] as Dictionary<string, object>;
             observedGeometry.Box = Box.FromData(Data);
+
             observedGeometry.MarkerType = jsonDataDict["marker_type"] as string;
             return observedGeometry;
         }

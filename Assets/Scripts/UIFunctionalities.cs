@@ -399,7 +399,6 @@ namespace CompasXR.UI
             SetCorrectionMenuItemsOnStart();
 
         }    
-
         public void PrintobservedGeometryDictInformation()
         {
             /*
@@ -420,7 +419,6 @@ namespace CompasXR.UI
                 }
             }
         }
-
         public void ToggleIOForRealtimeMimicMethod(bool toggle)
         {
             /*
