@@ -161,7 +161,6 @@ namespace CompasXR.Core
             ActiveRobotObjects = GameObject.Find("ActiveRobotObjects");
             ZonesARPrefabObjects = GameObject.Find("ZonesARPrefabs");
             AllGeometriesParentObject = GameObject.Find("Geometries");
-            // TrackedGeometriesParent = GameObject.Find("TrackedGeometriesParent");     
         }
         public void PositioningUpdateMethodRoboticTerritories(ref Dictionary<string, Node> QRCodeDataDict, ref GameObject KeyParentObject)
         {

@@ -119,6 +119,8 @@ namespace CompasXR.Core
         public GameObject ZonesARPrefabObjects;
         public GameObject AllGeometiresParentObjects;
         public GameObject TrackedGeometriesParentObject;
+        public GameObject InferenceGoalsParentObject;
+        public GameObject MimicGoalsParentObject;
 
         //TODO: REALTIME MIMIC OBJECT TESTING
         public GameObject RealtimeMimicObjects;
@@ -198,7 +200,6 @@ namespace CompasXR.Core
             Debug.Log("OnObservedGeometriesFetched: Observed Geometries Fetched");
             InstantiateObservedGeometries(e.ObservedGeometriesDict);
         }
-
         public void InstantiateObservedGeometries(Dictionary<string, ObservedGeometry> observedGeometriesDict)
         {
             /*
@@ -223,7 +224,6 @@ namespace CompasXR.Core
                 Debug.LogWarning("InstanteObservedGeometries: Observed Geometries Dict is null or empty");
             }
         }
-
         public void ColorObservedGeometries(Dictionary<string, ObservedGeometry> observedGeometriesDict)
         {
             /*
@@ -247,6 +247,8 @@ namespace CompasXR.Core
                             else
                             {
                                 renderers.material = AnchorCubeMaterial;
+                                //TODO: Update in the EVENTS
+                                UpdateGoalsBasedOnAnchorCubeObservedFrame(observedGeometry.Box.frame, ref MimicGoalsParentObject, ref InferenceGoalsParentObject);
                             }
                         }
                         else
@@ -263,13 +265,38 @@ namespace CompasXR.Core
                 }
 
                 OnInitialTrackedGeometryPlaced();
+                
             }
             else
             {
                 Debug.LogWarning("ColorObservedGeometries: Observed Geometries Dict is null or empty");
             }
         }
+        public void UpdateGoalsBasedOnAnchorCubeObservedFrame(Frame anchorCubeFrame, ref GameObject mimicGoalsParent, ref GameObject inferenceGoalsParent)
+        {
+            /*
+            * Method is used to update the goals based on the anchor cube observed frame.
+            */
+            if (anchorCubeFrame != null)
+            {
+                Debug.Log("UpdateGoalsBasedOnAnchorCubeObservedFrame: Updating Goals Based on Anchor Cube Observed Frame");
+            }
+            else
+            {
+                Debug.LogWarning("UpdateGoalsBasedOnAnchorCubeObservedFrame: Anchor Cube Frame is null");
+                return;
+            }
 
+            // IF mimic and inferance parents are null, then return.
+            if (mimicGoalsParent == null || inferenceGoalsParent == null)
+            {
+                Debug.LogWarning("UpdateGoalsBasedOnAnchorCubeObservedFrame: Mimic or Inference Goals Parent is null");
+                return;
+            }
+            ObjectInstantiaion.UpdateExistingObjectFromRightHandFrameData(mimicGoalsParent, anchorCubeFrame.point, anchorCubeFrame.xaxis, anchorCubeFrame.yaxis, false, false);
+            ObjectInstantiaion.UpdateExistingObjectFromRightHandFrameData(inferenceGoalsParent, anchorCubeFrame.point, anchorCubeFrame.xaxis, anchorCubeFrame.yaxis, false, false);
+            Debug.Log($"UpdateObservedGeometryLocation: Updated geometry location to {anchorCubeFrame.point} with x-axis {anchorCubeFrame.xaxis} and y-axis {anchorCubeFrame.yaxis}");
+        }
         public void OnZonesReceived(object source, ZonesInfoReceivedEventArgs e)
         {
             /*
@@ -1177,43 +1204,50 @@ namespace CompasXR.Core
             }
         }
 
-        if (currentGeometryDict.TryGetValue(key, out var cur))
-        {
+            if (currentGeometryDict.TryGetValue(key, out var cur))
+            {
 
-            if (cur == null)
-            {
-                Debug.LogWarning($"OnObservedGeometryUpdated: Current geometry for key {key} is null.");
-                return;
-            }
-            if (cur.Box?.frame != null && observedGeometry.Box?.frame != null)
-            {
-                if (cur.Box.frame.IsSameAs(observedGeometry.Box.frame))
+                if (cur == null)
                 {
-                    Debug.Log($"OnObservedGeometryUpdated JOEEEEE: {key} frame is unchanged and will not update.");
-                    return; // skip update
+                    Debug.LogWarning($"OnObservedGeometryUpdated: Current geometry for key {key} is null.");
+                    return;
                 }
+                if (cur.Box?.frame != null && observedGeometry.Box?.frame != null)
+                {
+                    if (cur.Box.frame.IsSameAs(observedGeometry.Box.frame))
+                    {
+                        Debug.Log($"OnObservedGeometryUpdated JOEEEEE: {key} frame is unchanged and will not update.");
+                        return; // skip update
+                    }
+                }
+
+                // Update the existing object’s transform
+                UpdateObservedGeometryLocation(cur, observedGeometry);
+
+                // Merge data-only fields into the existing instance
+                cur.Name = key;
+                cur.Box = observedGeometry.Box;
+                cur.Box.frame = observedGeometry.Box.frame;
+
+                if (key == "AnchorCube")
+                {
+                    //Updating the position of the goals parents based on the anchor cube position.
+                    ObjectInstantiaion.UpdateExistingObjectFromRightHandFrameData(MimicGoalsParentObject, cur.Box.frame.point, cur.Box.frame.xaxis, cur.Box.frame.yaxis, false, false);
+                    ObjectInstantiaion.UpdateExistingObjectFromRightHandFrameData(InferenceGoalsParentObject, cur.Box.frame.point, cur.Box.frame.xaxis, cur.Box.frame.yaxis, false, false);
+                    Debug.LogWarning($"OnObservedGeometryUpdated: AnchorCube position updated to {cur.Box.frame.point}");
+                }
+        }
+            else
+            {
+                observedGeometry.Name = key;
+                currentGeometryDict[key] = observedGeometry;
+
+                // First-time creation: make the GameObject now
+                var go = observedGeometry.Box.CreateBoxObject();
+                go.name = observedGeometry.Name;
+                go.transform.SetParent(TrackedGeometriesParentObject.transform, false);
+                observedGeometry.GeometryObject = go;
             }
-
-            // Update the existing object’s transform
-            UpdateObservedGeometryLocation(cur, observedGeometry);
-
-            // Merge data-only fields into the existing instance
-            cur.Name = key;
-            cur.Box = observedGeometry.Box;
-            cur.Box.frame = observedGeometry.Box.frame;
-            // Notice: we do NOT reassign currentGeometryDict[key]
-        }
-        else
-        {
-            observedGeometry.Name = key;
-            currentGeometryDict[key] = observedGeometry;
-
-            // First-time creation: make the GameObject now
-            var go = observedGeometry.Box.CreateBoxObject();
-            go.name = observedGeometry.Name;
-            go.transform.SetParent(TrackedGeometriesParentObject.transform, false);
-            observedGeometry.GeometryObject = go;
-        }
 
 
     }
@@ -1384,7 +1418,10 @@ namespace CompasXR.Core
 
             AllGeometiresParentObjects = GameObject.Find("Geometries");
             TrackedGeometriesParentObject = AllGeometiresParentObjects.FindObject("TrackedGeometriesParent");
-            
+
+            //TODO: TESTING MIMIC & INFERENCE GOALS
+            InferenceGoalsParentObject = AllGeometiresParentObjects.FindObject("InferenceGoals");
+            MimicGoalsParentObject = AllGeometiresParentObjects.FindObject("MimicGoals");
 
             BoundaryZoneParent = ZonesParentObject.FindObject("BoundaryZoneParent");
             InferenceZonesParent = ZonesParentObject.FindObject("InferenceZonesParent");
