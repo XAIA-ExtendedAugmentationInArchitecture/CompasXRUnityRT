@@ -31,7 +31,7 @@ namespace CompasXR.Core
         //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
         private GameObject ZonesGlobalParent;
         private GameObject ZonesARPrefabObjects;
-        private GameObject TrackedGeometriesParent;
+        private GameObject AllGeometriesParentObject;
 
         //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -160,7 +160,8 @@ namespace CompasXR.Core
             ZonesGlobalParent = GameObject.Find("ZonesParent");
             ActiveRobotObjects = GameObject.Find("ActiveRobotObjects");
             ZonesARPrefabObjects = GameObject.Find("ZonesARPrefabs");
-            TrackedGeometriesParent = GameObject.Find("TrackedGeometriesParent");     
+            AllGeometriesParentObject = GameObject.Find("Geometries");
+            // TrackedGeometriesParent = GameObject.Find("TrackedGeometriesParent");     
         }
         public void PositioningUpdateMethodRoboticTerritories(ref Dictionary<string, Node> QRCodeDataDict, ref GameObject KeyParentObject)
         {
@@ -194,7 +195,7 @@ namespace CompasXR.Core
                         ObjectTransformations.TranslateGameObjectByImageTarget(KeyParentObject, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
                         ObjectTransformations.TranslateGameObjectByImageTarget(ActiveRobotObjects, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
                         ObjectTransformations.TranslateGameObjectByImageTarget(ZonesARPrefabObjects, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
-                        ObjectTransformations.TranslateGameObjectByImageTarget(TrackedGeometriesParent, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
+                        ObjectTransformations.TranslateGameObjectByImageTarget(AllGeometriesParentObject, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
                     }
                 }
             }

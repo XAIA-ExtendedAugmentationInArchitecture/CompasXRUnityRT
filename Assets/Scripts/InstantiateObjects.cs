@@ -117,6 +117,7 @@ namespace CompasXR.Core
 
         //Zones AR Prefabs
         public GameObject ZonesARPrefabObjects;
+        public GameObject AllGeometiresParentObjects;
         public GameObject TrackedGeometriesParentObject;
 
         //TODO: REALTIME MIMIC OBJECT TESTING
@@ -1380,7 +1381,10 @@ namespace CompasXR.Core
             //Find Parent Objects
             ZonesParentObject = GameObject.Find("ZonesParent");
             ZonesARPrefabObjects = GameObject.Find("ZonesARPrefabs");
-            TrackedGeometriesParentObject = GameObject.Find("TrackedGeometriesParent");
+
+            AllGeometiresParentObjects = GameObject.Find("Geometries");
+            TrackedGeometriesParentObject = AllGeometiresParentObjects.FindObject("TrackedGeometriesParent");
+            
 
             BoundaryZoneParent = ZonesParentObject.FindObject("BoundaryZoneParent");
             InferenceZonesParent = ZonesParentObject.FindObject("InferenceZonesParent");
