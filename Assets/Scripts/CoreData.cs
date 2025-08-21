@@ -1078,6 +1078,38 @@ namespace CompasXR.Core.Data
             }
             return frames;
         }
+        public bool IsSameAs(Frame other, float posTolerance = 1e-4f, float axisToleranceDeg = 0.5f)
+        {
+            if (other == null) return false;
+
+            // Compare point positions
+            if (!AreVectorsClose(this.point, other.point, posTolerance)) return false;
+
+            // Compare axes by angle
+            if (!AreAxesClose(this.xaxis, other.xaxis, axisToleranceDeg)) return false;
+            if (!AreAxesClose(this.yaxis, other.yaxis, axisToleranceDeg)) return false;
+
+            return true;
+        }
+        private bool AreVectorsClose(float[] a, float[] b, float tol)
+        {
+            if (a == null || b == null || a.Length < 3 || b.Length < 3) return false;
+            float dx = a[0] - b[0];
+            float dy = a[1] - b[1];
+            float dz = a[2] - b[2];
+            return (dx * dx + dy * dy + dz * dz) <= tol * tol;
+        }
+        private bool AreAxesClose(float[] a, float[] b, float angTolDeg)
+        {
+            if (a == null || b == null || a.Length < 3 || b.Length < 3) return false;
+            var A = new UnityEngine.Vector3(a[0], a[1], a[2]).normalized;
+            var B = new UnityEngine.Vector3(b[0], b[1], b[2]).normalized;
+            if (A.sqrMagnitude < 1e-12f || B.sqrMagnitude < 1e-12f) return false;
+
+            float dot = Mathf.Clamp(Vector3.Dot(A, B), -1f, 1f);
+            float ang = Mathf.Acos(dot) * Mathf.Rad2Deg;
+            return ang <= angTolDeg;
+        }
 
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
 

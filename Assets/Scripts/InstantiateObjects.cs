@@ -117,7 +117,7 @@ namespace CompasXR.Core
 
         //Zones AR Prefabs
         public GameObject ZonesARPrefabObjects;
-        public GameObject GeometriesParentObject;
+        public GameObject TrackedGeometriesParentObject;
 
         //TODO: REALTIME MIMIC OBJECT TESTING
         public GameObject RealtimeMimicObjects;
@@ -135,6 +135,8 @@ namespace CompasXR.Core
         //TODO: VUFORIA TESTING
         DevicePoseBehaviour devicePoseBehavior;
 
+        public delegate void InitialTrackedGeometryCreated(object source, EventArgs e);
+        public event InitialTrackedGeometryCreated InitialTrackedGeometryPlaced;
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -211,7 +213,7 @@ namespace CompasXR.Core
                     GameObject observedGeometryObject = observedGeometry.Box.CreateBoxObject();
                     observedGeometry.GeometryObject = observedGeometryObject;
                     observedGeometry.GeometryObject.name = observedGeometry.Name;
-                    observedGeometryObject.transform.SetParent(GeometriesParentObject.transform, false);
+                    observedGeometryObject.transform.SetParent(TrackedGeometriesParentObject.transform, false);
                 }
                 ColorObservedGeometries(observedGeometriesDict);
             }
@@ -244,7 +246,7 @@ namespace CompasXR.Core
                             else
                             {
                                 renderers.material = AnchorCubeMaterial;
-                            }                      
+                            }
                         }
                         else
                         {
@@ -258,6 +260,8 @@ namespace CompasXR.Core
                         Debug.LogWarning($"ColorObservedGeometries: Geometry Object for {observedGeometry.Name} is null");
                     }
                 }
+
+                OnInitialTrackedGeometryPlaced();
             }
             else
             {
@@ -471,7 +475,14 @@ namespace CompasXR.Core
             */
             InitialZonesPlaced(this, EventArgs.Empty);
         }
-        public void CreateMimicPoints(GameObject humanZone, GameObject robotZone, ref List<GameObject> humanPoints, ref List<GameObject> robotPoints, GameObject humanLine, GameObject robotLine, GameObject humanParent, GameObject robotParent, bool Mirror=false)
+        protected virtual void OnInitialTrackedGeometryPlaced()
+        {
+            /*
+            * Method is used to raise the event when the initial objects are placed
+            */
+            InitialTrackedGeometryPlaced(this, EventArgs.Empty);
+        }
+        public void CreateMimicPoints(GameObject humanZone, GameObject robotZone, ref List<GameObject> humanPoints, ref List<GameObject> robotPoints, GameObject humanLine, GameObject robotLine, GameObject humanParent, GameObject robotParent, bool Mirror = false)
         {
             /*
             * Method is used to create the mimic points in the AR space
@@ -494,13 +505,13 @@ namespace CompasXR.Core
 
             if (trajectoryVisualizer.humanZoneMimicReachibility == null ||
                 ObjectInstantiaion.IsPositionWithinObject(trajectoryVisualizer.humanZoneMimicReachibility, position))
-            {            
+            {
                 CreateSpheresForMimic(humanZone, robotZone, ref humanPoints, ref robotPoints, humanParent, robotParent, position, rotation, radius, humanColor, robotColor, $"{humanPoints.Count}_MimicPoint", $"{robotPoints.Count}_MimicPoint", true, Mirror);
             }
             else
             {
-                CreateSpheresForMimic(humanZone, robotZone, ref humanPoints, ref robotPoints, 
-                humanParent, robotParent, position, rotation, 
+                CreateSpheresForMimic(humanZone, robotZone, ref humanPoints, ref robotPoints,
+                humanParent, robotParent, position, rotation,
                 radius, humanColor, robotColor, $"{humanPoints.Count}_MimicPoint", $"{robotPoints.Count}_MimicPoint", true, Mirror);
 
                 // //TODO: Quick test for the closest reachable point:
@@ -508,9 +519,9 @@ namespace CompasXR.Core
                 // MimicSystemProposedLineHuman, MimicSystemProposedLineRobot, MimicHumanSystemProposedPointsParent, MimicRobotSystemProposedPointsParent, 
                 // closestReachablePoint, rotation, radius, Color.red, Color.grey, $"{humanPoints.Count}_MimicPointProposal", $"{robotPoints.Count}_MimicPointProposal", false, Mirror);
                 //TODO: TESTING...
-                CreateSystemProposalPoints(humanZone, robotZone, trajectoryVisualizer.humanZoneMimicReachibility, ref humanPoints, 
+                CreateSystemProposalPoints(humanZone, robotZone, trajectoryVisualizer.humanZoneMimicReachibility, ref humanPoints,
                 ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints,
-                MimicSystemProposedLineHuman, MimicHumanSystemProposedPointsParent, MimicSystemProposedLineRobot, 
+                MimicSystemProposedLineHuman, MimicHumanSystemProposedPointsParent, MimicSystemProposedLineRobot,
                 MimicRobotSystemProposedPointsParent, Mirror);
 
                 Debug.LogWarning("CreateMimicPoints: POINT IS WITHIN THE ZONE BUT NOT REACHABLE BY ROBOT.");
@@ -1121,51 +1132,90 @@ namespace CompasXR.Core
 
         //TODO: TODO: TODO: TODO: TESTING GEOMETRY UPDATES UPDATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
     public void OnObservedObjectsChangedWrapper(object source, UpdateObservedGeometryEventArgs e)
+    {
+        if(e.ObservedGeometryDict == null)
         {
-            OnObservedGeometryUpdated(e.ObservedGeometryDict, e.NewObservedGeometry, e.Key);
+            Debug.LogWarning("OnObservedObjectsChangedWrapper: ObservedGeometryDict is null.");
+            return;
         }
-    public void OnObservedGeometryUpdated(Dictionary<string, ObservedGeometry> currentGeometryDict, ObservedGeometry observedGeometry, string key)
+        if(e.NewObservedGeometry == null)
         {
-            /*
-            * Method is used to handle the observed geometry updates.
-            */
-            if (currentGeometryDict == null || observedGeometry == null || string.IsNullOrEmpty(key))
-            {
-                Debug.LogWarning("OnObservedGeometryUpdated: Invalid parameters provided.");
-                return;
-            }
+            Debug.LogWarning("OnObservedObjectsChangedWrapper: NewObservedGeometry is null.");
+            return;
+        }
+        if(string.IsNullOrEmpty(e.Key))
+        {
+            Debug.LogWarning("OnObservedObjectsChangedWrapper: Key is null or empty.");
+            return;
+        }
+        OnObservedGeometryUpdated(e.ObservedGeometryDict, e.NewObservedGeometry, e.Key);
+    }
+    public void OnObservedGeometryUpdated(Dictionary<string, ObservedGeometry> currentGeometryDict, ObservedGeometry observedGeometry, string key)
+    {
+        /*
+        * Method is used to handle the observed geometry updates.
+        */
+        if (currentGeometryDict == null || observedGeometry == null || string.IsNullOrEmpty(key))
+        {
+            Debug.LogWarning("OnObservedGeometryUpdated: Invalid parameters provided.");
+            return;
+        }
 
-            if (observedGeometry == null)
-            {
-                if (currentGeometryDict.ContainsKey(key))
-                {
-                    Debug.Log($"OnObservedGeometryUpdated: Removing geometry for key: {key}");
-                    currentGeometryDict.Remove(key);
-                    return;
-                }
-                else
-                {
-                    Debug.LogWarning($"OnObservedGeometryUpdated: Key {key} not found in currentGeometry dictionary.");
-                    return;
-                }
-            }
-
+        if (observedGeometry == null)
+        {
             if (currentGeometryDict.ContainsKey(key))
             {
-                Debug.Log($"OnObservedGeometryUpdated: Updating geometry for key: {key}");
-                UpdateObservedGeometryLocation(currentGeometryDict[key], observedGeometry);
-                observedGeometry.Name = key; // Ensure the name is set correctly
-                currentGeometryDict[key] = observedGeometry;
+                Debug.Log($"OnObservedGeometryUpdated: Removing geometry for key: {key}");
+                currentGeometryDict.Remove(key);
+                return;
             }
             else
             {
-                Debug.Log($"OnObservedGeometryUpdated: Adding new geometry for key: {key} TODO: UPDATE THIS INFOMATION.");
-                observedGeometry.Name = key; // Ensure the name is set correctly
-                currentGeometryDict.Add(key, observedGeometry);
+                Debug.LogWarning($"OnObservedGeometryUpdated: Key {key} not found in currentGeometry dictionary.");
+                return;
+            }
+        }
+
+        if (currentGeometryDict.TryGetValue(key, out var cur))
+        {
+
+            if (cur == null)
+            {
+                Debug.LogWarning($"OnObservedGeometryUpdated: Current geometry for key {key} is null.");
+                return;
+            }
+            if (cur.Box?.frame != null && observedGeometry.Box?.frame != null)
+            {
+                if (cur.Box.frame.IsSameAs(observedGeometry.Box.frame))
+                {
+                    Debug.Log($"OnObservedGeometryUpdated JOEEEEE: {key} frame is unchanged and will not update.");
+                    return; // skip update
+                }
             }
 
+            // Update the existing object’s transform
+            UpdateObservedGeometryLocation(cur, observedGeometry);
 
+            // Merge data-only fields into the existing instance
+            cur.Name = key;
+            cur.Box = observedGeometry.Box;
+            cur.Box.frame = observedGeometry.Box.frame;
+            // Notice: we do NOT reassign currentGeometryDict[key]
         }
+        else
+        {
+            observedGeometry.Name = key;
+            currentGeometryDict[key] = observedGeometry;
+
+            // First-time creation: make the GameObject now
+            var go = observedGeometry.Box.CreateBoxObject();
+            go.name = observedGeometry.Name;
+            go.transform.SetParent(TrackedGeometriesParentObject.transform, false);
+            observedGeometry.GeometryObject = go;
+        }
+
+
+    }
     private void UpdateObservedGeometryLocation(ObservedGeometry currentGeometry, ObservedGeometry newGeometry)
     {
         /*
@@ -1176,57 +1226,69 @@ namespace CompasXR.Core
             Debug.LogWarning("UpdateObservedGeometryLocation: Invalid geometry provided.");
             return;
         }
+        else
+        {
+            Debug.LogWarning($"JOETHISSHOULD MOVE: Updating geometry location for {currentGeometry.Name}");
+        }
+        if (currentGeometry.GeometryObject == null)
+        {
+            Debug.LogWarning("UpdateObservedGeometryLocation: Current geometry object is null.");
+            return;
+        }
+        else
+        {
+            // currentGeometry.GeometryObject.GetComponentInChildren<Renderer>().material.color = Color.yellow; //TODO: TEMPORARY COLOR CHANGE FOR DEBUGGING
+        }
 
         ObjectInstantiaion.UpdateExistingObjectFromRightHandFrameData(currentGeometry.GeometryObject, newGeometry.Box.frame.point, newGeometry.Box.frame.xaxis, newGeometry.Box.frame.yaxis, false, false);
         Debug.Log($"UpdateObservedGeometryLocation: Updated geometry location to {newGeometry.Box.frame.point} with x-axis {newGeometry.Box.frame.xaxis} and y-axis {newGeometry.Box.frame.yaxis}");
     }
-    
 
     //TODO: //TODO: //TODO: //TODO: TEMPORARY ROBOTIC TERRITORIES TESTING REALTIME MIMIC
-        public void CreateRealtimeMimicPointsBasicTEMPORARY(GameObject humanZoneObject, GameObject robotZoneObject, ref List<GameObject> realtimeMimicHumanPoints,
-        ref List<GameObject> realtimeMimicRobotPoints, GameObject realtimeMimicHumanPointsParent, GameObject realtimeMimicRobotPointsParent,
-        GameObject realtimeMimicHumanLine, GameObject realtimeMimicRobotLine, bool MimicMirrorToggle = false)
+    public void CreateRealtimeMimicPointsBasicTEMPORARY(GameObject humanZoneObject, GameObject robotZoneObject, ref List<GameObject> realtimeMimicHumanPoints,
+    ref List<GameObject> realtimeMimicRobotPoints, GameObject realtimeMimicHumanPointsParent, GameObject realtimeMimicRobotPointsParent,
+    GameObject realtimeMimicHumanLine, GameObject realtimeMimicRobotLine, bool MimicMirrorToggle = false)
+    {
+        Vector3 position = cameraPositionObject.transform.position;
+        Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: CAMERA Position FROM REALTIME MIMIC: {position}");
+        Quaternion rotation = AddAdditionalRotationForEndEffector(cameraPositionObject); //TODO: Check this
+        Color humanColor = new Color(1.0f, 1.0f, 0.0f, 1.0f);
+        Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
+
+
+        CreateRealtimeMimicPointTEMPORARY(humanZoneObject, robotZoneObject, ref realtimeMimicHumanPoints,
+        ref realtimeMimicRobotPoints, realtimeMimicHumanPointsParent, realtimeMimicRobotPointsParent, position,
+        rotation, $"{realtimeMimicHumanPoints.Count}_MimicPoint", $"{realtimeMimicRobotPoints.Count}_MimicPoint", true, //TODO: ADDED THESE
+        MimicMirrorToggle);
+
+
+        // CreateSpheresForMimic(humanZone, robotZone, ref humanPoints, ref robotPoints, 
+        // humanParent, robotParent, position, rotation, 
+        // radius, humanColor, robotColor, $"{humanPoints.Count}_MimicPoint", $"{robotPoints.Count}_MimicPoint", true, Mirror);
+
+        // // //TODO: Quick test for the closest reachable point:
+        // // CreateSpheresForMimic(humanZone, robotZone, ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints, 
+        // // MimicSystemProposedLineHuman, MimicSystemProposedLineRobot, MimicHumanSystemProposedPointsParent, MimicRobotSystemProposedPointsParent, 
+        // // closestReachablePoint, rotation, radius, Color.red, Color.grey, $"{humanPoints.Count}_MimicPointProposal", $"{robotPoints.Count}_MimicPointProposal", false, Mirror);
+        // //TODO: TESTING...
+        // CreateSystemProposalPoints(humanZone, robotZone, trajectoryVisualizer.humanZoneMimicReachibility, ref humanPoints, 
+        // ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints,
+        // MimicSystemProposedLineHuman, MimicHumanSystemProposedPointsParent, MimicSystemProposedLineRobot, 
+        // MimicRobotSystemProposedPointsParent, Mirror);
+
+        Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Point is being set within the Robot Reachability.");
+
+        if (realtimeMimicHumanPoints.Count > 1 && realtimeMimicRobotPoints.Count > 1)
         {
-            Vector3 position = cameraPositionObject.transform.position;
-            Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: CAMERA Position FROM REALTIME MIMIC: {position}");
-            Quaternion rotation = AddAdditionalRotationForEndEffector(cameraPositionObject); //TODO: Check this
-            Color humanColor = new Color(1.0f, 1.0f, 0.0f, 1.0f);
-            Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
-
-
-            CreateRealtimeMimicPointTEMPORARY(humanZoneObject, robotZoneObject, ref realtimeMimicHumanPoints,
-            ref realtimeMimicRobotPoints, realtimeMimicHumanPointsParent, realtimeMimicRobotPointsParent, position,
-            rotation, $"{realtimeMimicHumanPoints.Count}_MimicPoint", $"{realtimeMimicRobotPoints.Count}_MimicPoint", true, //TODO: ADDED THESE
-            MimicMirrorToggle);
-
-
-            // CreateSpheresForMimic(humanZone, robotZone, ref humanPoints, ref robotPoints, 
-            // humanParent, robotParent, position, rotation, 
-            // radius, humanColor, robotColor, $"{humanPoints.Count}_MimicPoint", $"{robotPoints.Count}_MimicPoint", true, Mirror);
-
-            // // //TODO: Quick test for the closest reachable point:
-            // // CreateSpheresForMimic(humanZone, robotZone, ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints, 
-            // // MimicSystemProposedLineHuman, MimicSystemProposedLineRobot, MimicHumanSystemProposedPointsParent, MimicRobotSystemProposedPointsParent, 
-            // // closestReachablePoint, rotation, radius, Color.red, Color.grey, $"{humanPoints.Count}_MimicPointProposal", $"{robotPoints.Count}_MimicPointProposal", false, Mirror);
-            // //TODO: TESTING...
-            // CreateSystemProposalPoints(humanZone, robotZone, trajectoryVisualizer.humanZoneMimicReachibility, ref humanPoints, 
-            // ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints,
-            // MimicSystemProposedLineHuman, MimicHumanSystemProposedPointsParent, MimicSystemProposedLineRobot, 
-            // MimicRobotSystemProposedPointsParent, Mirror);
-
-            Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Point is being set within the Robot Reachability.");
-
-            if (realtimeMimicHumanPoints.Count > 1 && realtimeMimicRobotPoints.Count > 1)
-            {
-                Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Drawing Mimic Points Line");
-                DrawLineFromGameObjectList(realtimeMimicHumanPoints, realtimeMimicHumanLine, humanColor, 0.01f);
-                DrawLineFromGameObjectList(realtimeMimicRobotPoints, realtimeMimicRobotLine, robotColor, 0.01f);
-            }
-            else
-            {
-                Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Points are empty or not enough points to draw a line.");
-            }
+            Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Drawing Mimic Points Line");
+            DrawLineFromGameObjectList(realtimeMimicHumanPoints, realtimeMimicHumanLine, humanColor, 0.01f);
+            DrawLineFromGameObjectList(realtimeMimicRobotPoints, realtimeMimicRobotLine, robotColor, 0.01f);
         }
+        else
+        {
+            Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Points are empty or not enough points to draw a line.");
+        }
+    }
 
     public void CreateRealtimeMimicPointTEMPORARY(GameObject humanZone, GameObject robotZone, ref List<GameObject> humanPoints, 
     ref List<GameObject> robotPoints, GameObject humanParent, 
@@ -1318,7 +1380,7 @@ namespace CompasXR.Core
             //Find Parent Objects
             ZonesParentObject = GameObject.Find("ZonesParent");
             ZonesARPrefabObjects = GameObject.Find("ZonesARPrefabs");
-            GeometriesParentObject = GameObject.Find("GeometriesParent");
+            TrackedGeometriesParentObject = GameObject.Find("TrackedGeometriesParent");
 
             BoundaryZoneParent = ZonesParentObject.FindObject("BoundaryZoneParent");
             InferenceZonesParent = ZonesParentObject.FindObject("InferenceZonesParent");
@@ -2536,6 +2598,11 @@ namespace CompasXR.Core
             * This method serves as a simplified version of the placeElement method. And only requires a frame.
             * It loads the object, instantiates it at the correct place and then destroys the loaded object.
             */
+            if (existingGameObject == null)
+            {
+                Debug.LogError("UpdateExistingObjectFromRightHandFrameData: Existing game object is null.");
+                return null;
+            }
             Vector3 positionData = ObjectTransformations.GetPositionFromRightHand(pointData);
             ObjectTransformations.Rotation rotationData = ObjectTransformations.GetRotationFromRightHand(xAxisData, yAxisData);
             Quaternion rotationQuaternion;
@@ -2554,8 +2621,8 @@ namespace CompasXR.Core
                 Debug.LogError("placeElement: Cannot assign object rotation because it is null");
             }
 
-            existingGameObject.transform.position = positionData;
-            existingGameObject.transform.rotation = rotationQuaternion;
+            existingGameObject.transform.localPosition = positionData;
+            existingGameObject.transform.localRotation = rotationQuaternion;
             return existingGameObject;
         }
         public static bool IsPositionWithinObject(GameObject targetObject, Vector3 positionToCheck)

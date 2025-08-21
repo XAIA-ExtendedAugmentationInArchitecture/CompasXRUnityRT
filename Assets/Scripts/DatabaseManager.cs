@@ -20,6 +20,7 @@ using CompasXR.RoboticTerritories.Data;
 using UnityEngine.InputSystem.Interactions;
 using Unity.VisualScripting;
 using CompasXR.Core.Extentions;
+using UnityEngine.InputSystem;
 
 namespace CompasXR.Core
 {
@@ -458,9 +459,9 @@ namespace CompasXR.Core
             dbRefernceRobotBaseFrame.ChildRemoved += OnRobotBaseFrameChanged;
             dbRefernceRobotBaseFrame.ChildAdded += OnRobotBaseFrameChanged;
 
-            // dbReferenceObservedGeometries.ChildAdded += OnObservedGeometryChanged;
-            // dbReferenceObservedGeometries.ChildChanged += OnObservedGeometryChanged;
-            // dbReferenceObservedGeometries.ChildRemoved += OnObservedGeometryChanged;
+            dbReferenceObservedGeometries.ChildAdded += OnObservedGeometryChanged;
+            dbReferenceObservedGeometries.ChildChanged += OnObservedGeometryChanged;
+            dbReferenceObservedGeometries.ChildRemoved += OnObservedGeometryChanged;
         }
 
         //Event Listners
@@ -547,6 +548,7 @@ namespace CompasXR.Core
             * Method is used to handle the Child Changed event from the Firebase Realtime Database.
             * It is designed to take the snapshot of the child changed event and parse the information.
             */
+            //TODO: THIS HAS THE SAME PROBLEM AS COMPAS XR WHERE THE ON CHILD ADDED HAPPENS BEFORE THE GEOMETRY IS CREATED. I AM GOING TO FIX THIS WITH A BOOL FOR NOW.
             if (args.DatabaseError != null)
             {
                 Debug.LogError($"OnObservedGeometryChanged: Database error: {args.DatabaseError}");
@@ -564,7 +566,7 @@ namespace CompasXR.Core
 
             if (childSnapshot != null && key != null)
             {
-                Debug.Log("OnObservedGeometryChanged: Observed Geometry Changed");
+                Debug.Log("OnObservedGeometryChanged: Observed Geometry Changed with key: " + key);
                 ObservedGeometry observedGeometry = ObservedGeometry.Parse(childSnapshot);
                 OnObservedGeometryUpdate(observedGeometriesDict, observedGeometry, key);
             }

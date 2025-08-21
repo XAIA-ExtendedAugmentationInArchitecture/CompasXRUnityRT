@@ -31,6 +31,7 @@ namespace CompasXR.Core
         //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
         private GameObject ZonesGlobalParent;
         private GameObject ZonesARPrefabObjects;
+        private GameObject TrackedGeometriesParent;
 
         //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -154,11 +155,12 @@ namespace CompasXR.Core
             instantiateObjects = GameObject.Find("Instantiate").GetComponent<InstantiateObjects>();
             uiFunctionalities = GameObject.Find("UIFunctionalities").GetComponent<UIFunctionalities>();
             databaseManager = GameObject.Find("DatabaseManager").GetComponent<DatabaseManager>();
-            
+
             //Find GameObjects that need to be transformed
             ZonesGlobalParent = GameObject.Find("ZonesParent");
-            ActiveRobotObjects = GameObject.Find("ActiveRobotObjects");        
-            ZonesARPrefabObjects = GameObject.Find("ZonesARPrefabs");        
+            ActiveRobotObjects = GameObject.Find("ActiveRobotObjects");
+            ZonesARPrefabObjects = GameObject.Find("ZonesARPrefabs");
+            TrackedGeometriesParent = GameObject.Find("TrackedGeometriesParent");     
         }
         public void PositioningUpdateMethodRoboticTerritories(ref Dictionary<string, Node> QRCodeDataDict, ref GameObject KeyParentObject)
         {
@@ -173,11 +175,11 @@ namespace CompasXR.Core
 
                 foreach (string key in QRCodeDataDict.Keys)
                 {
-                    GameObject qrObject = GameObject.Find("Marker_" + key);              
+                    GameObject qrObject = GameObject.Find("Marker_" + key);
 
                     if (qrObject != null && qrObject.transform.position != Vector3.zero)
                     {
-                        if(qrObject.name != lastQrName)
+                        if (qrObject.name != lastQrName)
                         {
                             GameObject lastQrObject = GameObject.Find(lastQrName);
 
@@ -192,6 +194,7 @@ namespace CompasXR.Core
                         ObjectTransformations.TranslateGameObjectByImageTarget(KeyParentObject, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
                         ObjectTransformations.TranslateGameObjectByImageTarget(ActiveRobotObjects, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
                         ObjectTransformations.TranslateGameObjectByImageTarget(ZonesARPrefabObjects, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
+                        ObjectTransformations.TranslateGameObjectByImageTarget(TrackedGeometriesParent, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
                     }
                 }
             }

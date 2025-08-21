@@ -33,6 +33,8 @@ namespace CompasXR.Core
         //Other Script Components
         public DatabaseManager databaseManager;
 
+        public InstantiationCoordinator instantiationCoordinator = new InstantiationCoordinator();
+
         //////////////////////////// Monobehaviour Methods //////////////////////////////
         void Awake()
         {
@@ -61,10 +63,15 @@ namespace CompasXR.Core
             //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
 
             databaseManager.ZonesInfoReceived += instantiateObjects.OnZonesReceived;
-            instantiateObjects.InitialZonesPlaced += databaseManager.AddListenersRoboticTerritories;
+            instantiateObjects.InitialZonesPlaced += instantiationCoordinator.OnInitialZonesPlaced;
+            instantiateObjects.InitialTrackedGeometryPlaced += instantiationCoordinator.OnInitialTrackedGeometryPlaced;
+            instantiationCoordinator.Ready += databaseManager.AddListenersRoboticTerritories;
+
+
             databaseManager.ModeZonesUpdate += instantiateObjects.OnModeZonesUpdate;
             databaseManager.FetchedObservedGeometries += instantiateObjects.OnObservedGeometriesFetched;
-            // databaseManager.UpdateObvservedGeometry += instantiateObjects.OnObservedObjectsChangedWrapper;
+            databaseManager.UpdateObvservedGeometry += instantiateObjects.OnObservedObjectsChangedWrapper;
+
             // databaseManager.ApplicationSettingUpdate += databaseManager.FetchData;
             // databaseManager.ApplicationSettingUpdate += mqttTrajectoryReceiver.SetCompasXRTopics;
             // databaseManager.DatabaseInitializedDict += instantiateObjects.OnDatabaseInitializedDict;
@@ -91,6 +98,36 @@ namespace CompasXR.Core
             */
             ZoneHapticsManager zoneHapticsManager = zoneHapticsManagerObject.AddComponent<ZoneHapticsManager>();
         }
+
+        public class InstantiationCoordinator
+        {
+            private bool _zonesPlaced;
+            private bool _otherReady;
+
+            public event EventHandler Ready;
+
+            public void OnInitialZonesPlaced(object sender, EventArgs e)
+            {
+                _zonesPlaced = true;
+                TryFire();
+            }
+
+            public void OnInitialTrackedGeometryPlaced(object sender, EventArgs e)
+            {
+                _otherReady = true;
+                TryFire();
+            }
+
+            private void TryFire()
+            {
+                if (_zonesPlaced && _otherReady)
+                {
+                    Ready?.Invoke(this, EventArgs.Empty);
+                    // optional: reset or unsubscribe if you only want it once
+                }
+            }
+        }
+
 
     }
 }

@@ -318,6 +318,11 @@ namespace CompasXR.UI
             FollowMeButton.AddComponent<CompasXRButtonHeldEvent>();
             FollowMeButtonHeldEventComponent = FollowMeButton.GetComponent<CompasXRButtonHeldEvent>();
 
+            GameObject TESTBUTTON = RoboticTerritoriesCanvasItems.FindObject("TESTINGBUTTON");
+            Button TESTINGBUTTON = TESTBUTTON.GetComponentInChildren<Button>();
+            TESTINGBUTTON.onClick.AddListener(PrintobservedGeometryDictInformation);
+
+
             if (FollowMeButtonHeldEventComponent == null)
             {
                 Debug.LogError("JOETESTING : FollowMeButtonHeldEventComponent is null.");
@@ -388,6 +393,27 @@ namespace CompasXR.UI
             SetCorrectionMenuItemsOnStart();
 
         }    
+
+        public void PrintobservedGeometryDictInformation()
+        {
+            /*
+            * Method is used to print the observed geometry dictionary information.
+            */
+            Debug.Log("JOETESTING : Observed Geometry Dictionary Information:");
+            foreach (KeyValuePair<string, ObservedGeometry> item in databaseManager.observedGeometriesDict)
+            {
+                // Debug.Log($"Key: {item.Key}, Value: {JsonConvert.SerializeObject(item.Value)}");
+                if (item.Value.GeometryObject != null)
+                {
+                    Debug.Log($"PrintobservedGeometryDictInformation JOEEE: {item.Key}, Value: {item.Value.GeometryObject.name}");
+                    item.Value.GeometryObject.GetComponentInChildren<Renderer>().material.color = Color.green;
+                }
+                else
+                {
+                    Debug.LogWarning($"PrintobservedGeometryDictInformation JOEEE: {item.Key}, Value: null");
+                }
+            }
+        }
 
         public void TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY(bool toggle)
         {
