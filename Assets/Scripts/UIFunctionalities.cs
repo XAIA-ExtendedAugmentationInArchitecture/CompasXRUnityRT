@@ -376,15 +376,11 @@ namespace CompasXR.UI
             Toggle RealtimeMimicTestingToggle = RealtimeMimicEditorTestToggleObject.GetComponentInChildren<Toggle>();
             RealtimeMimicTestingToggle.onValueChanged.AddListener(TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY);
 
-            //Set Zone Visualization Menu Items on Start
-            // SetZoneMenuItemsOnStart();
-
             //Set robotic items on start
             SetRoboticMenuItemsOnStart();
 
             //Set Mimic Controls on start
             SetMimicUserInitiatedMimicControlsOnStart();
-
         }    
         public void PrintobservedGeometryDictInformation()
         {
@@ -460,7 +456,7 @@ namespace CompasXR.UI
             */
 
             //Find Objects for active robot selection
-            RobotSelectionControlObjects = GameObject.Find("RobotSelectionControls");
+            RobotSelectionControlObjects = RoboticTerritoriesUpdatedCanvas.FindObject("RobotSelectionControls");
             RobotSelectionDropdownObject = RobotSelectionControlObjects.FindObject("RobotSelectionDropdown");
             RobotSelectionDropdown = RobotSelectionDropdownObject.GetComponent<TMP_Dropdown>();
             List<TMP_Dropdown.OptionData> robotOptions = UserInterface.SetDropDownOptionsFromStringList(RobotSelectionDropdown ,trajectoryVisualizer.RobotPreFabList);
