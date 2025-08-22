@@ -195,7 +195,34 @@ namespace CompasXR.UI
         public GameObject ModeSelectionControlsObject;
         public GameObject ModeSelectionDropdownObject;
         public TMP_Dropdown ModeSelectionDropdown;
+        public GameObject RoboticTerritoriesInferenceControlsObject;
 
+        //TODO: Inference Controls
+        bool GOALINFERRED = false;
+        public GameObject InferenceRequestControlsObject;
+        public GameObject InferenceRequestTrajectoryCalculationControlsObject;
+        public GameObject RequestInferenceButtonObject;
+        public GameObject ReviewInferenceControlsParentObject;
+
+        //TODO: Inference Review After Guessing the Goal
+        public GameObject InferenceRejectGoalandTargetButton;
+        public GameObject InferenceAcceptTargetButton;
+        public GameObject InferenceAcceptGoalButton;
+        public GameObject InferenceReviewSliderParentGameObject;
+        public GameObject InferenceReviewSliderObject;
+        public Slider InferenceReviewSlider;
+
+        //TODO: After inference success, target selection and planning controls
+        public GameObject InferenceSelectTargetParentObject;
+        public GameObject InferenceNextTargetButtonObject;
+        public GameObject InferencePreviousTargetButtonObject;
+        public GameObject InferenceRequestTargetButtonObject;
+
+        public GameObject PostInferenceReviewTrajectoryParentObject;
+        public GameObject PostInferenceRobotExecuteButton;
+        public GameObject PostInferenceRobotRejectTrajectoryButton;
+        public GameObject PostInferenceTrajectoryReviewSliderObject;
+        public Slider PostInferenceTrajectoryReviewSlider;
 
         //TODO: Updating Canvas to the new one..........................................................
 
@@ -320,6 +347,9 @@ namespace CompasXR.UI
             RoboticTerritoriesUpdatedCanvas = CanvasObject.FindObject("RoboticTerritoriesUpdated");
             SetModeSelectionItemsOnStart();
 
+            RoboticTerritoriesInferenceControlsObject = RoboticTerritoriesUpdatedCanvas.FindObject("InferenceControls");
+            SetInferenceControlsOnStart();
+            
             //TODO: Mimic remap testing ////////////////////////////////////////////////////////////////////////////////////////
             MimicRemapPointsToRobotReachabilityMessage = MessagesParent.FindObject("Prefabs").FindObject("RemapMimicPointsMessage");
             Button RemapButton = MimicRemapPointsToRobotReachabilityMessage.FindObject("YesButton").GetComponent<Button>();
@@ -429,6 +459,86 @@ namespace CompasXR.UI
                 Debug.Log($"ToggleIOForRealtimeMimicMethod: Sending Realtime Mimic IO Toggle Request with signal: {signal}, gripperToggle: {gripperToggle}");
 
             }
+        }
+
+        public void SetInferenceControlsOnStart()
+        {
+            /*
+            * Method is used to set up the Inference Controls UI elements on start.
+            * Inference Controls UI elements constitute the UI elements that are used to control the inference functionalities
+            * of the application.
+            */
+            //Find Objects for Inference Controls
+            InferenceRequestControlsObject = RoboticTerritoriesInferenceControlsObject.FindObject("InferenceRequestControls");
+            UserInterface.FindButtonandSetOnClickAction(InferenceRequestControlsObject, ref RequestInferenceButtonObject, "RequestInferenceButton", () => UserInterface.PrintStringOnClick("Request Inference Button Pressed"));
+
+            ReviewInferenceControlsParentObject = InferenceRequestControlsObject.FindObject("InferenceReviewControls");
+            UserInterface.FindButtonandSetOnClickActionDebug(ReviewInferenceControlsParentObject, ref InferenceRejectGoalandTargetButton, "RejectGoalButton", () => UserInterface.PrintStringOnClick("Reject Goal and Target Button Pressed"));
+            UserInterface.FindButtonandSetOnClickAction(ReviewInferenceControlsParentObject, ref InferenceAcceptTargetButton, "AcceptTargetButton", () => UserInterface.PrintStringOnClick("Accept Target Button Pressed"));
+            UserInterface.FindButtonandSetOnClickAction(ReviewInferenceControlsParentObject, ref InferenceAcceptGoalButton, "AcceptGoalButton", () => UserInterface.PrintStringOnClick("Accept Goal Button Pressed"));
+
+            InferenceReviewSliderParentGameObject = ReviewInferenceControlsParentObject.FindObject("InferenceReviewTrajectorySlider");
+            UserInterface.FindSliderandSetOnValueChangeAction(InferenceReviewSliderParentGameObject, ref InferenceReviewSliderObject, ref InferenceReviewSlider, "TrajectoryReviewSlider", (value) => UserInterface.PrintStringOnClick("Review Inference Slider Value Changed to: " + value));
+
+            //TODO: This is to select a goal and plan after success in guessing the correct goal.
+            InferenceRequestTrajectoryCalculationControlsObject = RoboticTerritoriesInferenceControlsObject.FindObject("RobotTrajectoryCalculationControls");
+            InferenceSelectTargetParentObject = InferenceRequestTrajectoryCalculationControlsObject.FindObject("SelectTargetControls");
+            UserInterface.FindButtonandSetOnClickAction(InferenceSelectTargetParentObject, ref InferenceNextTargetButtonObject, "NextTargetButton", () => UserInterface.PrintStringOnClick("Next Target Button Pressed"));
+            UserInterface.FindButtonandSetOnClickAction(InferenceSelectTargetParentObject, ref InferencePreviousTargetButtonObject, "PreviousTargetButton", () => UserInterface.PrintStringOnClick("Previous Target Button Pressed"));
+            UserInterface.FindButtonandSetOnClickActionDebug(InferenceSelectTargetParentObject, ref InferenceRequestTargetButtonObject, "RequestTargetButton", () => UserInterface.PrintStringOnClick("Request Target Button Pressed"));
+
+            //TODO: This is for trajectory review after inference success.
+            PostInferenceReviewTrajectoryParentObject = InferenceRequestTrajectoryCalculationControlsObject.FindObject("ReviewAndExecuteTrajectoryUI");
+            UserInterface.FindButtonandSetOnClickAction(PostInferenceReviewTrajectoryParentObject, ref PostInferenceRobotExecuteButton, "ExecuteTrajectory", () => UserInterface.PrintStringOnClick("Execute Trajectory Button Pressed"));
+            UserInterface.FindButtonandSetOnClickAction(PostInferenceReviewTrajectoryParentObject, ref PostInferenceRobotRejectTrajectoryButton, "RejectTrajectory", () => UserInterface.PrintStringOnClick("Reject Trajectory Button Pressed"));
+            UserInterface.FindSliderandSetOnValueChangeAction(InferenceRequestTrajectoryCalculationControlsObject, ref PostInferenceTrajectoryReviewSliderObject, ref PostInferenceTrajectoryReviewSlider, "TrajectoryReviewSlider", (value) => UserInterface.PrintStringOnClick("Post Inference Review Slider Value Changed to: " + value));
+
+            //TODO: This is incorrect because it not set to this mode needs to be called in the set mode.
+            // SetInferanceUIBasedOnInferenceState(GOALINFERRED);
+        }
+
+        public void SetInferanceUIBasedOnInferenceState(bool goalInfered)
+        {
+            /*
+            * Method is used to set the inference goals based on the inference state.
+            * If the goal is inferred, the inference controls are set to visible and interactable.
+            * If the goal is not inferred, the inference controls are set to not visible and not interactable.
+            */
+            if (goalInfered)
+            {
+                Debug.Log("SetInferanceGoalsBasedOnInferenceState: Goal Inferred, setting inference controls to visible and interactable.");
+                InferenceRequestTrajectoryCalculationControlsObject.SetActive(true);
+                InferenceRequestControlsObject.SetActive(false);
+
+            }
+            else
+            {
+                Debug.Log("SetInferanceGoalsBasedOnInferenceState: Goal Not Inferred, setting inference controls to not visible and not interactable.");
+                InferenceRequestTrajectoryCalculationControlsObject.SetActive(false);
+                InferenceRequestControlsObject.SetActive(true);
+            }
+
+        }
+        public void RequestInferenceControlsVisibilityandInteractibility(bool requestInferanceControlsVisibility, bool requestInferenceControlsInteractibility, bool reviewInferenceControlsVisibility, bool reviewInferenceControlsInteractibility, bool reviewInferenceTrajectoryControlsExecutioninteractability)
+        {
+            /*
+            * Method is used to set the visibility and interactibility of the Inference Controls UI elements.
+            */
+            if (InferenceRequestControlsObject != null)
+            {
+                InferenceRequestControlsObject.SetActive(requestInferanceControlsVisibility);
+            }
+            if (ReviewInferenceControlsParentObject != null)
+            {
+                ReviewInferenceControlsParentObject.SetActive(reviewInferenceControlsVisibility);
+                InferenceRejectGoalandTargetButton.GetComponentInChildren<Button>().interactable = reviewInferenceControlsInteractibility;
+
+                //TODO: This is going to be a complicated situation because it will need an execute or not (for null trajectories, BOTH OF THESE)
+                InferenceReviewSliderParentGameObject.GetComponentInChildren<Slider>().interactable = reviewInferenceTrajectoryControlsExecutioninteractability;
+                InferenceAcceptGoalButton.GetComponentInChildren<Button>().interactable = reviewInferenceControlsInteractibility;
+                InferenceAcceptTargetButton.GetComponentInChildren<Button>().interactable = reviewInferenceControlsInteractibility;
+            }
+
         }
 
         public void TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY(bool toggle)
@@ -1273,25 +1383,6 @@ namespace CompasXR.UI
                     mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.RobotBaseFrame
                 );
                 mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicExecuteTrajectoryRequestTopic, exacuteMimicRequestMessage.GetData());
-            }
-        }
-        public void SetZonesVisibilityToggleMethod(Toggle toggle)
-        {
-            /*
-            * Method is used to set the visibility of the zones based on the toggle value.
-            */
-            bool visibility = toggle.isOn;
-            if(visibility)
-            {
-                Debug.Log("SetZonesVisibilityToggleMethod: Setting Zones Visibility to true.");
-                instantiateObjects.SetZoneOnlyCurrentZoneVisible(databaseManager.ProjectZones.CurrentZone);
-                UserInterface.SetUIObjectColor(ToggleZoneVisibilityObject, Yellow);
-            }
-            else
-            {
-                instantiateObjects.SetAllZonesVisible();
-                Debug.LogWarning("SetZonesVisibilityToggleMethod: Mimic Zones are null.");
-                UserInterface.SetUIObjectColor(ToggleZoneVisibilityObject, White);
             }
         }
 
@@ -3209,6 +3300,56 @@ namespace CompasXR.UI
                 Debug.LogError($"FindButtonandSetOnClickAction: Could not Set OnClick Action because search object is null for {unityObjectName}");
             }
         }
+        
+        public static void FindButtonandSetOnClickActionDebug(
+        GameObject searchObject,
+        ref GameObject buttonParentObjectReference,
+        string unityObjectName,
+        UnityAction customAction)
+        {
+            if (searchObject == null)
+            {
+                Debug.LogError($"FindButtonandSetOnClickAction: searchObject is null (looking for '{unityObjectName}')");
+                return;
+            }
+
+            buttonParentObjectReference = searchObject.FindObject(unityObjectName);
+
+            if (buttonParentObjectReference == null)
+            {
+                Debug.LogError(
+                    $"FindButtonandSetOnClickAction: Could not find '{unityObjectName}' under '{GetHierarchyPath(searchObject.transform)}'. " +
+                    $"Check the exact name/casing or the parent you’re searching within.");
+                return;
+            }
+
+            var buttonComponent = buttonParentObjectReference.GetComponent<Button>();
+            if (buttonComponent == null)
+            {
+                Debug.LogError(
+                    $"FindButtonandSetOnClickAction: '{GetHierarchyPath(buttonParentObjectReference.transform)}' exists but has no <Button> component.");
+                return;
+            }
+
+            if (customAction == null)
+            {
+                Debug.LogWarning($"FindButtonandSetOnClickAction: customAction is null for '{unityObjectName}'.");
+                return;
+            }
+
+            // Optional: prevent duplicate listeners if this runs more than once
+            // buttonComponent.onClick.RemoveAllListeners();
+
+            buttonComponent.onClick.AddListener(customAction);
+        }
+
+        // Small debug helper
+        private static string GetHierarchyPath(Transform t)
+        {
+            var path = t.name;
+            while (t.parent != null) { t = t.parent; path = t.name + "/" + path; }
+            return path;
+        }
         public static void FindToggleandSetOnValueChangedAction(GameObject searchObject, ref GameObject toggleParentObjectReference, string unityObjectName, UnityAction<Toggle> customAction)
         {
             /*
@@ -3216,7 +3357,7 @@ namespace CompasXR.UI
             * This method is used throughout the CompasXR Application, and serves as a simple way to set on value changed actions.
             */
             if (searchObject != null)
-            {    
+            {
                 toggleParentObjectReference = searchObject.FindObject(unityObjectName);
                 Toggle toggleComponent = toggleParentObjectReference.GetComponent<Toggle>();
                 toggleComponent.onValueChanged.AddListener(value => customAction(toggleComponent));
