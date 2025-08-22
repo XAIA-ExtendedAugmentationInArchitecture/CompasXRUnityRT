@@ -628,7 +628,6 @@ namespace CompasXR.UI
             // RobotSelectionDropdown.onValueChanged.AddListener(RobotSelectionDropdownValueChanged);
 
         }
-
         public void SetCurrentZoneFromDropdown(int dropDownValue)
         {
             /*
@@ -654,7 +653,6 @@ namespace CompasXR.UI
                 Debug.LogWarning("SetCurrentZoneFromDropdown: Dropdown value is out of range.");
             }
         }
-
 
         public void SetMimicUserInitiatedMimicControlsOnStart()
         {
@@ -703,37 +701,6 @@ namespace CompasXR.UI
             //Set Mimic OnScreen Messages
             MimicSetPointGreenScreen = MimicControlsSetPointsUIObjects.FindObject("SetPointGreenScreen");
             MimicUndoPointRedScreen = MimicControlsSetPointsUIObjects.FindObject("UndoPointRedScreen");
-        }
-        public void NextZoneButton()
-        {
-            /*
-            * Method is used to move to the next zone in the project zones.
-            */
-            if(CurrentZoneIndex < ZoneMenuItemsTest.Count - 1)
-            {
-                CurrentZoneIndex++;
-                CurrentZone = ZoneMenuItemsTest[CurrentZoneIndex];
-                CurrentModeTextObject.text = CurrentZone;
-                databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex; //TODO: THIS NEEDS TO REMAIN THE SAME AS THE OTHER ONE
-                
-                //Control Zone Coloring, UI Objects, and AR Objects
-                ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
-                SetUIObjectsFromCurrentMode(databaseManager.ProjectZones.CurrentZone);
-                ControlARZoneObjectsBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
-
-                //Update Zones visibility based on toggle
-                if(ToggleZoneVisibilityObject.GetComponent<Toggle>().isOn)
-                {
-                    SetZonesVisibilityToggleMethod(ToggleZoneVisibilityObject.GetComponent<Toggle>());
-                }
-
-                Debug.Log($"NextZoneButton: Attempting to push data to database {CurrentZone}");
-                DataHandlers.PushStringDataToDatabaseReference(databaseManager.dbReferenceCurrentMode, JsonConvert.SerializeObject(CurrentZone));
-            }
-            else
-            {
-                Debug.LogWarning("NextZoneButton: Current Zone Index is at the max value.");
-            }
         }
         public void ControlARZoneObjectsBasedOnCurrentMode(ProjectZones.CurrentZoneMode currentMode)
         {
@@ -828,35 +795,6 @@ namespace CompasXR.UI
                 default:
                     Debug.LogWarning("ControlRobotVisibilityBasedOnMode: Current Zone Mode is not set.");
                     break;
-            }
-        }
-        public void PreviousZoneButton()
-        {
-            /*
-            * Method is used to move to the previous zone in the project zones.
-            */
-            if (CurrentZoneIndex > 0)
-            {
-                CurrentZoneIndex--;
-                CurrentZone = ZoneMenuItemsTest[CurrentZoneIndex];
-                CurrentModeTextObject.text = CurrentZone;
-                databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex;
-                ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
-                SetUIObjectsFromCurrentMode(databaseManager.ProjectZones.CurrentZone);
-                ControlARZoneObjectsBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
-                
-                //Update Zones visibility based on toggle
-                if(ToggleZoneVisibilityObject.GetComponent<Toggle>().isOn)
-                {
-                    SetZonesVisibilityToggleMethod(ToggleZoneVisibilityObject.GetComponent<Toggle>());
-                }
-
-                Debug.Log($"PreviousZoneButton: Attempting to push data to database {CurrentZone}");
-                DataHandlers.PushStringDataToDatabaseReference(databaseManager.dbReferenceCurrentMode, JsonConvert.SerializeObject(CurrentZone));
-            }
-            else
-            {
-                Debug.LogWarning("PreviousZoneButton: Current Zone Index is at the min value.");
             }
         }
         public void ColorZonesBasedOnCurrentMode(ProjectZones.CurrentZoneMode cuttentMode)
