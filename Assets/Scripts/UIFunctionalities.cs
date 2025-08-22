@@ -385,12 +385,6 @@ namespace CompasXR.UI
             //Set Mimic Controls on start
             SetMimicUserInitiatedMimicControlsOnStart();
 
-            //Set Visualization Items on Start
-            SetVisualizationItemsOnStart();
-
-            //Set Correction Items on Start
-            SetCorrectionMenuItemsOnStart();
-
         }    
         public void PrintobservedGeometryDictInformation()
         {
@@ -457,23 +451,6 @@ namespace CompasXR.UI
                 FollowMeButtonHeldEventComponent.isHeld = false;
             }
         }
-        public void SetVisualizationItemsOnStart()
-        {
-            /*
-            * Method is used to set up the Correction Menu UI elements on start.
-            * Correction Menu UI elements constitute the UI elements that are used to control the correction functionalities
-            * of the application.
-            */
-
-            ToggleZoneVisibilityObject = RoboticTerritoriesCanvasItems.FindObject("ToggleZoneVisibility");
-
-            //Find Correction Menu Objects
-            UserInterface.FindToggleandSetOnValueChangedAction(
-            RoboticTerritoriesCanvasItems,
-            ref ToggleZoneVisibilityObject,
-            "ToggleZonesVisibility", SetZonesVisibilityToggleMethod);
-
-        }
         public void SetRoboticMenuItemsOnStart()
         {
             /*
@@ -507,24 +484,6 @@ namespace CompasXR.UI
                 RobotSelectionDropdown.options = robotOptions;
             }
             UserInterface.FindToggleandSetOnValueChangedAction(RobotSelectionControlObjects, ref SetActiveRobotToggleObject, "SetActiveRobotToggle", RoboticTerritoriesSetActiveRobotToggleMethod);
-        }
-        public void SetCorrectionMenuItemsOnStart()
-        {
-            /*
-            * Method is used to set up the Correction Menu UI elements on start.
-            * Correction Menu UI elements constitute the UI elements that are used to control the correction functionalities
-            * of the application.
-            */
-
-            CorrectionButtonObject = RoboticTerritoriesCanvasItems.FindObject("CorrectionButton");
-
-            //Find Correction Menu Objects
-            UserInterface.FindToggleandSetOnValueChangedAction(
-            RoboticTerritoriesCanvasItems,
-            ref CorrectionButtonObject,
-            "CorrectionButton",
-            value => { if (value) UserInterface.PrintStringOnClick("Correction Button Clicked"); });
-
         }
         public void SignalMimicPointsRemaptoRobotReachabilityMessage() //TODO: Static and not interchangeable
         {
