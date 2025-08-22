@@ -395,14 +395,15 @@ namespace CompasXR.Core
 
             switch (ZoneKey)
             {
-                case "tele_mimic_zone":
-                    if (Zones.TelemimicZones.Count > 0)
-                    {
-                        Zones.TelemimicZones.Clear();
-                    }
-                    Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
-                    Zones.TelemimicZones = ZonesDict;
-                    return Zones.TelemimicZones;
+                //TODO: LEAVING TELEMIMIC ZONE FOR NOW JUST IN CASE I ADD DIRECT PROGRAMMING.
+                // case "tele_mimic_zone":
+                //     if (Zones.TelemimicZones.Count > 0)
+                //     {
+                //         Zones.TelemimicZones.Clear();
+                //     }
+                //     Debug.Log($"DeserializeZoneDataSnapshot: Added Zones to {ZoneKey} and it contains {ZonesDict.Count}");
+                //     Zones.TelemimicZones = ZonesDict;
+                //     return Zones.TelemimicZones;
                 case "mimic_zones":
                     if (Zones.MimicZones.Count > 0)
                     {
@@ -436,7 +437,7 @@ namespace CompasXR.Core
         {
             Debug.Log($"Mimic Zones: {JsonConvert.SerializeObject(zones.MimicZones)}");
             Debug.Log($"Inference Zones: {JsonConvert.SerializeObject(zones.InferenceZones)}");
-            Debug.Log($"Telemimic Zones: {JsonConvert.SerializeObject(zones.TelemimicZones)}");
+            // Debug.Log($"Telemimic Zones: {JsonConvert.SerializeObject(zones.TelemimicZones)}");
             Debug.Log($"Boundary Zones: {JsonConvert.SerializeObject(zones.BoundaryZone)}");
         }
         public void AddListenersRoboticTerritories(object source, EventArgs args)

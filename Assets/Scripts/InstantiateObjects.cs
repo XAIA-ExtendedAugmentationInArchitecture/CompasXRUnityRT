@@ -75,7 +75,7 @@ namespace CompasXR.Core
         public GameObject BoundaryZoneParent;
         public GameObject InferenceZonesParent;
         public GameObject MimicZonesParent;
-        public GameObject TelemimicZonesParent;
+        // public GameObject TelemimicZonesParent;
         public TrajectoryVisualizer trajectoryVisualizer;
 
 
@@ -327,11 +327,11 @@ namespace CompasXR.Core
             Debug.Log($"InstantiateChangedKeys: {zoneKey} with the information from the ZonesDict {JsonConvert.SerializeObject(ZonesDict)}");
             switch (zoneKey)
             {   
-                case "tele_mimic_zone":
-                    GameObject teleMimicParent = ZonesParentObjectsDict["TelemimicZonesParent"];
-                    ObjectInstantiaion.DestroyChildrenOfGameObject(teleMimicParent);
-                    PlaceModeZones(ZonesDict, teleMimicParent);
-                    break;
+                // case "tele_mimic_zone":
+                //     GameObject teleMimicParent = ZonesParentObjectsDict["TelemimicZonesParent"];
+                //     ObjectInstantiaion.DestroyChildrenOfGameObject(teleMimicParent);
+                //     PlaceModeZones(ZonesDict, teleMimicParent);
+                //     break;
                 case "mimic_zones":
                     GameObject mimicParent = ZonesParentObjectsDict["MimicZonesParent"];
                     ObjectInstantiaion.DestroyChildrenOfGameObject(mimicParent);
@@ -433,14 +433,14 @@ namespace CompasXR.Core
                     }
                 }
 
-                foreach (KeyValuePair<string, Zone> entry in projectZones.TelemimicZones)
-                {
-                    if (entry.Value != null)
-                    {
-                        GameObject parentObject = parentObjects["TelemimicZonesParent"];
-                        PlaceZoneItem(entry.Value, parentObject);
-                    }
-                }
+                // foreach (KeyValuePair<string, Zone> entry in projectZones.TelemimicZones)
+                // {
+                //     if (entry.Value != null)
+                //     {
+                //         GameObject parentObject = parentObjects["TelemimicZonesParent"];
+                //         PlaceZoneItem(entry.Value, parentObject);
+                //     }
+                // }
                 UIFunctionalities.ColorZonesBasedOnCurrentMode(projectZones.CurrentZone);
 
                 //Event trigger for the first time through placing the zones.
@@ -1018,20 +1018,20 @@ namespace CompasXR.Core
                     SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, false);
                     SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, true);
                     SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, false);
-                    SetZoneVisiblity(databaseManager.ProjectZones.TelemimicZones, false);
+                    // SetZoneVisiblity(databaseManager.ProjectZones.TelemimicZones, false);
                     break;
                 case ProjectZones.CurrentZoneMode.Mimic:
                     SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, false);
                     SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, false);
                     SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, true);
-                    SetZoneVisiblity(databaseManager.ProjectZones.TelemimicZones, false);
+                    // SetZoneVisiblity(databaseManager.ProjectZones.TelemimicZones, false);
                     break;
-                case ProjectZones.CurrentZoneMode.Telemimic:
-                    SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, false);
-                    SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, false);
-                    SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, false);
-                    SetZoneVisiblity(databaseManager.ProjectZones.TelemimicZones, true);
-                    break;
+                // case ProjectZones.CurrentZoneMode.Telemimic:
+                //     SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, false);
+                //     SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, false);
+                //     SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, false);
+                //     SetZoneVisiblity(databaseManager.ProjectZones.TelemimicZones, true);
+                //     break;
                 default:
                     Debug.LogWarning("SetZoneOnlyCurrentZoneVisible: Invalid Current Zone Mode");
                     break;
@@ -1043,7 +1043,7 @@ namespace CompasXR.Core
             SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, true);
             SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, true);
             SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, true);
-            SetZoneVisiblity(databaseManager.ProjectZones.TelemimicZones, true);
+            // SetZoneVisiblity(databaseManager.ProjectZones.TelemimicZones, true);
         }
         public void SetZoneVisiblity(Dictionary<string, Zone> ZoneDict, bool Visiblity)
         {
@@ -1426,12 +1426,12 @@ namespace CompasXR.Core
             BoundaryZoneParent = ZonesParentObject.FindObject("BoundaryZoneParent");
             InferenceZonesParent = ZonesParentObject.FindObject("InferenceZonesParent");
             MimicZonesParent = ZonesParentObject.FindObject("MimicZonesParent");
-            TelemimicZonesParent = ZonesParentObject.FindObject("TelemimicZonesParent");
+            // TelemimicZonesParent = ZonesParentObject.FindObject("TelemimicZonesParent");
             
             ZonesParentObjectsDict.Add("BoundaryZoneParent", BoundaryZoneParent);
             ZonesParentObjectsDict.Add("InferenceZonesParent", InferenceZonesParent);
             ZonesParentObjectsDict.Add("MimicZonesParent", MimicZonesParent);
-            ZonesParentObjectsDict.Add("TelemimicZonesParent", TelemimicZonesParent);
+            // ZonesParentObjectsDict.Add("TelemimicZonesParent", TelemimicZonesParent);
 
             //Finding Materials
             HumanZoneMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("HumanZone").GetComponentInChildren<Renderer>().material;

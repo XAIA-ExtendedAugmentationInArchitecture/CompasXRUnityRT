@@ -194,7 +194,9 @@ namespace CompasXR.UI
         public GameObject ReachabilityToggleObject;
 
 
-        public List<string> ZoneMenuItems = new List<string> {"None", "Inference", "Mimic", "Telemimic"};
+        public List<string> ZoneMenuItemsTest = new List<string> {"None", "Inference", "Mimic"};
+        // public List<string> ZoneMenuItems = new List<string> {"None", "Inference", "Mimic"};
+        // public List<string> ZoneMenuItems = new List<string> {"None", "Inference", "Mimic", "Telemimic"};
         public string CurrentZone = "None";
         public int CurrentZoneIndex = 0;
         public GameObject NextZoneButtonObject;
@@ -669,10 +671,10 @@ namespace CompasXR.UI
             /*
             * Method is used to move to the next zone in the project zones.
             */
-            if(CurrentZoneIndex < ZoneMenuItems.Count - 1)
+            if(CurrentZoneIndex < ZoneMenuItemsTest.Count - 1)
             {
                 CurrentZoneIndex++;
-                CurrentZone = ZoneMenuItems[CurrentZoneIndex];
+                CurrentZone = ZoneMenuItemsTest[CurrentZoneIndex];
                 CurrentModeTextObject.text = CurrentZone;
                 databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex; //TODO: THIS NEEDS TO REMAIN THE SAME AS THE OTHER ONE
                 
@@ -738,18 +740,18 @@ namespace CompasXR.UI
                         Debug.LogWarning("ControlARZoneObjectsBasedOnCurrentMode: Active Robot is null.");
                     }
                     break;
-                case ProjectZones.CurrentZoneMode.Telemimic:
-                    instantiateObjects.DestroyMimicZoneObjects();
-                    if(trajectoryVisualizer.ActiveTrajectoryParentObject!= null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
-                    {
-                        trajectoryVisualizer.DestroyActiveTrajectoryChildren();
-                    }                    
-                    if(trajectoryVisualizer.humanZoneMimicReachibility != null)
-                    {
-                        Destroy(trajectoryVisualizer.humanZoneMimicReachibility);
-                    }
-                    Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Telemimic Mode.");
-                    break;
+                // case ProjectZones.CurrentZoneMode.Telemimic:
+                //     instantiateObjects.DestroyMimicZoneObjects();
+                //     if(trajectoryVisualizer.ActiveTrajectoryParentObject!= null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+                //     {
+                //         trajectoryVisualizer.DestroyActiveTrajectoryChildren();
+                //     }                    
+                //     if(trajectoryVisualizer.humanZoneMimicReachibility != null)
+                //     {
+                //         Destroy(trajectoryVisualizer.humanZoneMimicReachibility);
+                //     }
+                //     Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Telemimic Mode.");
+                //     break;
                 default:
                     Debug.LogWarning("ControlARZoneObjectsBasedOnCurrentMode: Current Zone Mode is not set.");
                     break;
@@ -797,9 +799,9 @@ namespace CompasXR.UI
                         Debug.LogWarning("ControlRobotVisibilityBasedOnMode: Active Robot Name is null.");
                     }
                     break;
-                case ProjectZones.CurrentZoneMode.Telemimic:
-                    Debug.Log("ControlRobotVisibilityBasedOnMode: Controlling Robot Visibility for Telemimic Mode.");
-                    break;
+                // case ProjectZones.CurrentZoneMode.Telemimic:
+                //     Debug.Log("ControlRobotVisibilityBasedOnMode: Controlling Robot Visibility for Telemimic Mode.");
+                //     break;
                 default:
                     Debug.LogWarning("ControlRobotVisibilityBasedOnMode: Current Zone Mode is not set.");
                     break;
@@ -813,7 +815,7 @@ namespace CompasXR.UI
             if (CurrentZoneIndex > 0)
             {
                 CurrentZoneIndex--;
-                CurrentZone = ZoneMenuItems[CurrentZoneIndex];
+                CurrentZone = ZoneMenuItemsTest[CurrentZoneIndex];
                 CurrentModeTextObject.text = CurrentZone;
                 databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex;
                 ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
@@ -845,27 +847,27 @@ namespace CompasXR.UI
                 case ProjectZones.CurrentZoneMode.None:
                     ColorZoneBasedOnActivity(databaseManager.ProjectZones.MimicZones, false);
                     ColorZoneBasedOnActivity(databaseManager.ProjectZones.InferenceZones, false);
-                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.TelemimicZones, false);
+                    // ColorZoneBasedOnActivity(databaseManager.ProjectZones.TelemimicZones, false);
                     ColorZoneBasedOnActivity(databaseManager.ProjectZones.BoundaryZone, false);
                     break;
                 case ProjectZones.CurrentZoneMode.Inference:
                     ColorZoneBasedOnActivity(databaseManager.ProjectZones.MimicZones, false);
                     ColorZoneBasedOnActivity(databaseManager.ProjectZones.InferenceZones, true);
-                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.TelemimicZones, false);
+                    // ColorZoneBasedOnActivity(databaseManager.ProjectZones.TelemimicZones, false);
                     ColorZoneBasedOnActivity(databaseManager.ProjectZones.BoundaryZone, false);
                     break;
                 case ProjectZones.CurrentZoneMode.Mimic:
                     ColorZoneBasedOnActivity(databaseManager.ProjectZones.MimicZones, true);
                     ColorZoneBasedOnActivity(databaseManager.ProjectZones.InferenceZones, false);
-                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.TelemimicZones, false);
+                    // ColorZoneBasedOnActivity(databaseManager.ProjectZones.TelemimicZones, false);
                     ColorZoneBasedOnActivity(databaseManager.ProjectZones.BoundaryZone, false);
                     break;
-                case ProjectZones.CurrentZoneMode.Telemimic:
-                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.MimicZones, false);
-                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.InferenceZones, false);
-                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.TelemimicZones, true);
-                    ColorZoneBasedOnActivity(databaseManager.ProjectZones.BoundaryZone, false);
-                    break;
+                // case ProjectZones.CurrentZoneMode.Telemimic:
+                //     ColorZoneBasedOnActivity(databaseManager.ProjectZones.MimicZones, false);
+                //     ColorZoneBasedOnActivity(databaseManager.ProjectZones.InferenceZones, false);
+                //     ColorZoneBasedOnActivity(databaseManager.ProjectZones.TelemimicZones, true);
+                //     ColorZoneBasedOnActivity(databaseManager.ProjectZones.BoundaryZone, false);
+                //     break;
                 default:
                     Debug.LogWarning("ColorZonesBasedOnCurrentMode: Current Zone Mode is not set.");
                     break;
@@ -1138,10 +1140,10 @@ namespace CompasXR.UI
                     SetUserInitiatedMimicControlsActivity(true, true, true, false, false);
                     Debug.Log("SetUIObjectsFromCurrentMode: Setting Active Controls for Mimic Mode.");
                     break;
-                case ProjectZones.CurrentZoneMode.Telemimic:
-                    SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
-                    Debug.Log("SetUIObjectsFromCurrentMode: Setting Active Controls for Telemimic Mode.");
-                    break;
+                // case ProjectZones.CurrentZoneMode.Telemimic:
+                //     SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
+                //     Debug.Log("SetUIObjectsFromCurrentMode: Setting Active Controls for Telemimic Mode.");
+                //     break;
                 default:
                     SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
                     Debug.LogWarning("SetUIObjectsFromCurrentMode: Current Zone Mode is not set.");

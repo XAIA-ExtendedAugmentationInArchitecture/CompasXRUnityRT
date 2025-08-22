@@ -17,7 +17,7 @@ namespace CompasXR.RoboticTerritories.Data
         public CurrentZoneMode CurrentZone { get; set; }
         public Dictionary<string, Zone> MimicZones { get; set; }
         public Dictionary<string, Zone> InferenceZones { get; set; }
-        public Dictionary<string, Zone> TelemimicZones { get; set; }
+        // public Dictionary<string, Zone> TelemimicZones { get; set; }
         public Dictionary<string, Zone> BoundaryZone { get; set; }
         public MimicZoneMode CurrentMimicMode { get; set; }
 
@@ -25,7 +25,7 @@ namespace CompasXR.RoboticTerritories.Data
         {
             MimicZones = new Dictionary<string, Zone>();
             InferenceZones = new Dictionary<string, Zone>();
-            TelemimicZones = new Dictionary<string, Zone>();
+            // TelemimicZones = new Dictionary<string, Zone>();
             BoundaryZone = new Dictionary<string, Zone>();
             CurrentZone = CurrentZoneMode.None;
             CurrentMimicMode = MimicZoneMode.UserInitiated;
@@ -35,7 +35,7 @@ namespace CompasXR.RoboticTerritories.Data
         {
             MimicZones.Clear();
             InferenceZones.Clear();
-            TelemimicZones.Clear();
+            // TelemimicZones.Clear();
             BoundaryZone.Clear();
         }
         public enum CurrentZoneMode
@@ -43,7 +43,7 @@ namespace CompasXR.RoboticTerritories.Data
             None,
             Inference,
             Mimic,
-            Telemimic,
+            // Telemimic,
         }
 
         public enum MimicZoneMode
