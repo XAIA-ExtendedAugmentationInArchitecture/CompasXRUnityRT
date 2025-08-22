@@ -190,6 +190,16 @@ namespace CompasXR.UI
         public GameObject ZonesARPrefabObjects;
         public TMP_Text CurrentModeTextObject;
 
+        //TODO: Updating Canvas to the new one..........................................................
+        public GameObject RoboticTerritoriesUpdatedCanvas;
+        public GameObject ModeSelectionControlsObject;
+        public GameObject ModeSelectionDropdownObject;
+        public TMP_Dropdown ModeSelectionDropdown;
+
+
+        //TODO: Updating Canvas to the new one..........................................................
+
+
         //ROBOT ITEMS
         public GameObject ReachabilityToggleObject;
 
@@ -306,6 +316,10 @@ namespace CompasXR.UI
             OnScreenInfoMessagePrefab = MessagesParent.FindObject("Prefabs").FindObject("OnScreenInfoMessagePrefab");
             ActiveRobotUpdatedFromPlannerMessageObject = MessagesParent.FindObject("Prefabs").FindObject("ActiveRobotUpdatedFromPlannerMessage");
 
+            //TODO: Working updates
+            RoboticTerritoriesUpdatedCanvas = CanvasObject.FindObject("RoboticTerritoriesUpdated");
+            SetModeSelectionItemsOnStart();
+
             //TODO: Mimic remap testing ////////////////////////////////////////////////////////////////////////////////////////
             MimicRemapPointsToRobotReachabilityMessage = MessagesParent.FindObject("Prefabs").FindObject("RemapMimicPointsMessage");
             Button RemapButton = MimicRemapPointsToRobotReachabilityMessage.FindObject("YesButton").GetComponent<Button>();
@@ -358,33 +372,12 @@ namespace CompasXR.UI
 
             //TODO: //TODO: //TODO: //TODO: //TODO: THIS IS LITERALLY JUST FOR TESTING PURPOSES IN THE REALTIME MIMIC.
             RealtimeMimicEditorTestToggleObject = RealtimeMimicControls.FindObject("TestingToggle");
-            if(RealtimeMimicEditorTestToggleObject == null)
-            {
-                Debug.Log("JOETESTING : RealtimeMimicEditorTestToggleObject is null.");
-            }
-            else
-            {
-                Debug.Log("JOETESTING : RealtimeMimicEditorTestToggleObject is not null.");
-            }
-
-            Toggle RealtimeMimicEditorTestToggle = RealtimeMimicEditorTestToggleObject.GetComponent<Toggle>();
-            if(RealtimeMimicEditorTestToggle == null)
-            {
-                Debug.Log("JOETESTING : RealtimeMimicEditorTestToggle is null.");
-            }
-            else
-            {
-                Debug.Log("JOETESTING : RealtimeMimicEditorTestToggle is not null.");
-            }
-
-
-            //Set Mirror Toggle Object
             RealtimeMimicEditorTestToggleObject = RealtimeMimicControls.FindObject("TestingToggle");
             Toggle RealtimeMimicTestingToggle = RealtimeMimicEditorTestToggleObject.GetComponentInChildren<Toggle>();
             RealtimeMimicTestingToggle.onValueChanged.AddListener(TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY);
 
             //Set Zone Visualization Menu Items on Start
-            SetZoneMenuItemsOnStart();
+            // SetZoneMenuItemsOnStart();
 
             //Set robotic items on start
             SetRoboticMenuItemsOnStart();
@@ -605,20 +598,67 @@ namespace CompasXR.UI
                 SetActiveRobotToggleObject.FindObject("Image").SetActive(false);           
             }
         }
-        public void SetZoneMenuItemsOnStart()
+        public void SetModeSelectionItemsOnStart()
         {
-            //Find Zone Menu Objects
-            CurrentModeTextObject = RoboticTerritoriesCanvasItems.FindObject("ConstantUIPanel").FindObject("ZonePanel").FindObject("ZoneText").GetComponent<TMP_Text>();
+            /*
+            * Method is used to set up the Mode Selection UI elements on start.
+            * Mode Selection UI elements constitute the UI elements that are used to control the mode selection functionalities
+            * of the application.
+            */
 
-            //Find the Menu Buttons
-            RoboticTerritoriesConstantUIObjects = RoboticTerritoriesCanvasItems.FindObject("ConstantUIPanel"); 
-            UserInterface.FindButtonandSetOnClickAction(RoboticTerritoriesConstantUIObjects, ref NextZoneButtonObject, "NextZoneButton", NextZoneButton);
-            UserInterface.FindButtonandSetOnClickAction(RoboticTerritoriesConstantUIObjects, ref PreviousZoneButtonObject, "PreviousZoneButton", PreviousZoneButton);
+            //Find The Dropdown for Mode Selection
+            ModeSelectionControlsObject = RoboticTerritoriesUpdatedCanvas.FindObject("ModeSelectionControls");
+            if(ModeSelectionControlsObject == null)
+            {
+                Debug.LogWarning("SetModeSelectionItemsOnStart: ModeSelectionControlsObject is null.");
+            }
+            if(RoboticTerritoriesUpdatedCanvas == null)
+            {
+                Debug.LogWarning("SetModeSelectionItemsOnStart: RoboticTerritoriesUpdatedCanvas is null.");
+            }
+            ModeSelectionDropdownObject = ModeSelectionControlsObject.FindObject("SetModeDropdown");
+            if(ModeSelectionDropdownObject == null)
+            {
+                Debug.LogWarning("SetModeSelectionItemsOnStart: ModeSelectionDropdownObject is null.");
+            }
+            ModeSelectionDropdown = ModeSelectionDropdownObject.GetComponent<TMP_Dropdown>();
+            List<TMP_Dropdown.OptionData> modeOptions = UserInterface.SetDropDownOptionsFromStringList(ModeSelectionDropdown , ZoneMenuItemsTest);
+            ModeSelectionDropdown.onValueChanged.AddListener(SetCurrentZoneFromDropdown);
+
+            // RobotSelectionDropdown.onValueChanged.AddListener(RobotSelectionDropdownValueChanged);
 
         }
+
+        public void SetCurrentZoneFromDropdown(int dropDownValue)
+        {
+            /*
+            * Method is used to set the current zone based on the dropdown value.
+            */
+            if(dropDownValue >= 0 && dropDownValue < ZoneMenuItemsTest.Count)
+            {
+                CurrentZoneIndex = dropDownValue;
+                CurrentZone = ZoneMenuItemsTest[CurrentZoneIndex];
+                databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex; //TODO: THIS NEEDS TO REMAIN THE SAME AS THE OTHER ONE
+                
+                //Control Zone Coloring, UI Objects, and AR Objects
+                ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
+                SetUIObjectsFromCurrentMode(databaseManager.ProjectZones.CurrentZone);
+                ControlARZoneObjectsBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
+                instantiateObjects.SetZoneOnlyCurrentZoneVisible(databaseManager.ProjectZones.CurrentZone);
+
+                Debug.Log($"SetCurrentZoneFromDropdown: Attempting to push data to database {CurrentZone}");
+                DataHandlers.PushStringDataToDatabaseReference(databaseManager.dbReferenceCurrentMode, JsonConvert.SerializeObject(CurrentZone));
+            }
+            else
+            {
+                Debug.LogWarning("SetCurrentZoneFromDropdown: Dropdown value is out of range.");
+            }
+        }
+
+
         public void SetMimicUserInitiatedMimicControlsOnStart()
         {
-            
+
             //Find Mimic Control Objects
             GameObject MimicControlsObject = RoboticTerritoriesCanvasItems.FindObject("MimicControls");
             MimicControlsSetPointsUIObjects = MimicControlsObject.FindObject("SetPointsUI");
@@ -653,7 +693,7 @@ namespace CompasXR.UI
             MimicControlsReviewAndExecuteTrajectoryUIObjects, ref MimicTrajectoryReviewSliderObject,
             // ref MimicTrajectoryReviewSlider, "TrajectoryReviewSlider", value => MimicTrajectorySliderReviewMethod(value));
             ref MimicTrajectoryReviewSlider, "TrajectoryReviewSlider", value => MimicTrajectorySliderReviewCompoundTrajectories(value));
-            
+
 
             //Set Mirror Toggle Object
             MimicMirrorToggleObject = MimicControlsSetPointsUIObjects.FindObject("Mirror");
