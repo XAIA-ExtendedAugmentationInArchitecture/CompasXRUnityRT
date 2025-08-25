@@ -330,12 +330,9 @@ namespace CompasXR.UI
         {
             if (FollowMeButtonHeldEventComponent.isHeld)
             {
-                Debug.Log("FOLLOWME: NEW BUTTON WORKS BUT STILL TESTING");
-                return;
                 SetRealtimeMimicPointBasicTEMPORARY();
             }
         }
-
         public IEnumerator PauseForDurationSeconds(float duration)
         {
             yield return new WaitForSeconds(duration);
@@ -555,7 +552,6 @@ namespace CompasXR.UI
         }
 
         //TODO: Mimic UI Mode and Goal Selecton Controls
-
         public void SetMimicGoalSelectionUIOnStart()
         {
             MimicSelectGoalsUI = MimicControlsParent.FindObject("SelectGoalUI");
@@ -709,8 +705,6 @@ namespace CompasXR.UI
             /*
             * Method is used to test the Realtime Mimic Is Pressed Toggle.
             */
-            Debug.Log("REALTIMEMIMICTOGGLE: TESTING NEW BUTTON WORKS BUT WILL CHANGE LATER");
-            return;
             if (toggle)
             {
                 Debug.Log("ToggleRealtimeMimicIsPressedTestingMethod: Realtime Mimic Is Pressed Toggle is On.");
@@ -1319,8 +1313,6 @@ namespace CompasXR.UI
             /*
             * Method is used to set the mimic point based on the human and robot zone objects.
             */
-            Debug.Log("NEWSETMIMICPOINTWORKED : TESTING, and WILL REMOVE LATER");
-            return;
             Debug.Log("SetMimicPoint: Setting Mimic Point based on Human and Robot Zone Objects.");
             Debug.Log("SetMimicPoint: Mimic Zone Objects: " +databaseManager.ProjectZones.MimicZones + "Type of Mimic Zones: " + databaseManager.ProjectZones.MimicZones.GetType());
     
@@ -1371,8 +1363,6 @@ namespace CompasXR.UI
             /*
             * Method is used to undo the last set mimic point.
             */
-            Debug.Log("NEWUNDOBUTTONWORKED : TESTING AND WILL REMOVE LATER.");
-            return;
             Debug.Log("UndoMimicPoint: Undoing Last Mimic Point.");
             if(instantiateObjects.MimicHumanPoints.Count > 0 && instantiateObjects.MimicRobotPoints.Count > 0)
             {
@@ -1557,8 +1547,6 @@ namespace CompasXR.UI
 
         public void UserInitiatedMimicRequestTrajectoryButtonMethod()
         {
-            Debug.Log("UserInitiatedMimicRequestTrajectoryButtonMethod : NEW BUTTON WORKS TESTING WILL REMOVE LATER");
-            return;
             Debug.Log($"MimicRequestTrajectoryButtonMethod: Requesting Trajectory for {instantiateObjects.MimicHumanPoints.Count} points.");
 
             if (instantiateObjects.MimicHumanPoints.Count < 2)
@@ -1685,8 +1673,6 @@ namespace CompasXR.UI
         }
         public void UserInitiatedMimicTrajectorySliderReviewCompoundTrajectories(float value)
         {
-            Debug.Log($"UserInitiatedMimicTrajectorySliderReviewCompoundTrajectories : NEW SLIDER WORKS {value} TESTING WILL REMOVE LATER");
-            return;
             if (mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.Trajectories != null)
             {
                 if (mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.Trajectories.Count > 0)
@@ -1744,8 +1730,6 @@ namespace CompasXR.UI
         }
         public void UserInitiatedMimicExecuteTrajectoryButtonMethod()
         {
-            Debug.Log("UserInitiatedMimicExecuteTrajectoryButtonMethod : NEW BUTTON WORKS WILL REMOVE LATER");
-            return;
             Debug.Log("MimicExecuteTrajectoryButton: Executing Mimic Trajectory.");
             if(mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints == null 
             || mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints.Count <= 0 
