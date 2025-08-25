@@ -23,6 +23,8 @@ using CompasXR.Robots.Data;
 using RosSharp.RosBridgeClient;
 using System.Collections;
 using Vuforia;
+using RosSharp.RosBridgeClient.MessageTypes.Actionlib;
+using Unity.PlasticSCM.Editor.WebApi;
 
 namespace CompasXR.UI
 {
@@ -243,6 +245,16 @@ namespace CompasXR.UI
         //Mimic Controls
         public GameObject UserInitiatedMimicControlsSetPointsUIObjects;
         public GameObject MimicControlsParent;
+
+        public GameObject MimicSelectGoalsUI;
+        public GameObject MimicNextGoalButtonObject;
+        public GameObject MimicPreviousGoalsButtonObject;
+        public TMP_Text CurrentSelectedGoalTextObject;
+
+        public GameObject ChangeMimicModeControlsObject;
+        public GameObject MimicNextModeButtonObject;
+        public GameObject MimicPreviousModeButtonObject;
+
         public GameObject UserInitiatedMimicControls;
         public GameObject MimicSetPointsButtonObject;
         public GameObject UserInitiatedMimicControlsUndoPointButtonObject;
@@ -269,6 +281,7 @@ namespace CompasXR.UI
         public GameObject UserInitiatedMimicUndoPointRedScreen;
         public float MimicSetandUndoFlashDuration = 0.1f;
         public CompasXRButtonHeldEvent FollowMeButtonHeldEventComponent;
+        public GameObject RealtimeMimicControlsParent;
         public GameObject RealtimeMimicEditorTestToggleObject;
         public int TEMPORARYCOUNTERREALTIMEMIMIC = 0;
 
@@ -277,6 +290,14 @@ namespace CompasXR.UI
 
         //TODO: TESTING
         DevicePoseBehaviour devicePoseBehavior;
+
+        //Mimic Mode and Goal Selection Objects
+        public List<string> MimicModesList = new List<string> {"UserInitiated", "RealtimeMimic" };
+        public int CurrentMimicModeIndex = 0;
+
+        public int currentSelectedGoalIndex = 0;
+        public string CurrentSelectedGoalName = "Goal00";
+
 
 
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
@@ -296,7 +317,7 @@ namespace CompasXR.UI
             /*
             * Update : Method is used to update the UI elements and check for touch option activation.
             */
-            TouchSearchControler();
+            // TouchSearchControler();
             RealtimeMimicFollowMeEventWatcher();
         }
 
@@ -318,7 +339,6 @@ namespace CompasXR.UI
             yield return new WaitForSeconds(duration);
             Debug.Log($"Paused for {duration} seconds.");
         }
-
         private void OnAwakeInitilizationRoboticTerritories()
         {
             /*
@@ -359,43 +379,199 @@ namespace CompasXR.UI
             RoboticTerritoriesInferenceControlsObject = RoboticTerritoriesUpdatedCanvas.FindObject("InferenceControls");
             SetInferenceControlsOnStart();
 
-            //TODO: Mimic remap testing ////////////////////////////////////////////////////////////////////////////////////////
+            //TODO: Mimic remap testing : I think this can go away, but keep for now. ////////////////////////////////////////////////////////////////////////////////////////
             MimicRemapPointsToRobotReachabilityMessage = MessagesParent.FindObject("Prefabs").FindObject("RemapMimicPointsMessage");
             Button RemapButton = MimicRemapPointsToRobotReachabilityMessage.FindObject("YesButton").GetComponent<Button>();
             Button NoButton = MimicRemapPointsToRobotReachabilityMessage.FindObject("NoButton").GetComponent<Button>();
             RemapButton.GetComponent<Button>().onClick.AddListener(RemapMimicPointsToRobotReachabilityButtonMethod);
             NoButton.GetComponent<Button>().onClick.AddListener(DestroySystemProposedMimicPointsButtonMethod);
-            //TODO: Mimic remap testing ////////////////////////////////////////////////////////////////////////////////////////
+            //TODO: Mimic remap testing : I think this can go away, but keep for now. ////////////////////////////////////////////////////////////////////////////////////////
 
             //Set robotic items on start
             SetRoboticMenuItemsOnStart();
 
-            //Set Mimic Controls on start
+            //Set Mimic Mode Selection Items
             MimicControlsParent = RoboticTerritoriesUpdatedCanvas.FindObject("MimicControls");
-            SetMimicUserInitiatedMimicControlsOnStart();
-            SetRealtimeMimicControlsOnStart();
-            SetMimicGoalSelectionUIOnStart();
+            SetMimicModeSelectionItemsOnStart();
 
+            //Set User Initiated Mimic Controls
+            SetMimicUserInitiatedMimicControlsOnStart();
+
+            //Set Realtime Mimic Controls
+            SetRealtimeMimicControlsOnStart();
+
+            //Set Mimic Goal Selection UI
+            SetMimicGoalSelectionUIOnStart();
         }
+        public void SetMimicModeSelectionItemsOnStart()
+        {
+            /*
+            * Method is used to set up the Mimic Mode Selection UI elements on start.
+            * Mimic Mode Selection UI elements constitute the UI elements that are used to control the mode selection functionalities
+            * of the application.
+            */
+
+            //Find The Dropdown for Mode Selection
+            ChangeMimicModeControlsObject = MimicControlsParent.FindObject("ChangeMimicModeControls");
+
+            //Find SetPointsButton Objects
+            UserInterface.FindButtonandSetOnClickAction(
+            ChangeMimicModeControlsObject,
+            ref MimicNextModeButtonObject,
+            "NextModeButton", NextMimicModeButtonMethod);
+
+            //Find UndoPointsButton ObjectsU
+            UserInterface.FindButtonandSetOnClickAction(
+            ChangeMimicModeControlsObject,
+            ref MimicPreviousModeButtonObject,
+            "PreviousModeButton", PreviousMimicModeButtonMethod);
+        }
+
+        //TODO: Mimic UI Mode and Goal Selecton Controls
+        public void NextMimicModeButtonMethod()
+        {
+            /*
+            * Method is used to set the next mimic mode based on the current mode.
+            */
+            if (CurrentMimicModeIndex < MimicModesList.Count - 1)
+            {
+                string previousMimicMode = MimicModesList[CurrentMimicModeIndex];
+                CurrentMimicModeIndex += 1;
+                string newMimicMode = MimicModesList[CurrentMimicModeIndex];
+
+                if (newMimicMode == "RealtimeMimic")
+                {
+                    databaseManager.ProjectZones.CurrentMimicMode = ProjectZones.MimicZoneMode.RealtimeMimic;
+                    SetMimicControlsBasedOnCurrentMimicMode(databaseManager.ProjectZones.CurrentMimicMode);
+                    instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();
+                    Debug.Log($"NextMimicModeButtonMethod: Changed Mimic Mode from {previousMimicMode} to {newMimicMode}");
+                }
+                else
+                {
+                    Debug.Log($"NextMimicModeButtonMethod: NOT SURE HOW... Changed Mimic Mode from {previousMimicMode} to {newMimicMode}");
+                }
+            }
+            else
+            {
+                Debug.Log("NextMimicModeButtonMethod: Reached end of Mimic Modes List Not Changing");
+            }
+        }
+        public void PreviousMimicModeButtonMethod()
+        {
+            /*
+            * Method is used to set the previous mimic mode based on the current mode.
+            */
+
+            if (CurrentMimicModeIndex > 0)
+            {
+                string previousMimicMode = MimicModesList[CurrentMimicModeIndex];
+                CurrentMimicModeIndex -= 1;
+                string newMimicMode = MimicModesList[CurrentMimicModeIndex];
+
+                if (newMimicMode == "UserInitiated")
+                {
+                    databaseManager.ProjectZones.CurrentMimicMode = ProjectZones.MimicZoneMode.UserInitiated;
+                    SetMimicControlsBasedOnCurrentMimicMode(databaseManager.ProjectZones.CurrentMimicMode);
+                    instantiateObjects.DestroyRealtimeMimicZoneObjects();
+                    Debug.Log($"PreviousMimicModeButtonMethod: Changed Mimic Mode from {previousMimicMode} to {newMimicMode}");
+                }
+                else
+                {
+                    Debug.Log($"PreviousMimicModeButtonMethod: NOT SURE HOW... Changed Mimic Mode from {previousMimicMode} to {newMimicMode}");
+                }
+            }
+            else
+            {
+                Debug.Log("PreviousMimicModeButtonMethod: Reached start of Mimic Modes List Not Changing");
+            }
+
+            Debug.Log("PreviousMimicModeButtonMethod: Previous Mimic Mode Button Pressed");
+        }
+        public void MimicSelectNextGoalButtonMethod() //TODO: Working on this now...
+        {
+            //Do nothing for now
+            if (instantiateObjects.MimicGoalsManager.Goals.Count == 0)
+            {
+                Debug.LogWarning("MimicSelectNextGoalButtonMethod: No Goals Found in the Mimic Goals Manager");
+                return;
+            }
+            else
+            {
+                if (currentSelectedGoalIndex < instantiateObjects.MimicGoalsManager.Goals.Count - 1)
+                {
+                    GameObject previousSelectedGoal = instantiateObjects.MimicGoalsManager.Goals[currentSelectedGoalIndex].GoalGameObject;
+                    previousSelectedGoal.SetActive(false);
+
+                    currentSelectedGoalIndex += 1;
+
+                    SetMimicGoalFromIndex(currentSelectedGoalIndex);
+
+                    Debug.Log($"MimicSelectNextGoalButtonMethod: Changed Selected Goal to {CurrentSelectedGoalName}");
+                }
+                else
+                {
+                    Debug.Log("MimicSelectNextGoalButtonMethod: Reached end of Goals List Not Changing");
+                }
+            }
+        }
+
+        public void SetMimicGoalFromIndex(int selectedGoalIndex)
+        {
+            CurrentSelectedGoalName = instantiateObjects.MimicGoalsManager.Goals[selectedGoalIndex].Name;
+            CurrentSelectedGoalTextObject.text = CurrentSelectedGoalName;
+            GameObject newSelectedGoal = instantiateObjects.MimicGoalsManager.Goals[selectedGoalIndex].GoalGameObject;
+            newSelectedGoal.SetActive(true);
+        }
+        public void MimicSelectPreviousGoalButtonMethod() //TODO: Working on this now...
+        {
+            //Do nothing for now
+            Debug.Log("MimicSelectPreviousGoalButtonMethod: Previous Goal Button Pressed - Do Nothing for now");
+
+            if (instantiateObjects.MimicGoalsManager.Goals.Count == 0)
+            {
+                Debug.LogWarning("MimicSelectPreviousGoalButtonMethod: No Goals Found in the Mimic Goals Manager");
+                return;
+            }
+            else
+            {
+                if (currentSelectedGoalIndex > 0)
+                {
+                    GameObject previousSelectedGoal = instantiateObjects.MimicGoalsManager.Goals[currentSelectedGoalIndex].GoalGameObject;
+                    previousSelectedGoal.SetActive(false);
+
+                    currentSelectedGoalIndex -= 1;
+
+                    SetMimicGoalFromIndex(currentSelectedGoalIndex);
+
+                    Debug.Log($"MimicSelectPreviousGoalButtonMethod: Changed Selected Goal to {CurrentSelectedGoalName}");
+                }
+                else
+                {
+                    Debug.Log("MimicSelectPreviousGoalButtonMethod: Reached start of Goals List Not Changing");
+                }
+            }
+        }
+
+        //TODO: Mimic UI Mode and Goal Selecton Controls
 
         public void SetMimicGoalSelectionUIOnStart()
         {
-            // MimicSelectGoalsUI = MimicControlsParent.FindObject("SelectGoalUI")
+            MimicSelectGoalsUI = MimicControlsParent.FindObject("SelectGoalUI");
 
-            // //Find SetPointsButton Objects
-            // UserInterface.FindButtonandSetOnClickAction(
-            // MimicSelectGoalsUI,
-            // ref MimicNextGoalButton,
-            // "NextGoalButton", MimicNextGoalButtonMethod);
+            //Find SetPointsButton Objects
+            UserInterface.FindButtonandSetOnClickAction(
+            MimicSelectGoalsUI,
+            ref MimicNextGoalButtonObject,
+            "NextGoalButton", MimicSelectNextGoalButtonMethod);
 
-            // //Find UndoPointsButton ObjectsU
-            // UserInterface.FindButtonandSetOnClickAction(
-            // MimicSelectGoalsUI,
-            // ref MimicPreviousGoals,
-            // "PreviousGoal", MimicPreviousGoalButtonMethod);
+            //Find UndoPointsButton ObjectsU
+            UserInterface.FindButtonandSetOnClickAction(
+            MimicSelectGoalsUI,
+            ref MimicPreviousGoalsButtonObject,
+            "PreviousGoal", MimicSelectPreviousGoalButtonMethod);
 
+            CurrentSelectedGoalTextObject = MimicSelectGoalsUI.FindObject("GoalNameText").GetComponentInChildren<TMP_Text>();
         }
-
         public void PrintobservedGeometryDictInformation()
         {
             /*
@@ -525,7 +701,6 @@ namespace CompasXR.UI
             }
 
         }
-
         public void TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY(bool toggle)
         {
             /*
@@ -705,21 +880,19 @@ namespace CompasXR.UI
                 Debug.LogWarning("SetCurrentZoneFromDropdown: Dropdown value is out of range.");
             }
         }
-
         public void SetRealtimeMimicControlsOnStart()
         {
-
             //Find FollowMe Button and then add event trigger componnet to it.
-            GameObject RealtimeMimicControls = MimicControlsParent.FindObject("RealtimeMimicControls");
-            GameObject FollowMeButton = RealtimeMimicControls.FindObject("FollowMeButton");
+            RealtimeMimicControlsParent = MimicControlsParent.FindObject("RealtimeMimicControls");
+            GameObject FollowMeButton = RealtimeMimicControlsParent.FindObject("FollowMeButton");
             FollowMeButton.AddComponent<CompasXRButtonHeldEvent>();
             FollowMeButtonHeldEventComponent = FollowMeButton.GetComponent<CompasXRButtonHeldEvent>();
 
-            RealtimeMimicIOToggleGameObject = RealtimeMimicControls.FindObject("IOTestToggle");
+            RealtimeMimicIOToggleGameObject = RealtimeMimicControlsParent.FindObject("IOToggle");
             Toggle RealtimeMimicIOToggle = RealtimeMimicIOToggleGameObject.GetComponentInChildren<Toggle>();
             RealtimeMimicIOToggle.onValueChanged.AddListener(ToggleIOForRealtimeMimicMethod);
 
-            RealtimeMimicMirrorToggleGameObject = RealtimeMimicControls.FindObject("Mirror");
+            RealtimeMimicMirrorToggleGameObject = RealtimeMimicControlsParent.FindObject("Mirror");
             Toggle RealtimeMimicMirrorToggle = RealtimeMimicMirrorToggleGameObject.GetComponentInChildren<Toggle>();
             RealtimeMimicMirrorToggle.onValueChanged.AddListener(RealtimeMimicMirrorToggleMethod);
 
@@ -732,7 +905,7 @@ namespace CompasXR.UI
                 Debug.Log("JOETESTING : FollowMeButtonHeldEventComponent is not null.");
             }
 
-            if (RealtimeMimicControls == null)
+            if (RealtimeMimicControlsParent == null)
             {
                 Debug.LogError("JOETESTING : RealtimeMimicControls is null.");
             }
@@ -751,8 +924,8 @@ namespace CompasXR.UI
             }
 
             //TODO: //TODO: //TODO: //TODO: //TODO: THIS IS LITERALLY JUST FOR TESTING PURPOSES IN THE REALTIME MIMIC.
-            RealtimeMimicEditorTestToggleObject = RealtimeMimicControls.FindObject("TestingToggle");
-            RealtimeMimicEditorTestToggleObject = RealtimeMimicControls.FindObject("TestingToggle");
+            RealtimeMimicEditorTestToggleObject = RealtimeMimicControlsParent.FindObject("TestingToggle");
+            RealtimeMimicEditorTestToggleObject = RealtimeMimicControlsParent.FindObject("TestingToggle");
             Toggle RealtimeMimicTestingToggle = RealtimeMimicEditorTestToggleObject.GetComponentInChildren<Toggle>();
             RealtimeMimicTestingToggle.onValueChanged.AddListener(TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY);
 
@@ -806,7 +979,6 @@ namespace CompasXR.UI
             UserInitiatedMimicControlsReviewAndExecuteTrajectoryUIObjects, ref UserInitiatedMimicTrajectoryReviewSliderObject,
             ref UserInitiatedMimicTrajectoryReviewSlider, "TrajectoryReviewSlider", value => UserInitiatedMimicTrajectorySliderReviewCompoundTrajectories(value));
 
-
             //Set Mirror Toggle Object
             UserInitiatedMimicMirrorToggleObject = UserInitiatedMimicControlsSetPointsUIObjects.FindObject("Mirror");
             UserInitiatedMimicMirrorToggle = UserInitiatedMimicMirrorToggleObject.GetComponentInChildren<Toggle>();
@@ -826,9 +998,20 @@ namespace CompasXR.UI
             {
                 case ProjectZones.CurrentZoneMode.None:
                     Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for None Mode.");
+
+                    //Setting the Goal Objects To be not visible.
+                    if (instantiateObjects.InferenceGoalsParentObject != null)
+                    {
+                        instantiateObjects.InferenceGoalsParentObject.SetActive(false);
+                    }
+                    if (instantiateObjects.MimicGoalsParentObject != null)
+                    {
+                        instantiateObjects.MimicGoalsParentObject.SetActive(false);
+                    }
+
                     break;
                 case ProjectZones.CurrentZoneMode.Inference:
-                    instantiateObjects.DestroyMimicZoneObjects();
+                    instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();
                     if(trajectoryVisualizer.ActiveTrajectoryParentObject!= null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
                     {
                         trajectoryVisualizer.DestroyActiveTrajectoryChildren();
@@ -838,6 +1021,17 @@ namespace CompasXR.UI
                         Destroy(trajectoryVisualizer.humanZoneMimicReachibility);
                     }
                     Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Inference Mode.");
+
+                    //Setting the Goal Objects To be not visible.
+                    if (instantiateObjects.InferenceGoalsParentObject != null)
+                    {
+                        instantiateObjects.InferenceGoalsParentObject.SetActive(true);
+                    }
+                    if (instantiateObjects.MimicGoalsParentObject != null)
+                    {
+                        instantiateObjects.MimicGoalsParentObject.SetActive(false);
+                    }
+
                     break;
                 case ProjectZones.CurrentZoneMode.Mimic:
                     Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Mimic Mode.");
@@ -858,6 +1052,17 @@ namespace CompasXR.UI
                     {
                         Debug.LogWarning("ControlARZoneObjectsBasedOnCurrentMode: Active Robot is null.");
                     }
+
+                    //Setting the Goal Objects To be not visible.
+                    if (instantiateObjects.InferenceGoalsParentObject != null)
+                    {
+                        instantiateObjects.InferenceGoalsParentObject.SetActive(false);
+                    }
+                    if (instantiateObjects.MimicGoalsParentObject != null)
+                    {
+                        instantiateObjects.MimicGoalsParentObject.SetActive(true);
+                    }
+
                     break;
                 default:
                     Debug.LogWarning("ControlARZoneObjectsBasedOnCurrentMode: Current Zone Mode is not set.");
@@ -1190,7 +1395,8 @@ namespace CompasXR.UI
             }
         }
 
-        //UI Control Methods
+
+        //UI Control Methods //TODO: I think that all of the updated methods for Mimic are working, but needs to be tested.
         public void SetUIObjectsFromCurrentMode(ProjectZones.CurrentZoneMode mode)
         {
             /*
@@ -1202,16 +1408,23 @@ namespace CompasXR.UI
                     Debug.Log("SetUIObjectsFromCurrentMode: Setting UI Objects for None Mode.");
                     SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
                     break;
-                case ProjectZones.CurrentZoneMode.Inference:
+                case ProjectZones.CurrentZoneMode.Inference: //TODO: This needs to set the selection and change controls as well.
                     Debug.Log("SetUIObjectsFromCurrentMode: Setting UI Objects for Inference Mode.");
+                    MimicControlsParent.gameObject.SetActive(false);
+                    RoboticTerritoriesInferenceControlsObject.SetActive(true);
                     SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
                     break;
-                case ProjectZones.CurrentZoneMode.Mimic:
-                    SetUserInitiatedMimicControlsActivity(true, true, true, false, false);
+                case ProjectZones.CurrentZoneMode.Mimic: //TODO: This needs to set the selection and change controls as well.
+                    MimicControlsParent.gameObject.SetActive(true);
+                    SetMimicControlsBasedOnCurrentMimicMode(databaseManager.ProjectZones.CurrentMimicMode);
+                    
+                    RoboticTerritoriesInferenceControlsObject.SetActive(false);
                     Debug.Log("SetUIObjectsFromCurrentMode: Setting Active Controls for Mimic Mode.");
                     break;
                 default:
                     SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
+                    RoboticTerritoriesInferenceControlsObject.SetActive(false);
+                    MimicControlsParent.gameObject.SetActive(false);
                     Debug.LogWarning("SetUIObjectsFromCurrentMode: Current Zone Mode is not set.");
                     break;
             }
@@ -1231,6 +1444,111 @@ namespace CompasXR.UI
             UserInitiatedMimicExecuteTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = reviewInteractive;
             UserInitiatedMimicTrajectoryReviewSliderObject.GetComponentInChildren<Slider>().interactable = reviewInteractive;
         }
+        public void SetMimicControlsBasedOnCurrentMimicMode(ProjectZones.MimicZoneMode mode)
+        {
+            /*
+            * Method is used to set the Mimic Controls based on the current mimic mode.
+            */
+            Debug.Log($"SetMimicControlsBasedOnCurrentMimicMode: Setting Mimic Controls based on the current mimic mode {mode}");
+            switch (mode)
+            {
+                case ProjectZones.MimicZoneMode.UserInitiated:
+                    SetUserInitiatedMimicControlsActivity(true, true, true, false, false);
+                    SetRealtimeMimicControlsActivity(false, false);
+
+                    //TODO: Line Testing
+                    if (instantiateObjects.MimicHumanLine != null)
+                    {
+                        instantiateObjects.MimicHumanLine.gameObject.SetActive(true);
+                    }
+                    if (instantiateObjects.MimicRobotLine != null)
+                    {
+                        instantiateObjects.MimicRobotLine.gameObject.SetActive(true);
+                    }
+                    if(instantiateObjects.RealtimeMimicHumanLine != null)
+                    {
+                        instantiateObjects.RealtimeMimicHumanLine.gameObject.SetActive(false);
+                    }
+                    if(instantiateObjects.RealtimeMimicRobotLine != null)
+                    {
+                        instantiateObjects.RealtimeMimicRobotLine.gameObject.SetActive(false);
+                    }
+                    //TODO: End Line Testing
+
+                    Debug.Log("SetMimicControlsBasedOnCurrentMimicMode: Setting UI Objects for None Mode.");
+                    break;
+                case ProjectZones.MimicZoneMode.RealtimeMimic:
+                    SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
+                    SetRealtimeMimicControlsActivity(true, true);
+
+                    //TODO: Line Testing
+                    if (instantiateObjects.MimicHumanLine != null)
+                    {
+                        instantiateObjects.MimicHumanLine.gameObject.SetActive(false);
+                    }
+                    if (instantiateObjects.MimicRobotLine != null)
+                    {
+                        instantiateObjects.MimicRobotLine.gameObject.SetActive(false);
+                    }
+                    if(instantiateObjects.RealtimeMimicHumanLine != null)
+                    {
+                        instantiateObjects.RealtimeMimicHumanLine.gameObject.SetActive(true);
+                    }
+                    if(instantiateObjects.RealtimeMimicRobotLine != null)
+                    {
+                        instantiateObjects.RealtimeMimicRobotLine.gameObject.SetActive(true);
+                    }
+                    //TODO: End Line Testing
+
+                    Debug.Log("SetMimicControlsBasedOnCurrentMimicMode: Setting UI Objects for SetPoints Mode.");
+                    break;
+                default:
+                    SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
+                    SetRealtimeMimicControlsActivity(false, false);
+                    Debug.LogWarning("SetMimicControlsBasedOnCurrentMimicMode: Current Mimic Mode is not set.");
+                    break;
+            }
+        }
+        public void SetRealtimeMimicControlsActivity(bool setControlsActive, bool setControlsInteractive)
+        {
+            /*
+            * Method is used to set the Realtime Mimic Controls activity based on the input.
+            */
+            if (RealtimeMimicControlsParent == null)
+            {
+                Debug.LogError("SetRealtimeMimicControlsActivity: RealtimeMimicControlsParent is null.");
+                return;
+            }
+            if (RealtimeMimicControlsParent != null)
+            {
+                RealtimeMimicControlsParent.SetActive(setControlsActive);
+            }
+
+            if (RealtimeMimicControlsParent.transform.childCount == 0)
+            {
+                Debug.LogWarning("SetRealtimeMimicControlsActivity: RealtimeMimicControlsParent has no children.");
+                return;
+            }
+            else
+            {
+                foreach (Transform child in RealtimeMimicControlsParent.transform)
+                {
+                    var go = child.gameObject;
+
+                    // Show/hide
+                    go.SetActive(setControlsActive);
+
+                    // If it's a Button
+                    if (go.TryGetComponent<Button>(out var button))
+                        button.interactable = setControlsInteractive;
+
+                    // If it's a Toggle
+                    if (go.TryGetComponent<Toggle>(out var toggle))
+                        toggle.interactable = setControlsInteractive;
+                }
+            }
+        }
+
         public void UserInitiatedMimicRequestTrajectoryButtonMethod()
         {
             Debug.Log("UserInitiatedMimicRequestTrajectoryButtonMethod : NEW BUTTON WORKS TESTING WILL REMOVE LATER");
@@ -1251,7 +1569,7 @@ namespace CompasXR.UI
                 UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref ActiveRobotIsNullWarningMessageObject, "ActiveRobotNullWarningMessage", MessagesParent, message, "MimicRequestTrajectoryButtonMethod: Active Robot is null.");
                 return;
             }
-            else if(!ObjectInstantiaion.AllGameObjectsInListsPositionsAreWithinAnotherObject(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility))
+            else if (!ObjectInstantiaion.AllGameObjectsInListsPositionsAreWithinAnotherObject(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility))
             {
                 var mimicZones = databaseManager.ProjectZones.MimicZones;
 
@@ -1261,9 +1579,9 @@ namespace CompasXR.UI
                     {
                         GameObject humanZoneObject = humanZone.ZoneObject;
                         GameObject robotZoneObject = robotZone.ZoneObject;
-                        instantiateObjects.CreateSystemProposalPoints(humanZoneObject, robotZoneObject, trajectoryVisualizer.humanZoneMimicReachibility, ref instantiateObjects.MimicHumanPoints, 
+                        instantiateObjects.CreateSystemProposalPoints(humanZoneObject, robotZoneObject, trajectoryVisualizer.humanZoneMimicReachibility, ref instantiateObjects.MimicHumanPoints,
                         ref instantiateObjects.MimicHumanSystemProposedPoints, ref instantiateObjects.MimicRobotSystemProposedPoints,
-                        instantiateObjects.MimicSystemProposedLineHuman, instantiateObjects.MimicHumanSystemProposedPointsParent, instantiateObjects.MimicSystemProposedLineRobot, 
+                        instantiateObjects.MimicSystemProposedLineHuman, instantiateObjects.MimicHumanSystemProposedPointsParent, instantiateObjects.MimicSystemProposedLineRobot,
                         instantiateObjects.MimicRobotSystemProposedPointsParent, UserInitiatedMimicMirrorToggleObject.GetComponentInChildren<Toggle>().isOn);
                     }
                     else
@@ -1444,7 +1762,6 @@ namespace CompasXR.UI
                 mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicExecuteTrajectoryRequestTopic, exacuteMimicRequestMessage.GetData());
             }
         }
-
         public void UserInitiatedMimicMirrorToggleMethod(bool value)
         {
             /*
@@ -1464,6 +1781,7 @@ namespace CompasXR.UI
                 Debug.LogWarning("MimicMirrorToggleMethod: Reachability Toggle is not on.");
             }
         }
+
         //TODO: RoboticTerritories Testing ///////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
         {
@@ -1485,7 +1803,7 @@ namespace CompasXR.UI
             Elements = GameObject.Find("Elements");
             QRMarkers = GameObject.Find("QRMarkers");
             CanvasObject = GameObject.Find("Canvas").FindObject("CompasXR");
-            UserObjects = GameObject.Find("ActiveUserObjects");     
+            UserObjects = GameObject.Find("ActiveUserObjects");
 
             //Find AR and system management items
             arCameraObject = GameObject.Find("XR Origin").FindObject("Camera Offset").FindObject("Main Camera");
@@ -1495,7 +1813,7 @@ namespace CompasXR.UI
 
             //Find Constant UI Pannel
             ConstantUIPanelObjects = CanvasObject.FindObject("ConstantUIPanel");
-        
+
             //Set up UI Objects and buttons on start
             SetPrimaryUIItemsOnStart();
             SetVisualizerMenuItemsOnStart();

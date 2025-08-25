@@ -80,6 +80,65 @@ namespace CompasXR.RoboticTerritories.Data
 
     }
 
+    public class GoalObject
+    {
+        public string Name { get; private set; }
+        public GameObject GoalGameObject { get; private set; }
+        public Dictionary<string, GameObject> GoalObjectComponentsDict { get; private set; }
+
+        public GoalObject(string name, GameObject parentObject)
+        {
+            Name = name;
+            GoalGameObject = parentObject;
+            GoalObjectComponentsDict = BuildComponentsDict(parentObject);
+        }
+
+        // Internal method to build the dictionary from child objects
+        private Dictionary<string, GameObject> BuildComponentsDict(GameObject parent)
+        {
+            var dict = new Dictionary<string, GameObject>();
+            Debug.Log("Building components dictionary for Goal: " + parent.name);
+            foreach (Transform child in parent.transform)
+            {
+                if (!dict.ContainsKey(child.name))
+                {
+                    dict.Add(child.name, child.gameObject);
+                }
+                else
+                {
+                    Debug.LogWarning($"Duplicate child name '{child.name}' under {parent.name}");
+                }
+            }
+
+            return dict;
+        }
+    }
+
+    public class GoalManager
+    {
+        public List<GoalObject> Goals { get; private set; }
+        public string ParentObjectName { get; private set; }
+
+        public GoalManager(GameObject parentObject)
+        {
+            Goals = new List<GoalObject>();
+            ParentObjectName = parentObject.name;
+
+            foreach(Transform child in parentObject.transform)
+            {
+                Debug.Log("Adding Goal: " + child.name);
+                Goals.Add(new GoalObject(child.name, child.gameObject));
+            }
+
+        }
+
+        // Accessors
+        public GoalObject GetByIndex(int index) => Goals[index];
+
+        public GoalObject GetByName(string name) =>
+            Goals.Find(g => g.Name == name);
+    }
+
     [System.Serializable]
     public class ObservedGeometry
     {

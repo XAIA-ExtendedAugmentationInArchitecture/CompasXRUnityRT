@@ -14,6 +14,7 @@ using Newtonsoft.Json;
 using CompasXR.Robots;
 using CompasXR.Robots.Data;
 using Vuforia;
+using RosSharp.RosBridgeClient.MessageTypes.ObjectRecognition;
 
 
 namespace CompasXR.Core
@@ -118,8 +119,11 @@ namespace CompasXR.Core
         public GameObject ZonesARPrefabObjects;
         public GameObject AllGeometiresParentObjects;
         public GameObject TrackedGeometriesParentObject;
+
         public GameObject InferenceGoalsParentObject;
+        public GoalManager InferenceGoalsManager { get; private set; }
         public GameObject MimicGoalsParentObject;
+        public GoalManager MimicGoalsManager { get; private set; }
 
         //TODO: REALTIME MIMIC OBJECT TESTING
         public GameObject RealtimeMimicObjects;
@@ -148,7 +152,6 @@ namespace CompasXR.Core
             OnAwakeInitilization();
 
         }
-
         public void Update()
         {
             //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
@@ -165,14 +168,17 @@ namespace CompasXR.Core
             //Update the position of the Mimic Lines if they are on.
             if (databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
             {
-                UpdateLinePositionsByGameObjectPositionsList(MimicHumanPoints, MimicHumanLine);
-                UpdateLinePositionsByGameObjectPositionsList(MimicRobotPoints, MimicRobotLine);
 
-                //TODO: TESTING
-                UpdateLinePositionsByGameObjectPositionsList(MimicHumanSystemProposedPoints, MimicSystemProposedLineHuman);
-                UpdateLinePositionsByGameObjectPositionsList(MimicRobotSystemProposedPoints, MimicSystemProposedLineRobot);
+                if (databaseManager.ProjectZones.CurrentMimicMode == ProjectZones.MimicZoneMode.UserInitiated)
+                {
+                    UpdateLinePositionsByGameObjectPositionsList(MimicHumanPoints, MimicHumanLine);
+                    UpdateLinePositionsByGameObjectPositionsList(MimicRobotPoints, MimicRobotLine);
 
-                if (RealtimeMimicObjects.activeSelf)
+                    //TODO: TESTING
+                    UpdateLinePositionsByGameObjectPositionsList(MimicHumanSystemProposedPoints, MimicSystemProposedLineHuman);
+                    UpdateLinePositionsByGameObjectPositionsList(MimicRobotSystemProposedPoints, MimicSystemProposedLineRobot);
+                }
+                else if (databaseManager.ProjectZones.CurrentMimicMode == ProjectZones.MimicZoneMode.RealtimeMimic)
                 {
                     if (RealtimeMimicHumanPoints.Count > 1 && RealtimeMimicRobotPoints.Count > 1)
                     {
@@ -945,7 +951,7 @@ namespace CompasXR.Core
                 Debug.LogWarning("UpdateLinePositionsByGameObjectPositionsList: List length is 0.");
             }
         }
-        public void DestroyMimicZoneObjects()
+        public void DestroyUserInstatiatedMimicZoneObjects()
         {
             /*
             * Method is used to destroy the mimic zone objects in the AR space
@@ -969,6 +975,30 @@ namespace CompasXR.Core
                 Debug.Log("DestroyMimicZoneObjects: Mimic Points are empty");
             }
         }
+        public void DestroyRealtimeMimicZoneObjects()
+        {
+            /*
+            * Method is used to destroy the mimic zone objects in the AR space
+            */
+            if (RealtimeMimicHumanPoints.Count > 0 && RealtimeMimicHumanPoints.Count > 0)
+            {
+                ObjectInstantiaion.DestroyChildrenOfGameObject(RealtimeMimicHumanPointsParent);
+                ObjectInstantiaion.DestroyChildrenOfGameObject(RealtimeMimicRobotPointsParent);
+
+                RealtimeMimicHumanPoints.Clear();
+                RealtimeMimicRobotPoints.Clear();
+
+                RealtimeMimicHumanLine.GetComponentInChildren<LineRenderer>().positionCount = 0;
+                RealtimeMimicRobotLine.GetComponentInChildren<LineRenderer>().positionCount = 0;
+
+                //TODO: CHECK IF I NEED THIS LINE....
+                // RealtimeMimicObjects.SetActive(false);
+            }
+            else
+            {
+                Debug.Log("DestroyMimicZoneObjects: Mimic Points are empty");
+            }
+        }
         public static Quaternion AddAdditionalRotationForEndEffector(GameObject cameraObject)
         {
             if (cameraObject == null)
@@ -978,7 +1008,7 @@ namespace CompasXR.Core
             }
 
             // Use the GameObject's local X-axis
-            Vector3 localXAxis = cameraObject.transform.right; 
+            Vector3 localXAxis = cameraObject.transform.right;
 
             // Create and apply the 90-degree rotation
             Quaternion rotate90XLocal = Quaternion.AngleAxis(90, localXAxis);
@@ -1394,7 +1424,34 @@ namespace CompasXR.Core
 
             //TODO: TESTING MIMIC & INFERENCE GOALS
             InferenceGoalsParentObject = AllGeometiresParentObjects.FindObject("InferenceGoals");
+            if (InferenceGoalsParentObject != null)
+            {
+                InferenceGoalsManager = new GoalManager(InferenceGoalsParentObject);
+                foreach (GoalObject goal in InferenceGoalsManager.Goals)
+                {
+                    Debug.Log("GoalsManager Inference Goal: " + goal.Name);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("InferenceGoalsParentObject is null");
+            }
+
+
             MimicGoalsParentObject = AllGeometiresParentObjects.FindObject("MimicGoals");
+            if (MimicGoalsParentObject != null)
+            {
+                MimicGoalsManager = new GoalManager(MimicGoalsParentObject);
+                Debug.Log("MimicGoalsManager initialized. With Goals Parent Object: " + MimicGoalsParentObject.name);
+                foreach(GoalObject goal in MimicGoalsManager.Goals)
+                {
+                    Debug.Log("GoalsManager Mimic Goals: " + goal.Name);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("MimicGoalsParentObject is null");
+            }
 
             BoundaryZoneParent = ZonesParentObject.FindObject("BoundaryZoneParent");
             InferenceZonesParent = ZonesParentObject.FindObject("InferenceZonesParent");
