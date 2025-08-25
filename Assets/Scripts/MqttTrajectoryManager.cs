@@ -220,9 +220,9 @@ namespace CompasXR.Robots
             else if(mimicResultMessage.RobotName != serviceManager.ActiveRobotName)  //TODO: THIS IS FROM COMPAS XR, BUT NEEDS TO BE THOUGHT ABOUT FOR ROBOT TERRITORIES
             {
                 //Update Last Mimic Trajectory Result Message in the Service Manager
-                if(UIFunctionalities.MimicTrajectoryReviewSlider.value != 0)
+                if(UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value != 0)
                 {
-                    UIFunctionalities.MimicTrajectoryReviewSlider.value = 0;
+                    UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value = 0;
                 }
 
                 UIFunctionalities.SignalActiveRobotUpdateFromPlannerRoboticTerritories(
@@ -244,9 +244,9 @@ namespace CompasXR.Robots
             else
             {
                 //Update Last Mimic Trajectory Result Message in the Service Manager
-                if(UIFunctionalities.MimicTrajectoryReviewSlider.value != 0)
+                if(UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value != 0)
                 {
-                    UIFunctionalities.MimicTrajectoryReviewSlider.value = 0;
+                    UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value = 0;
                 }
 
                 //Update Last Mimic Trajectory Result Message in the Service Manager

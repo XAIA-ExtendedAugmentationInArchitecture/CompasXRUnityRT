@@ -245,7 +245,7 @@ namespace CompasXR.Robots
                     humanZoneReachability.transform.localScale = reachibilitysphereScale;
                     
                     Vector3 tempPos = reachabilityObject.transform.position;
-                    if(uiFunctionalities.MimicMirrorToggle.isOn)
+                    if(uiFunctionalities.UserInitiatedMimicMirrorToggle.isOn)
                     {
                         tempPos = InstantiateObjects.MirrorPositionAcrossBox(robotZoneObject, reachabilityObject.transform.position); //TODO: CHECK THIS IDK WHATS UP.
                         // tempPos = InstantiateObjects.MirrorPositionAcrossBox(robotZoneObject, reachabilityObject.transform.position, robotZoneObject.transform.right); //TODO: CHECK THIS IDK WHATS UP.

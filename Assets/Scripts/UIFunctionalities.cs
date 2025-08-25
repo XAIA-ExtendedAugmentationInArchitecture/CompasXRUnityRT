@@ -241,17 +241,23 @@ namespace CompasXR.UI
         public GameObject ToggleZoneVisibilityObject;
 
         //Mimic Controls
-        public GameObject MimicControlsSetPointsUIObjects;
+        public GameObject UserInitiatedMimicControlsSetPointsUIObjects;
+        public GameObject MimicControlsParent;
+        public GameObject UserInitiatedMimicControls;
         public GameObject MimicSetPointsButtonObject;
-        public GameObject MimicControlsUndoPointButtonObject;
-        public GameObject MimicRequestTrajectoryButtonObject;
-        public GameObject MimicMirrorToggleObject;
-        public Toggle MimicMirrorToggle;
+        public GameObject UserInitiatedMimicControlsUndoPointButtonObject;
+        public GameObject UserInitiatedMimicRequestTrajectoryButtonObject;
+        public GameObject UserInitiatedMimicMirrorToggleObject;
+        public Toggle UserInitiatedMimicMirrorToggle;
 
-        public GameObject MimicControlsReviewAndExecuteTrajectoryUIObjects;
-        public GameObject MimicExecuteTrajectoryButtonObject;
-        public GameObject MimicTrajectoryReviewSliderObject;
-        public Slider MimicTrajectoryReviewSlider;
+        public GameObject UserInitiatedMimicControlsReviewAndExecuteTrajectoryUIObjects;
+
+        //TODO: Testing Set Target Button.
+        public GameObject UserInitiatedSetTargetButtonObject;
+        public CompasXRButtonHeldEvent UserInitiatedSetTargetButtonHeldEventComponent;
+        public GameObject UserInitiatedMimicExecuteTrajectoryButtonObject;
+        public GameObject UserInitiatedMimicTrajectoryReviewSliderObject;
+        public Slider UserInitiatedMimicTrajectoryReviewSlider;
         
         //Mimic OnScreen Messages
         public GameObject MimicSetPointOutsideOfHumanZone;
@@ -259,14 +265,15 @@ namespace CompasXR.UI
         public GameObject MimicPointsTooFewMessage;
         public GameObject MimicUnabletoExecuteTrajectory;
 
-        public GameObject MimicSetPointGreenScreen;
-        public GameObject MimicUndoPointRedScreen;
+        public GameObject UserInitiatedMimicSetPointGreenScreen;
+        public GameObject UserInitiatedMimicUndoPointRedScreen;
         public float MimicSetandUndoFlashDuration = 0.1f;
         public CompasXRButtonHeldEvent FollowMeButtonHeldEventComponent;
         public GameObject RealtimeMimicEditorTestToggleObject;
         public int TEMPORARYCOUNTERREALTIMEMIMIC = 0;
 
         public GameObject RealtimeMimicIOToggleGameObject;
+        public GameObject RealtimeMimicMirrorToggleGameObject;
 
         //TODO: TESTING
         DevicePoseBehaviour devicePoseBehavior;
@@ -300,6 +307,8 @@ namespace CompasXR.UI
         {
             if (FollowMeButtonHeldEventComponent.isHeld)
             {
+                Debug.Log("FOLLOWME: NEW BUTTON WORKS BUT STILL TESTING");
+                return;
                 SetRealtimeMimicPointBasicTEMPORARY();
             }
         }
@@ -349,7 +358,7 @@ namespace CompasXR.UI
 
             RoboticTerritoriesInferenceControlsObject = RoboticTerritoriesUpdatedCanvas.FindObject("InferenceControls");
             SetInferenceControlsOnStart();
-            
+
             //TODO: Mimic remap testing ////////////////////////////////////////////////////////////////////////////////////////
             MimicRemapPointsToRobotReachabilityMessage = MessagesParent.FindObject("Prefabs").FindObject("RemapMimicPointsMessage");
             Button RemapButton = MimicRemapPointsToRobotReachabilityMessage.FindObject("YesButton").GetComponent<Button>();
@@ -358,60 +367,35 @@ namespace CompasXR.UI
             NoButton.GetComponent<Button>().onClick.AddListener(DestroySystemProposedMimicPointsButtonMethod);
             //TODO: Mimic remap testing ////////////////////////////////////////////////////////////////////////////////////////
 
-            //TODO: Find FollowMe Button and then add event trigger componnet to it.
-            GameObject RealtimeMimicControls = RoboticTerritoriesCanvasItems.FindObject("RealtimeMimicControls");
-            GameObject FollowMeButton = RealtimeMimicControls.FindObject("FollowMeButton");
-            FollowMeButton.AddComponent<CompasXRButtonHeldEvent>();
-            FollowMeButtonHeldEventComponent = FollowMeButton.GetComponent<CompasXRButtonHeldEvent>();
-
-            GameObject TESTBUTTON = RoboticTerritoriesCanvasItems.FindObject("TESTINGBUTTON");
-            Button TESTINGBUTTON = TESTBUTTON.GetComponentInChildren<Button>();
-            TESTINGBUTTON.onClick.AddListener(PrintobservedGeometryDictInformation);
-
-            RealtimeMimicIOToggleGameObject = RoboticTerritoriesCanvasItems.FindObject("IOTestToggle");
-            Toggle RealtimeMimicIOToggle = RealtimeMimicIOToggleGameObject.GetComponentInChildren<Toggle>();
-            RealtimeMimicIOToggle.onValueChanged.AddListener(ToggleIOForRealtimeMimicMethod);
-
-
-            if (FollowMeButtonHeldEventComponent == null)
-            {
-                Debug.LogError("JOETESTING : FollowMeButtonHeldEventComponent is null.");
-            }
-            else
-            {
-                Debug.Log("JOETESTING : FollowMeButtonHeldEventComponent is not null.");
-            }
-
-            if(RealtimeMimicControls == null)
-            {
-                Debug.LogError("JOETESTING : RealtimeMimicControls is null.");
-            }
-            else
-            {
-                Debug.Log("JOETESTING : RealtimeMimicControls is not null.");
-            }
-
-            if(FollowMeButton == null)
-            {
-                Debug.Log("JOETESTING : FollowMeButton is null.");
-            }
-            else
-            {
-                Debug.Log("JOETESTING : FollowMeButton is not null.");
-            }
-
-            //TODO: //TODO: //TODO: //TODO: //TODO: THIS IS LITERALLY JUST FOR TESTING PURPOSES IN THE REALTIME MIMIC.
-            RealtimeMimicEditorTestToggleObject = RealtimeMimicControls.FindObject("TestingToggle");
-            RealtimeMimicEditorTestToggleObject = RealtimeMimicControls.FindObject("TestingToggle");
-            Toggle RealtimeMimicTestingToggle = RealtimeMimicEditorTestToggleObject.GetComponentInChildren<Toggle>();
-            RealtimeMimicTestingToggle.onValueChanged.AddListener(TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY);
-
             //Set robotic items on start
             SetRoboticMenuItemsOnStart();
 
             //Set Mimic Controls on start
+            MimicControlsParent = RoboticTerritoriesUpdatedCanvas.FindObject("MimicControls");
             SetMimicUserInitiatedMimicControlsOnStart();
-        }    
+            SetRealtimeMimicControlsOnStart();
+            SetMimicGoalSelectionUIOnStart();
+
+        }
+
+        public void SetMimicGoalSelectionUIOnStart()
+        {
+            // MimicSelectGoalsUI = MimicControlsParent.FindObject("SelectGoalUI")
+
+            // //Find SetPointsButton Objects
+            // UserInterface.FindButtonandSetOnClickAction(
+            // MimicSelectGoalsUI,
+            // ref MimicNextGoalButton,
+            // "NextGoalButton", MimicNextGoalButtonMethod);
+
+            // //Find UndoPointsButton ObjectsU
+            // UserInterface.FindButtonandSetOnClickAction(
+            // MimicSelectGoalsUI,
+            // ref MimicPreviousGoals,
+            // "PreviousGoal", MimicPreviousGoalButtonMethod);
+
+        }
+
         public void PrintobservedGeometryDictInformation()
         {
             /*
@@ -437,6 +421,8 @@ namespace CompasXR.UI
             /*
             * Method is used to toggle the IO for the Realtime Mimic.
             */
+            Debug.Log("TOGGLEIOFORREALTIMEMIMIC : NEW TOGGLE WORKS BUT STILL TESTING");
+            return;
             Debug.Log($"ToggleIOForRealtimeMimicMethod: Toggling IO for Realtime Mimic to {toggle}");
             if (RealtimeMimicIOToggleGameObject != null)
             {
@@ -496,7 +482,6 @@ namespace CompasXR.UI
             //TODO: This is incorrect because it not set to this mode needs to be called in the set mode.
             // SetInferanceUIBasedOnInferenceState(GOALINFERRED);
         }
-
         public void SetInferanceUIBasedOnInferenceState(bool goalInfered)
         {
             /*
@@ -546,6 +531,8 @@ namespace CompasXR.UI
             /*
             * Method is used to test the Realtime Mimic Is Pressed Toggle.
             */
+            Debug.Log("REALTIMEMIMICTOGGLE: TESTING NEW BUTTON WORKS BUT WILL CHANGE LATER");
+            return;
             if (toggle)
             {
                 Debug.Log("ToggleRealtimeMimicIsPressedTestingMethod: Realtime Mimic Is Pressed Toggle is On.");
@@ -719,53 +706,115 @@ namespace CompasXR.UI
             }
         }
 
+        public void SetRealtimeMimicControlsOnStart()
+        {
+
+            //Find FollowMe Button and then add event trigger componnet to it.
+            GameObject RealtimeMimicControls = MimicControlsParent.FindObject("RealtimeMimicControls");
+            GameObject FollowMeButton = RealtimeMimicControls.FindObject("FollowMeButton");
+            FollowMeButton.AddComponent<CompasXRButtonHeldEvent>();
+            FollowMeButtonHeldEventComponent = FollowMeButton.GetComponent<CompasXRButtonHeldEvent>();
+
+            RealtimeMimicIOToggleGameObject = RealtimeMimicControls.FindObject("IOTestToggle");
+            Toggle RealtimeMimicIOToggle = RealtimeMimicIOToggleGameObject.GetComponentInChildren<Toggle>();
+            RealtimeMimicIOToggle.onValueChanged.AddListener(ToggleIOForRealtimeMimicMethod);
+
+            RealtimeMimicMirrorToggleGameObject = RealtimeMimicControls.FindObject("Mirror");
+            Toggle RealtimeMimicMirrorToggle = RealtimeMimicMirrorToggleGameObject.GetComponentInChildren<Toggle>();
+            RealtimeMimicMirrorToggle.onValueChanged.AddListener(RealtimeMimicMirrorToggleMethod);
+
+            if (FollowMeButtonHeldEventComponent == null)
+            {
+                Debug.LogError("JOETESTING : FollowMeButtonHeldEventComponent is null.");
+            }
+            else
+            {
+                Debug.Log("JOETESTING : FollowMeButtonHeldEventComponent is not null.");
+            }
+
+            if (RealtimeMimicControls == null)
+            {
+                Debug.LogError("JOETESTING : RealtimeMimicControls is null.");
+            }
+            else
+            {
+                Debug.Log("JOETESTING : RealtimeMimicControls is not null.");
+            }
+
+            if (FollowMeButton == null)
+            {
+                Debug.Log("JOETESTING : FollowMeButton is null.");
+            }
+            else
+            {
+                Debug.Log("JOETESTING : FollowMeButton is not null.");
+            }
+
+            //TODO: //TODO: //TODO: //TODO: //TODO: THIS IS LITERALLY JUST FOR TESTING PURPOSES IN THE REALTIME MIMIC.
+            RealtimeMimicEditorTestToggleObject = RealtimeMimicControls.FindObject("TestingToggle");
+            RealtimeMimicEditorTestToggleObject = RealtimeMimicControls.FindObject("TestingToggle");
+            Toggle RealtimeMimicTestingToggle = RealtimeMimicEditorTestToggleObject.GetComponentInChildren<Toggle>();
+            RealtimeMimicTestingToggle.onValueChanged.AddListener(TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY);
+
+
+        }
+
+        public void RealtimeMimicMirrorToggleMethod(bool value)
+        {
+            Debug.Log("RealtimeMimicMirrorToggleMethod: NEW TOGGLE WORKS, BUT TESTING NEEDS TO BE UPDATED IN THE OTHER METHODS BUT WORKS");
+        }
         public void SetMimicUserInitiatedMimicControlsOnStart()
         {
 
             //Find Mimic Control Objects
-            GameObject MimicControlsObject = RoboticTerritoriesCanvasItems.FindObject("MimicControls");
-            MimicControlsSetPointsUIObjects = MimicControlsObject.FindObject("SetPointsUI");
-            MimicControlsReviewAndExecuteTrajectoryUIObjects = MimicControlsObject.FindObject("ReviewAndExecuteTrajectoryUI");
+            UserInitiatedMimicControls = MimicControlsParent.FindObject("UserInitiatedMimicControls");
+            UserInitiatedMimicControlsSetPointsUIObjects = UserInitiatedMimicControls.FindObject("SetPointsUI");
+            UserInitiatedMimicControlsReviewAndExecuteTrajectoryUIObjects = UserInitiatedMimicControls.FindObject("ReviewAndExecuteTrajectoryUI");
 
             //Find SetPointsButton Objects
             UserInterface.FindButtonandSetOnClickAction(
-            MimicControlsSetPointsUIObjects,
+            UserInitiatedMimicControlsSetPointsUIObjects,
             ref MimicSetPointsButtonObject,
-            "SetPointButton", SetMimicPointButtonMethod);
+            "SetPointButton", SetUserInitiatedMimicPointButtonMethod);
+
+            //Find UndoPointsButton ObjectsU
+            UserInterface.FindButtonandSetOnClickAction(
+            UserInitiatedMimicControlsSetPointsUIObjects,
+            ref UserInitiatedMimicControlsUndoPointButtonObject,
+            "UndoPointButton", UndoUserInitiatedMimicPointButtonMethod);
 
             //Find UndoPointsButton Objects
             UserInterface.FindButtonandSetOnClickAction(
-            MimicControlsSetPointsUIObjects,
-            ref MimicControlsUndoPointButtonObject,
-            "UndoPointButton", UndoMimicPointButtonMethod);
-
-            //Find UndoPointsButton Objects
-            UserInterface.FindButtonandSetOnClickAction(
-            MimicControlsSetPointsUIObjects,
-            ref MimicRequestTrajectoryButtonObject,
-            "RequestTrajectoryButton", MimicRequestTrajectoryButtonMethod);
+            UserInitiatedMimicControlsSetPointsUIObjects,
+            ref UserInitiatedMimicRequestTrajectoryButtonObject,
+            "RequestTrajectoryButton", UserInitiatedMimicRequestTrajectoryButtonMethod);
 
             //Find Execute Button Objects
             UserInterface.FindButtonandSetOnClickAction(
-            MimicControlsReviewAndExecuteTrajectoryUIObjects,
-            ref MimicExecuteTrajectoryButtonObject,
-            "ExecuteTrajectoryButton", MimicExecuteTrajectoryButtonMethod);
+            UserInitiatedMimicControlsReviewAndExecuteTrajectoryUIObjects,
+            ref UserInitiatedMimicExecuteTrajectoryButtonObject,
+            "ExecuteTrajectoryButton", UserInitiatedMimicExecuteTrajectoryButtonMethod);
+
+            //TODO: Set Target Button.
+            UserInitiatedSetTargetButtonObject = UserInitiatedMimicControlsSetPointsUIObjects.FindObject("SetTargetButton");
+            UserInitiatedSetTargetButtonObject.AddComponent<CompasXRButtonHeldEvent>();
+            UserInitiatedSetTargetButtonHeldEventComponent = UserInitiatedSetTargetButtonObject.GetComponent<CompasXRButtonHeldEvent>();
+            UserInitiatedSetTargetButtonHeldEventComponent.vibrate = false;
 
             //Find Slider Objects
             UserInterface.FindSliderandSetOnValueChangeAction(
-            MimicControlsReviewAndExecuteTrajectoryUIObjects, ref MimicTrajectoryReviewSliderObject,
-            // ref MimicTrajectoryReviewSlider, "TrajectoryReviewSlider", value => MimicTrajectorySliderReviewMethod(value));
-            ref MimicTrajectoryReviewSlider, "TrajectoryReviewSlider", value => MimicTrajectorySliderReviewCompoundTrajectories(value));
+            UserInitiatedMimicControlsReviewAndExecuteTrajectoryUIObjects, ref UserInitiatedMimicTrajectoryReviewSliderObject,
+            ref UserInitiatedMimicTrajectoryReviewSlider, "TrajectoryReviewSlider", value => UserInitiatedMimicTrajectorySliderReviewCompoundTrajectories(value));
 
 
             //Set Mirror Toggle Object
-            MimicMirrorToggleObject = MimicControlsSetPointsUIObjects.FindObject("Mirror");
-            MimicMirrorToggle = MimicMirrorToggleObject.GetComponentInChildren<Toggle>();
-            MimicMirrorToggle.onValueChanged.AddListener(MimicMirrorToggleMethod);
+            UserInitiatedMimicMirrorToggleObject = UserInitiatedMimicControlsSetPointsUIObjects.FindObject("Mirror");
+            UserInitiatedMimicMirrorToggle = UserInitiatedMimicMirrorToggleObject.GetComponentInChildren<Toggle>();
+            UserInitiatedMimicMirrorToggle.onValueChanged.AddListener(UserInitiatedMimicMirrorToggleMethod);
 
             //Set Mimic OnScreen Messages
-            MimicSetPointGreenScreen = MimicControlsSetPointsUIObjects.FindObject("SetPointGreenScreen");
-            MimicUndoPointRedScreen = MimicControlsSetPointsUIObjects.FindObject("UndoPointRedScreen");
+            UserInitiatedMimicSetPointGreenScreen = UserInitiatedMimicControlsSetPointsUIObjects.FindObject("SetPointGreenScreen");
+            UserInitiatedMimicUndoPointRedScreen = UserInitiatedMimicControlsSetPointsUIObjects.FindObject("UndoPointRedScreen");
         }
         public void ControlARZoneObjectsBasedOnCurrentMode(ProjectZones.CurrentZoneMode currentMode)
         {
@@ -986,7 +1035,7 @@ namespace CompasXR.UI
                                 instantiateObjects.CreateRealtimeMimicPointsBasicTEMPORARY(humanZoneObject, robotZoneObject,
                                 ref instantiateObjects.RealtimeMimicHumanPoints, ref instantiateObjects.RealtimeMimicRobotPoints,
                                 instantiateObjects.RealtimeMimicHumanPointsParent, instantiateObjects.RealtimeMimicRobotPointsParent,
-                                instantiateObjects.RealtimeMimicHumanLine, instantiateObjects.RealtimeMimicRobotLine, MimicMirrorToggle.isOn);
+                                instantiateObjects.RealtimeMimicHumanLine, instantiateObjects.RealtimeMimicRobotLine, UserInitiatedMimicMirrorToggle.isOn);
 
                                 //TODO: CONVERT TO FRAME FROM LAST GAMEOBJECT IN ROBOT POINTS LIST.
                                 GameObject lastRealtimeMimicPointTest = instantiateObjects.RealtimeMimicRobotPoints[instantiateObjects.RealtimeMimicRobotPoints.Count - 1];
@@ -1015,7 +1064,7 @@ namespace CompasXR.UI
                             instantiateObjects.CreateRealtimeMimicPointsBasicTEMPORARY(humanZoneObject, robotZoneObject,
                             ref instantiateObjects.RealtimeMimicHumanPoints, ref instantiateObjects.RealtimeMimicRobotPoints,
                             instantiateObjects.RealtimeMimicHumanPointsParent, instantiateObjects.RealtimeMimicRobotPointsParent,
-                            instantiateObjects.RealtimeMimicHumanLine, instantiateObjects.RealtimeMimicRobotLine, MimicMirrorToggle.isOn);
+                            instantiateObjects.RealtimeMimicHumanLine, instantiateObjects.RealtimeMimicRobotLine, UserInitiatedMimicMirrorToggle.isOn);
 
                             //TODO: CONVERT TO FRAME FROM LAST GAMEOBJECT IN ROBOT POINTS LIST.
                             GameObject lastRealtimeMimicPoint = instantiateObjects.RealtimeMimicRobotPoints[instantiateObjects.RealtimeMimicRobotPoints.Count - 1];
@@ -1054,11 +1103,13 @@ namespace CompasXR.UI
             }
         }
 
-        public void SetMimicPointButtonMethod()
+        public void SetUserInitiatedMimicPointButtonMethod()
         {
             /*
             * Method is used to set the mimic point based on the human and robot zone objects.
             */
+            Debug.Log("NEWSETMIMICPOINTWORKED : TESTING, and WILL REMOVE LATER");
+            return;
             Debug.Log("SetMimicPoint: Setting Mimic Point based on Human and Robot Zone Objects.");
             Debug.Log("SetMimicPoint: Mimic Zone Objects: " +databaseManager.ProjectZones.MimicZones + "Type of Mimic Zones: " + databaseManager.ProjectZones.MimicZones.GetType());
     
@@ -1083,8 +1134,8 @@ namespace CompasXR.UI
                         //Set Lines active and Points active
                         instantiateObjects.MimicHumanObjects.SetActive(true);
                         instantiateObjects.MimicRobotObjects.SetActive(true);
-                        instantiateObjects.CreateMimicPoints(humanZoneObject, robotZoneObject, ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, instantiateObjects.MimicHumanLine, instantiateObjects.MimicRobotLine, instantiateObjects.MimicHumanPointsParent, instantiateObjects.MimicRobotPointsParent, MimicMirrorToggle.isOn);
-                        StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(MimicSetPointGreenScreen, MimicSetandUndoFlashDuration));
+                        instantiateObjects.CreateMimicPoints(humanZoneObject, robotZoneObject, ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, instantiateObjects.MimicHumanLine, instantiateObjects.MimicRobotLine, instantiateObjects.MimicHumanPointsParent, instantiateObjects.MimicRobotPointsParent, UserInitiatedMimicMirrorToggle.isOn);
+                        StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(UserInitiatedMimicSetPointGreenScreen, MimicSetandUndoFlashDuration));
                     }
                     else
                     {
@@ -1104,16 +1155,18 @@ namespace CompasXR.UI
                 Debug.LogError("SetMimicPoint: 'human_zone' key not found in MimicZones.");
             }
         }
-        public void UndoMimicPointButtonMethod()
+        public void UndoUserInitiatedMimicPointButtonMethod()
         {
             /*
             * Method is used to undo the last set mimic point.
             */
+            Debug.Log("NEWUNDOBUTTONWORKED : TESTING AND WILL REMOVE LATER.");
+            return;
             Debug.Log("UndoMimicPoint: Undoing Last Mimic Point.");
             if(instantiateObjects.MimicHumanPoints.Count > 0 && instantiateObjects.MimicRobotPoints.Count > 0)
             {
                 instantiateObjects.DestroyLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine);
-                StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(MimicUndoPointRedScreen, MimicSetandUndoFlashDuration));
+                StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(UserInitiatedMimicUndoPointRedScreen, MimicSetandUndoFlashDuration));
             }
             else
             {
@@ -1168,18 +1221,20 @@ namespace CompasXR.UI
             /*
             * Method is used to set the Mimic Controls activity based on the input.
             */
-            MimicControlsSetPointsUIObjects.SetActive(setControlsActive);
+            UserInitiatedMimicControlsSetPointsUIObjects.SetActive(setControlsActive);
             MimicSetPointsButtonObject.GetComponentInChildren<Button>().interactable = setControlsInteractive;
-            MimicControlsUndoPointButtonObject.GetComponentInChildren<Button>().interactable = setControlsInteractive;
-            MimicRequestTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = requestInteractable;
-            MimicMirrorToggleObject.GetComponentInChildren<Toggle>().interactable = setControlsInteractive;
+            UserInitiatedMimicControlsUndoPointButtonObject.GetComponentInChildren<Button>().interactable = setControlsInteractive;
+            UserInitiatedMimicRequestTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = requestInteractable;
+            UserInitiatedMimicMirrorToggleObject.GetComponentInChildren<Toggle>().interactable = setControlsInteractive;
 
-            MimicControlsReviewAndExecuteTrajectoryUIObjects.SetActive(reviewActive);
-            MimicExecuteTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = reviewInteractive;
-            MimicTrajectoryReviewSliderObject.GetComponentInChildren<Slider>().interactable = reviewInteractive;
+            UserInitiatedMimicControlsReviewAndExecuteTrajectoryUIObjects.SetActive(reviewActive);
+            UserInitiatedMimicExecuteTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = reviewInteractive;
+            UserInitiatedMimicTrajectoryReviewSliderObject.GetComponentInChildren<Slider>().interactable = reviewInteractive;
         }
-        public void MimicRequestTrajectoryButtonMethod()
+        public void UserInitiatedMimicRequestTrajectoryButtonMethod()
         {
+            Debug.Log("UserInitiatedMimicRequestTrajectoryButtonMethod : NEW BUTTON WORKS TESTING WILL REMOVE LATER");
+            return;
             Debug.Log($"MimicRequestTrajectoryButtonMethod: Requesting Trajectory for {instantiateObjects.MimicHumanPoints.Count} points.");
 
             if (instantiateObjects.MimicHumanPoints.Count < 2)
@@ -1209,7 +1264,7 @@ namespace CompasXR.UI
                         instantiateObjects.CreateSystemProposalPoints(humanZoneObject, robotZoneObject, trajectoryVisualizer.humanZoneMimicReachibility, ref instantiateObjects.MimicHumanPoints, 
                         ref instantiateObjects.MimicHumanSystemProposedPoints, ref instantiateObjects.MimicRobotSystemProposedPoints,
                         instantiateObjects.MimicSystemProposedLineHuman, instantiateObjects.MimicHumanSystemProposedPointsParent, instantiateObjects.MimicSystemProposedLineRobot, 
-                        instantiateObjects.MimicRobotSystemProposedPointsParent, MimicMirrorToggleObject.GetComponentInChildren<Toggle>().isOn);
+                        instantiateObjects.MimicRobotSystemProposedPointsParent, UserInitiatedMimicMirrorToggleObject.GetComponentInChildren<Toggle>().isOn);
                     }
                     else
                     {
@@ -1304,13 +1359,15 @@ namespace CompasXR.UI
                 Debug.Log("MimicTrajectorySliderReviewMethod: Current Trajectory is null.");
             }
         }
-        public void MimicTrajectorySliderReviewCompoundTrajectories(float value)
+        public void UserInitiatedMimicTrajectorySliderReviewCompoundTrajectories(float value)
         {
+            Debug.Log($"UserInitiatedMimicTrajectorySliderReviewCompoundTrajectories : NEW SLIDER WORKS {value} TESTING WILL REMOVE LATER");
+            return;
             if (mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.Trajectories != null)
             {
                 if (mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.Trajectories.Count > 0)
                 {
-                    
+
                     List<Trajectory> trajectories = mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.Trajectories;
                     List<(int start, int end)> trajectoryRanges = new List<(int, int)>();
                     int configCount = 0;
@@ -1348,7 +1405,7 @@ namespace CompasXR.UI
                         Debug.Log($"Slider = {SliderValue:0.000} → Global Config #{targetGlobalIndex}");
                         Debug.Log($"Belongs to Trajectory #{selectedTrajectoryIndex}, Local Config #{localIndex}");
                         trajectoryVisualizer.ColorRobotConfigfromSliderInputCompoundTrajectories(selectedTrajectoryIndex, localIndex, trajectories, instantiateObjects.InactiveRobotMaterial, instantiateObjects.ActiveRobotMaterial, ref trajectoryVisualizer.previousConfigIndex, ref trajectoryVisualizer.previousTrajectoryIndex);
-                        
+
                     }
                     else
                     {
@@ -1361,8 +1418,10 @@ namespace CompasXR.UI
                 Debug.Log("MimicTrajectorySliderReviewMethod: Current Trajectory is null.");
             }
         }
-        public void MimicExecuteTrajectoryButtonMethod()
+        public void UserInitiatedMimicExecuteTrajectoryButtonMethod()
         {
+            Debug.Log("UserInitiatedMimicExecuteTrajectoryButtonMethod : NEW BUTTON WORKS WILL REMOVE LATER");
+            return;
             Debug.Log("MimicExecuteTrajectoryButton: Executing Mimic Trajectory.");
             if(mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints == null 
             || mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints.Count <= 0 
@@ -1386,11 +1445,13 @@ namespace CompasXR.UI
             }
         }
 
-        public void MimicMirrorToggleMethod(bool value)
+        public void UserInitiatedMimicMirrorToggleMethod(bool value)
         {
             /*
             * Method is used to set the mimic mirror based on the toggle value.
             */
+            Debug.Log($"UserInitiatedMimicMirrorToggleMethod: NEW MIRROR TOGGLE WORKS {value} TESTING WILL REMOVE LATER");
+            return;
             Debug.Log($"MimicMirrorToggleMethod: Setting Mimic Mirror to {value}");
             if(ReachabilityToggleObject.GetComponentInChildren<Toggle>().isOn)
             {

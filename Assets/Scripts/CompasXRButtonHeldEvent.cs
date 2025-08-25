@@ -11,6 +11,8 @@ namespace CompasXR.UI
         private float vibrationInterval = 0.3f; // seconds between buzzes
         private float timer = 0f;
 
+        public bool vibrate = true;
+
         public void OnPointerDown(PointerEventData eventData)
         {
             isHeld = true;
@@ -25,7 +27,7 @@ namespace CompasXR.UI
 
         void Update()
         {
-            if (isHeld)
+            if (isHeld && vibrate)
             {
                 timer += Time.deltaTime;
 
