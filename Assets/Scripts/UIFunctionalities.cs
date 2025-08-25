@@ -25,6 +25,7 @@ using System.Collections;
 using Vuforia;
 using RosSharp.RosBridgeClient.MessageTypes.Actionlib;
 using Unity.PlasticSCM.Editor.WebApi;
+using UnityEngine.Analytics;
 
 namespace CompasXR.UI
 {
@@ -287,6 +288,9 @@ namespace CompasXR.UI
 
         public GameObject RealtimeMimicIOToggleGameObject;
         public GameObject RealtimeMimicMirrorToggleGameObject;
+        public Toggle RealtimeMimicMirrorToggle;
+
+        private bool _syncingMirrorToggles = false;
 
         //TODO: TESTING
         DevicePoseBehaviour devicePoseBehavior;
@@ -295,10 +299,8 @@ namespace CompasXR.UI
         public List<string> MimicModesList = new List<string> {"UserInitiated", "RealtimeMimic" };
         public int CurrentMimicModeIndex = 0;
 
-        public int currentSelectedGoalIndex = 0;
+        public int mimicCurrentSelectedGoalIndex = 0;
         public string CurrentSelectedGoalName = "Goal00";
-
-
 
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
 
@@ -497,14 +499,14 @@ namespace CompasXR.UI
             }
             else
             {
-                if (currentSelectedGoalIndex < instantiateObjects.MimicGoalsManager.Goals.Count - 1)
+                if (mimicCurrentSelectedGoalIndex < instantiateObjects.MimicGoalsManager.Goals.Count - 1)
                 {
-                    GameObject previousSelectedGoal = instantiateObjects.MimicGoalsManager.Goals[currentSelectedGoalIndex].GoalGameObject;
+                    GameObject previousSelectedGoal = instantiateObjects.MimicGoalsManager.Goals[mimicCurrentSelectedGoalIndex].GoalGameObject;
                     previousSelectedGoal.SetActive(false);
 
-                    currentSelectedGoalIndex += 1;
+                    mimicCurrentSelectedGoalIndex += 1;
 
-                    SetMimicGoalFromIndex(currentSelectedGoalIndex);
+                    SetMimicGoalFromIndex(mimicCurrentSelectedGoalIndex);
 
                     Debug.Log($"MimicSelectNextGoalButtonMethod: Changed Selected Goal to {CurrentSelectedGoalName}");
                 }
@@ -534,14 +536,14 @@ namespace CompasXR.UI
             }
             else
             {
-                if (currentSelectedGoalIndex > 0)
+                if (mimicCurrentSelectedGoalIndex > 0)
                 {
-                    GameObject previousSelectedGoal = instantiateObjects.MimicGoalsManager.Goals[currentSelectedGoalIndex].GoalGameObject;
+                    GameObject previousSelectedGoal = instantiateObjects.MimicGoalsManager.Goals[mimicCurrentSelectedGoalIndex].GoalGameObject;
                     previousSelectedGoal.SetActive(false);
 
-                    currentSelectedGoalIndex -= 1;
+                    mimicCurrentSelectedGoalIndex -= 1;
 
-                    SetMimicGoalFromIndex(currentSelectedGoalIndex);
+                    SetMimicGoalFromIndex(mimicCurrentSelectedGoalIndex);
 
                     Debug.Log($"MimicSelectPreviousGoalButtonMethod: Changed Selected Goal to {CurrentSelectedGoalName}");
                 }
@@ -571,6 +573,7 @@ namespace CompasXR.UI
             "PreviousGoal", MimicSelectPreviousGoalButtonMethod);
 
             CurrentSelectedGoalTextObject = MimicSelectGoalsUI.FindObject("GoalNameText").GetComponentInChildren<TMP_Text>();
+            SetMimicGoalFromIndex(mimicCurrentSelectedGoalIndex);
         }
         public void PrintobservedGeometryDictInformation()
         {
@@ -893,7 +896,7 @@ namespace CompasXR.UI
             RealtimeMimicIOToggle.onValueChanged.AddListener(ToggleIOForRealtimeMimicMethod);
 
             RealtimeMimicMirrorToggleGameObject = RealtimeMimicControlsParent.FindObject("Mirror");
-            Toggle RealtimeMimicMirrorToggle = RealtimeMimicMirrorToggleGameObject.GetComponentInChildren<Toggle>();
+            RealtimeMimicMirrorToggle = RealtimeMimicMirrorToggleGameObject.GetComponentInChildren<Toggle>();
             RealtimeMimicMirrorToggle.onValueChanged.AddListener(RealtimeMimicMirrorToggleMethod);
 
             if (FollowMeButtonHeldEventComponent == null)
@@ -934,7 +937,11 @@ namespace CompasXR.UI
 
         public void RealtimeMimicMirrorToggleMethod(bool value)
         {
-            Debug.Log("RealtimeMimicMirrorToggleMethod: NEW TOGGLE WORKS, BUT TESTING NEEDS TO BE UPDATED IN THE OTHER METHODS BUT WORKS");
+            /*
+            * Method is used to set the mirror mode for the Realtime Mimic.
+            */
+            Debug.Log($"RealtimeMimicMirrorToggleMethod: Setting Realtime Mimic Mirror Mode to {value}");
+            OnMirrorToggleChanged(value);
         }
         public void SetMimicUserInitiatedMimicControlsOnStart()
         {
@@ -1240,7 +1247,7 @@ namespace CompasXR.UI
                                 instantiateObjects.CreateRealtimeMimicPointsBasicTEMPORARY(humanZoneObject, robotZoneObject,
                                 ref instantiateObjects.RealtimeMimicHumanPoints, ref instantiateObjects.RealtimeMimicRobotPoints,
                                 instantiateObjects.RealtimeMimicHumanPointsParent, instantiateObjects.RealtimeMimicRobotPointsParent,
-                                instantiateObjects.RealtimeMimicHumanLine, instantiateObjects.RealtimeMimicRobotLine, UserInitiatedMimicMirrorToggle.isOn);
+                                instantiateObjects.RealtimeMimicHumanLine, instantiateObjects.RealtimeMimicRobotLine, RealtimeMimicMirrorToggle.isOn);
 
                                 //TODO: CONVERT TO FRAME FROM LAST GAMEOBJECT IN ROBOT POINTS LIST.
                                 GameObject lastRealtimeMimicPointTest = instantiateObjects.RealtimeMimicRobotPoints[instantiateObjects.RealtimeMimicRobotPoints.Count - 1];
@@ -1269,7 +1276,7 @@ namespace CompasXR.UI
                             instantiateObjects.CreateRealtimeMimicPointsBasicTEMPORARY(humanZoneObject, robotZoneObject,
                             ref instantiateObjects.RealtimeMimicHumanPoints, ref instantiateObjects.RealtimeMimicRobotPoints,
                             instantiateObjects.RealtimeMimicHumanPointsParent, instantiateObjects.RealtimeMimicRobotPointsParent,
-                            instantiateObjects.RealtimeMimicHumanLine, instantiateObjects.RealtimeMimicRobotLine, UserInitiatedMimicMirrorToggle.isOn);
+                            instantiateObjects.RealtimeMimicHumanLine, instantiateObjects.RealtimeMimicRobotLine, RealtimeMimicMirrorToggle.isOn);
 
                             //TODO: CONVERT TO FRAME FROM LAST GAMEOBJECT IN ROBOT POINTS LIST.
                             GameObject lastRealtimeMimicPoint = instantiateObjects.RealtimeMimicRobotPoints[instantiateObjects.RealtimeMimicRobotPoints.Count - 1];
@@ -1307,7 +1314,6 @@ namespace CompasXR.UI
                 Debug.LogError("CreateRealtimeMimicPointsBasicTEMPORARY: 'human_zone' key not found in MimicZones.");
             }
         }
-
         public void SetUserInitiatedMimicPointButtonMethod()
         {
             /*
@@ -1767,18 +1773,35 @@ namespace CompasXR.UI
             /*
             * Method is used to set the mimic mirror based on the toggle value.
             */
-            Debug.Log($"UserInitiatedMimicMirrorToggleMethod: NEW MIRROR TOGGLE WORKS {value} TESTING WILL REMOVE LATER");
-            return;
             Debug.Log($"MimicMirrorToggleMethod: Setting Mimic Mirror to {value}");
-            if(ReachabilityToggleObject.GetComponentInChildren<Toggle>().isOn)
+            OnMirrorToggleChanged(value);
+        }
+        private void OnMirrorToggleChanged(bool value) //TODO: Kind of a hack, but keeps the toggles in sync.
+        {
+            if (_syncingMirrorToggles) return;
+
+            Debug.Log($"OnMirrorToggleChanged : Mirror toggles changed to {value}");
+
+            _syncingMirrorToggles = true;
+            if (UserInitiatedMimicMirrorToggle.isOn != value)
+                UserInitiatedMimicMirrorToggle.isOn = value;
+            if (RealtimeMimicMirrorToggle.isOn != value)
+                RealtimeMimicMirrorToggle.isOn = value;
+            _syncingMirrorToggles = false;
+
+
+            if (ReachabilityToggleObject.GetComponentInChildren<Toggle>().isOn)
             {
-                Debug.Log("MimicMirrorToggleMethod: Reachability Toggle is on.");
-                trajectoryVisualizer.AddReachabilitlyToHumanZone(trajectoryVisualizer.ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName),
-                databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, ReachabilityToggleObject.GetComponent<Toggle>().isOn);
+                Debug.Log("Reachability Toggle is on.");
+                trajectoryVisualizer.AddReachabilitlyToHumanZone(
+                    trajectoryVisualizer.ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName),
+                    databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject,
+                    databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject,
+                    ReachabilityToggleObject.GetComponent<Toggle>().isOn);
             }
             else
             {
-                Debug.LogWarning("MimicMirrorToggleMethod: Reachability Toggle is not on.");
+                Debug.LogWarning("Reachability Toggle is not on.");
             }
         }
 

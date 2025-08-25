@@ -5877,7 +5877,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &127666907
 Transform:
   m_ObjectHideFlags: 0
@@ -52951,7 +52951,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1048439116
 Transform:
   m_ObjectHideFlags: 0
@@ -120118,17 +120118,12 @@ MonoBehaviour:
   TEMPORARYCOUNTERREALTIMEMIMIC: 0
   RealtimeMimicIOToggleGameObject: {fileID: 0}
   RealtimeMimicMirrorToggleGameObject: {fileID: 0}
-  GeometryGoalsList:
-  - Goal 00
-  - Goal 01
-  - Goal 02
-  - Goal 03
-  - Goal 04
-  - Goal 05
-  - Goal 06
-  - Goal 07
-  - Goal 08
-  - Goal 09
+  MimicModesList:
+  - UserInitiated
+  - RealtimeMimic
+  CurrentMimicModeIndex: 0
+  mimicCurrentSelectedGoalIndex: 0
+  CurrentSelectedGoalName: Goal00
 --- !u!1 &3175254400978762859
 GameObject:
   m_ObjectHideFlags: 0
