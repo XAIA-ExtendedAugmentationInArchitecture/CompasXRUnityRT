@@ -44,12 +44,22 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public string mimicExecuteTrajectoryRequestTopic { get; set; }
         public string realtimeMimicRequestTopic { get; set; }
         public string realtimeMimicIOToggleRequestTopic { get; set; }
+
+        public string inferenceRequestTopic { get; set; }
+        public string inferenceReplyTopic { get; set; }
+        // public string inferenceRequestTargetTopic { get; set; }
+        // public string inferenceExecuteTargetRequestTopic { get; set; }
         public RTPublishers(string projectName)
         {
             mimicRequestTopic = $"robotic_territories/mimic_request/{projectName}";
             mimicExecuteTrajectoryRequestTopic = $"robotic_territories/mimic_execute_trajectory/{projectName}";
             realtimeMimicRequestTopic = $"robotic_territories/real_time_mimic_request/{projectName}";
             realtimeMimicIOToggleRequestTopic = $"robotic_territories/real_time_mimic_io_toggle_request/{projectName}";
+
+            inferenceRequestTopic = $"robotic_territories/inference_request/{projectName}";
+            inferenceReplyTopic = $"robotic_territories/inference_user_reply/{projectName}";
+            // inferenceRequestTargetTopic = $"robotic_territories/inference_request_target/{projectName}";
+            // inferenceExecuteTargetRequestTopic = $"robotic_territories/inference_execute_target/{projectName}";
         }
 
     }
@@ -63,12 +73,16 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         */
         public string mimicResultTopic { get; set; }
         public string realtimeMimicResultTopic { get; set; }
+        public string inferenceResultTopic { get; set; }
 
         //Constructer for subscribers that takes an input project name
         public RTSubscribers(string projectName)
         {
             mimicResultTopic = $"robotic_territories/mimic_result/{projectName}";
             realtimeMimicResultTopic = $"robotic_territories/real_time_mimic_result/{projectName}";
+
+            inferenceResultTopic = $"robotic_territories/inference_result/{projectName}";
+            // inferenceTargetResultTopic = $"robotic_territories/inference_target_result/{projectName}";
         }
     }
 
@@ -112,7 +126,6 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 return null;
             }
         }
-
         public static List<Dictionary<string, object>> _getTrajectoriesDataFromList(List<Trajectory> Trajectories)
         {
             /*
@@ -125,7 +138,6 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             }
             return trajectoriesData;
         }
-
 
         public static List<Frame> _parseDataFromFramesList(List<Dictionary<string, object>> framesData)
         {
@@ -337,12 +349,12 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         {
             Header = header ?? new Header();
             Trajectories = trajectories;
-            CombinedTrajectoryPoints = _GetJointTRajectoryPoints(trajectories);
+            CombinedTrajectoryPoints = _GetJointTrajectoryPoints(trajectories);
             RobotBaseFrame = robotBaseFrame;
             RobotName = robotName;
         }
 
-        public static List<JointTrajectoryPoint> _GetJointTRajectoryPoints(List<Trajectory> trajectories)
+        public static List<JointTrajectoryPoint> _GetJointTrajectoryPoints(List<Trajectory> trajectories)
         {
             if (trajectories.Count == 0)
             {
@@ -654,11 +666,11 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public Header Header { get; private set; }
         public int Signal { get; private set; }
         public int Value { get; private set; }
-        public RealtimeMimicIOToggleRequestMessage(int signal, bool gripperToggle, Header header=null) //List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header=null)
+        public RealtimeMimicIOToggleRequestMessage(int signal, bool gripperToggle, Header header = null) //List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header=null)
         {
             Header = header ?? new Header();
             Signal = signal;
-            if(gripperToggle)
+            if (gripperToggle)
             {
                 Value = 1; // 1 for gripper open
             }
@@ -707,5 +719,209 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         }
     }
 
+    [System.Serializable]
+    public class InferenceRequestMessage
+    {
+        /*
+        * InferenceRequestMessage : Class is used to manage the InferenceRequestMessage message for Compas XR communication.
+        * It is designed to store the element ID, robot name, and header for the message.
+        * It is sent to the CAD when a user requests a trajectory.
+        */
+        public Header Header { get; private set; }
+        public List<Frame> CurrentGeometryFrames { get; private set; }
+        public string RobotName { get; private set; }
+        public InferenceRequestMessage(List<Frame> currentGeometryFrames, string robotName, Header header = null)
+        {
+            Header = header ?? new Header();
+            CurrentGeometryFrames = currentGeometryFrames;
+            RobotName = robotName;
+        }
+        public Dictionary<string, object> GetData()
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            return new Dictionary<string, object>
+            {
+                { "header", Header.GetData() },
+                { "geometry_frames", MessageHandelingExtensions._getDataFromFramesList(CurrentGeometryFrames) },
+                { "robot_name", RobotName }
+            };
+        }
+        public static InferenceRequestMessage Parse(string jsonString)
+        {
+            /*
+            * Method is used to parse an instance of the class from a JSON string.
+            */
+            var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+            var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
+            Header header = Header.Parse(headerInfo);
 
+            var geometryFramesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["geometry_frames"].ToString());
+            List<Frame> geometryFrames = Frame._parseFramesData(geometryFramesData);
+            var robotName = jsonObject["robot_name"].ToString();
+            return new InferenceRequestMessage(geometryFrames, robotName, header);
+
+        }
+    }
+
+    [System.Serializable] //TODO: CHECK THIS.
+    public class InferenceResultMessage
+    {
+        /*
+        * GetTrajectoryRequest : Class is used to manage the GetTrajectoryRequest message for Compas XR communication.
+        * It is designed to store the element ID, robot name, and header for the message.
+        * It is sent to the CAD when a user requests a trajectory.
+        */
+        public Header Header { get; private set; }
+
+        //TODO: Make Nullable.
+        public List<Trajectory> Trajectories { get; private set; }
+
+        //TODO: Make Nullable.
+        public Frame RobotBaseFrame { get; private set; }
+
+        //TODO: Make Nullable.
+        public List<JointTrajectoryPoint> CombinedTrajectoryPoints { get; private set; }
+        public string RobotName { get; private set; }
+        public string InferenceGuess { get; set; }
+
+        public InferenceResultMessage(string inferenceGuess, List<Trajectory> trajectories, Frame robotBaseFrame = null, string robotName = null, Header header = null)
+        {
+            Header = header ?? new Header();
+            Trajectories = trajectories;
+            if (trajectories.Count > 0)
+            {
+                CombinedTrajectoryPoints = _GetJointTrajectoryPoints(trajectories);
+            }
+            else
+            {
+                CombinedTrajectoryPoints = new List<JointTrajectoryPoint>();
+            }
+            RobotBaseFrame = robotBaseFrame;
+            RobotName = robotName;
+            InferenceGuess = inferenceGuess;
+        }
+
+        public static List<JointTrajectoryPoint> _GetJointTrajectoryPoints(List<Trajectory> trajectories)
+        {
+            if (trajectories.Count == 0)
+            {
+                Debug.LogWarning("MimicTrajectoryResultMessage: No trajectories found in the message returning null list.");
+                return new List<JointTrajectoryPoint>();
+            }
+            else
+            {
+                Debug.Log($"MimicTrajectoryResultMessage: Found {trajectories.Count} trajectories in the message.");
+                return MessageHandelingExtensions._getCombinedTrajectoryPointsFromTrajectoryList(trajectories);
+            }
+        }
+        public Dictionary<string, object> GetData()
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            return new Dictionary<string, object>
+            {
+                { "header", Header.GetData() },
+                { "trajectories", MessageHandelingExtensions._getTrajectoriesDataFromList(Trajectories) },
+                { "robot_base_frame", RobotBaseFrame.GetData() },
+                { "robot_name", RobotName },
+                { "inference_guess", InferenceGuess }
+            };
+        }
+        public static InferenceResultMessage Parse(string jsonString)
+        {
+            /*
+            * Method is used to parse an instance of the class from a JSON string.
+            */
+
+            var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+            var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
+            Header header = Header.Parse(headerInfo);
+
+            var trajectoriesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["trajectories"].ToString());
+            List<Trajectory> trajectories = new List<Trajectory>();
+            if (trajectoriesData.Count > 0)
+            {
+                foreach (Dictionary<string, object> trajectoryData in trajectoriesData)
+                {
+                    if (trajectoryData.TryGetValue("data", out var trajectoryDataValue))
+                    {
+                        var trajectoryJson = JsonConvert.SerializeObject(trajectoryDataValue);
+                        var trajectoryDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(trajectoryJson);
+                        trajectories.Add(Trajectory.FromData(trajectoryDict));
+                    }
+                    else
+                    {
+                        Debug.LogWarning("MimicTrajectoryResultMessage: Parse: Trajectory data not found in the message.");
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogWarning("MimicTrajectoryResultMessage: Parse: No trajectories found in the message.");
+            }
+
+            Frame robotBaseFrame = MessageHandelingExtensions._getBaseFrameFromMessage(jsonObject);
+            if (robotBaseFrame == null)
+            {
+                Debug.LogWarning("MimicTrajectoryResultMessage: Parse: Robot base frame not found in the message.");
+            }
+            else
+            {
+                Debug.Log($"MimicTrajectoryResultMessage: Robot Base Frame Parsed Successfully: {JsonConvert.SerializeObject(robotBaseFrame)}");
+            }
+
+            //Parse the robot name
+            var robotName = jsonObject["robot_name"].ToString();
+            var inferenceGuess = jsonObject["inference_guess"].ToString();
+
+            //TODO: ALL OF THESE NEED TO DUMP IF IT IS NULL. NOT REACH SOME SORT OF EXCEPTION.
+            return new InferenceResultMessage(inferenceGuess, trajectories, robotBaseFrame, robotName, header);
+        }
+
+    [System.Serializable]
+    public class InferenceReplyMessage
+    {
+        /*
+        * InferenceRequestMessage : Class is used to manage the InferenceRequestMessage message for Compas XR communication.
+        * It is designed to store the element ID, robot name, and header for the message.
+        * It is sent to the CAD when a user requests a trajectory.
+        */
+        public Header Header { get; private set; }
+        public int GoalStatusReply { get; private set; }
+        public string RobotName { get; private set; }
+        public InferenceReplyMessage(int goalStatusReply, Header header = null)
+        {
+            Header = header ?? new Header();
+            GoalStatusReply = goalStatusReply;
+        }
+        public Dictionary<string, object> GetData()
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            return new Dictionary<string, object>
+            {
+                { "header", Header.GetData() },
+                { "goal_status_reply", GoalStatusReply }
+                // { "robot_name", RobotName }
+            };
+        }
+        public static InferenceReplyMessage Parse(string jsonString)
+        {
+            /*
+            * Method is used to parse an instance of the class from a JSON string.
+            */
+            var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+            var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
+            Header header = Header.Parse(headerInfo);
+            var goalStatusReply = Convert.ToInt32(jsonObject["goal_status_reply"]);
+            // var robotName = jsonObject["goal_status_reply"].ToInt();
+            return new InferenceReplyMessage(goalStatusReply, header);
+        }
+    }
+
+    }
 }
