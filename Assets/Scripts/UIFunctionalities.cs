@@ -237,6 +237,7 @@ namespace CompasXR.UI
         public List<string> ZoneMenuItemsTest = new List<string> {"None", "Inference", "Mimic"};
         public string CurrentZone = "None";
         public int CurrentZoneIndex = 0;
+        public int PreviousZoneIndex;
         public GameObject NextZoneButtonObject;
         public GameObject PreviousZoneButtonObject;
         public GameObject RoboticTerritoriesConstantUIObjects;
@@ -655,7 +656,7 @@ namespace CompasXR.UI
             UserInterface.FindSliderandSetOnValueChangeAction(InferenceRequestTrajectoryCalculationControlsObject, ref PostInferenceTrajectoryReviewSliderObject, ref PostInferenceTrajectoryReviewSlider, "TrajectoryReviewSlider", (value) => UserInterface.PrintStringOnClick("Post Inference Review Slider Value Changed to: " + value));
 
             //TODO: This is incorrect because it not set to this mode needs to be called in the set mode.
-            // SetInferanceUIBasedOnInferenceState(GOALINFERRED);
+            SetInferanceUIBasedOnInferenceState(GOALINFERRED);
         }
         public void SetInferanceUIBasedOnInferenceState(bool goalInfered)
         {
@@ -664,39 +665,87 @@ namespace CompasXR.UI
             * If the goal is inferred, the inference controls are set to visible and interactable.
             * If the goal is not inferred, the inference controls are set to not visible and not interactable.
             */
+            Debug.Log($"SetInferanceGoalsBasedOnInferenceState: Setting Inference UI based on Inference State. Goal Inferred: {goalInfered}");
             if (goalInfered)
             {
-                Debug.Log("SetInferanceGoalsBasedOnInferenceState: Goal Inferred, setting inference controls to visible and interactable.");
-                InferenceRequestTrajectoryCalculationControlsObject.SetActive(true);
-                InferenceRequestControlsObject.SetActive(false);
 
+                SetInferenceUIPostInferenceSuccesState(true, true, false, false);
+                SetInferenceRequestUIControlsVisibilityandInteractibility(false, false, false, false, false);
+                Debug.Log("SetInferanceGoalsBasedOnInferenceState: Goal Inferred, setting inference controls to visible and interactable.");
             }
             else
             {
+                SetInferenceUIPostInferenceSuccesState(false, false, false, false);
+                SetInferenceRequestUIControlsVisibilityandInteractibility(true, true, false, false, false);
                 Debug.Log("SetInferanceGoalsBasedOnInferenceState: Goal Not Inferred, setting inference controls to not visible and not interactable.");
-                InferenceRequestTrajectoryCalculationControlsObject.SetActive(false);
-                InferenceRequestControlsObject.SetActive(true);
             }
 
         }
-        public void RequestInferenceControlsVisibilityandInteractibility(bool requestInferanceControlsVisibility, bool requestInferenceControlsInteractibility, bool reviewInferenceControlsVisibility, bool reviewInferenceControlsInteractibility, bool reviewInferenceTrajectoryControlsExecutioninteractability)
+
+        public void SetInferenceUIPostInferenceSuccesState(bool selectTargetControlsVisibility, bool selectTargetControlsInteractibility, bool trajectoryReviewControlsVisibility, bool trajectoryReviewControlsInteractibility)
+        {
+            /*
+            * Method is used to set the inference UI controls post inference success state.
+            */
+            if (InferenceRequestTrajectoryCalculationControlsObject != null)
+            {
+                bool anyVisible = selectTargetControlsVisibility || trajectoryReviewControlsVisibility;
+                InferenceRequestTrajectoryCalculationControlsObject.SetActive(anyVisible);
+            }
+            else
+            {
+                Debug.LogWarning("SetInferenceUIPostInferenceSuccesState: InferenceRequestTrajectoryCalculationControlsObject is null.");
+            }
+
+            if (InferenceSelectTargetParentObject != null)
+            {
+                InferenceSelectTargetParentObject.SetActive(selectTargetControlsVisibility);
+                InferenceNextTargetButtonObject.GetComponentInChildren<Button>().interactable = selectTargetControlsInteractibility;
+                InferencePreviousTargetButtonObject.GetComponentInChildren<Button>().interactable = selectTargetControlsInteractibility;
+                InferenceRequestTargetButtonObject.GetComponentInChildren<Button>().interactable = selectTargetControlsInteractibility;
+            }
+            if (PostInferenceReviewTrajectoryParentObject != null)
+            {
+                PostInferenceReviewTrajectoryParentObject.SetActive(trajectoryReviewControlsVisibility);
+                PostInferenceRobotExecuteButton.GetComponentInChildren<Button>().interactable = trajectoryReviewControlsInteractibility;
+                PostInferenceRobotRejectTrajectoryButton.GetComponentInChildren<Button>().interactable = trajectoryReviewControlsInteractibility;
+                PostInferenceTrajectoryReviewSlider.GetComponentInChildren<Slider>().interactable = trajectoryReviewControlsInteractibility;
+            }
+        }
+        public void SetInferenceRequestUIControlsVisibilityandInteractibility(bool requestInferenceControlsVisibility, bool requestInferenceControlsInteractibility, bool reviewInferenceControlsVisibility, bool reviewInferenceControlsInteractibility, bool reviewInferenceTrajectoryControlsExecutionInteractability)
         {
             /*
             * Method is used to set the visibility and interactibility of the Inference Controls UI elements.
             */
             if (InferenceRequestControlsObject != null)
             {
-                InferenceRequestControlsObject.SetActive(requestInferanceControlsVisibility);
+                // Parent is visible if ANY visibility flag is true
+                bool anyVisible = requestInferenceControlsVisibility || reviewInferenceControlsVisibility;
+                InferenceRequestControlsObject.SetActive(anyVisible);
             }
+
+            if (RequestInferenceButtonObject != null)
+            {
+                RequestInferenceButtonObject.SetActive(requestInferenceControlsVisibility);
+
+                // If the button should be visible, set interactability accordingly
+                var button = RequestInferenceButtonObject.GetComponentInChildren<Button>();
+                if (button != null)
+                    button.interactable = requestInferenceControlsInteractibility;
+            }
+
             if (ReviewInferenceControlsParentObject != null)
             {
                 ReviewInferenceControlsParentObject.SetActive(reviewInferenceControlsVisibility);
+
                 InferenceRejectGoalandTargetButton.GetComponentInChildren<Button>().interactable = reviewInferenceControlsInteractibility;
 
-                //TODO: This is going to be a complicated situation because it will need an execute or not (for null trajectories, BOTH OF THESE)
-                InferenceReviewSliderParentGameObject.GetComponentInChildren<Slider>().interactable = reviewInferenceTrajectoryControlsExecutioninteractability;
-                InferenceAcceptGoalButton.GetComponentInChildren<Button>().interactable = reviewInferenceControlsInteractibility;
+                // Handles both execute/not-execute cases
+                InferenceAcceptGoalButton.GetComponentInChildren<Button>().interactable   = reviewInferenceControlsInteractibility;
                 InferenceAcceptTargetButton.GetComponentInChildren<Button>().interactable = reviewInferenceControlsInteractibility;
+
+                InferenceReviewSliderParentGameObject.GetComponentInChildren<Slider>().interactable =
+                    reviewInferenceTrajectoryControlsExecutionInteractability;
             }
 
         }
@@ -859,7 +908,16 @@ namespace CompasXR.UI
             */
             if(dropDownValue >= 0 && dropDownValue < ZoneMenuItemsTest.Count)
             {
+
+                PreviousZoneIndex = CurrentZoneIndex;
                 CurrentZoneIndex = dropDownValue;
+
+                //TODO: This is a hacky way to reset the goal inferred state when switching away from the inference zone.
+                if (PreviousZoneIndex == 1 && CurrentZoneIndex != 1)
+                {
+                    GOALINFERRED = false;
+                }
+
                 CurrentZone = ZoneMenuItemsTest[CurrentZoneIndex];
                 databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex; //TODO: THIS NEEDS TO REMAIN THE SAME AS THE OTHER ONE
                 
@@ -1403,24 +1461,49 @@ namespace CompasXR.UI
                 case ProjectZones.CurrentZoneMode.None:
                     Debug.Log("SetUIObjectsFromCurrentMode: Setting UI Objects for None Mode.");
                     SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
+                    SetRealtimeMimicControlsActivity(false, false);
+
+                    SetInferenceUIPostInferenceSuccesState(false, false, false, false);
+                    SetInferenceRequestUIControlsVisibilityandInteractibility(false, false, false, false, false);
+
+                    MimicControlsParent.gameObject.SetActive(false);
+                    RoboticTerritoriesInferenceControlsObject.SetActive(false);
+
                     break;
-                case ProjectZones.CurrentZoneMode.Inference: //TODO: This needs to set the selection and change controls as well.
+
+                case ProjectZones.CurrentZoneMode.Inference:
                     Debug.Log("SetUIObjectsFromCurrentMode: Setting UI Objects for Inference Mode.");
                     MimicControlsParent.gameObject.SetActive(false);
-                    RoboticTerritoriesInferenceControlsObject.SetActive(true);
                     SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
+                    SetRealtimeMimicControlsActivity(false, false);
+
+                    RoboticTerritoriesInferenceControlsObject.SetActive(true);
+                    SetInferanceUIBasedOnInferenceState(GOALINFERRED);
                     break;
-                case ProjectZones.CurrentZoneMode.Mimic: //TODO: This needs to set the selection and change controls as well.
+
+                case ProjectZones.CurrentZoneMode.Mimic:
                     MimicControlsParent.gameObject.SetActive(true);
                     SetMimicControlsBasedOnCurrentMimicMode(databaseManager.ProjectZones.CurrentMimicMode);
-                    
+
+                    //Reset Inference Controls
                     RoboticTerritoriesInferenceControlsObject.SetActive(false);
+                    SetInferenceUIPostInferenceSuccesState(false, false, false, false);
+                    SetInferenceRequestUIControlsVisibilityandInteractibility(false, false, false, false, false);
+
                     Debug.Log("SetUIObjectsFromCurrentMode: Setting Active Controls for Mimic Mode.");
                     break;
+
                 default:
                     SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
-                    RoboticTerritoriesInferenceControlsObject.SetActive(false);
+
+                    //Reset Inference Controls
+                    SetInferenceUIPostInferenceSuccesState(false, false, false, false);
+                    SetInferenceRequestUIControlsVisibilityandInteractibility(false, false, false, false, false);
+
+                    //Set both parents to false.
                     MimicControlsParent.gameObject.SetActive(false);
+                    RoboticTerritoriesInferenceControlsObject.SetActive(true);
+
                     Debug.LogWarning("SetUIObjectsFromCurrentMode: Current Zone Mode is not set.");
                     break;
             }
