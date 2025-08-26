@@ -444,6 +444,12 @@ namespace CompasXR.UI
                     databaseManager.ProjectZones.CurrentMimicMode = ProjectZones.MimicZoneMode.RealtimeMimic;
                     SetMimicControlsBasedOnCurrentMimicMode(databaseManager.ProjectZones.CurrentMimicMode);
                     instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();
+
+                    //TODO: This was not 100% Correct. It kills the active Robot when it shouldn't.
+                    if(trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+                    {
+                        trajectoryVisualizer.DestroyActiveTrajectoryChildren();
+                    }
                     Debug.Log($"NextMimicModeButtonMethod: Changed Mimic Mode from {previousMimicMode} to {newMimicMode}");
                 }
                 else
