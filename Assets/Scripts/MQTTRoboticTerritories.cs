@@ -9,9 +9,11 @@ using Unity.VisualScripting.AssemblyQualifiedNameParser;
 using Newtonsoft.Json;
 using RosSharp.Urdf;
 using CompasXR.Core.Data;
+using CompasXR.Core;
 using Google.MiniJSON;
 using CompasXR.Robots.Data;
 using Newtonsoft.Json.Linq;
+using Unity.VisualScripting;
 
 
 
@@ -203,6 +205,19 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             return framesData;
         }
 
+        public static Dictionary<string, Dictionary<string, object>> _getDataFromFramesDictionary(Dictionary<string, Frame> FramesDictionary)
+        {
+            /*
+            * Method is used to retrieve the GetTrajectoryRequest data as a dictionary.
+            */
+            Dictionary<string, Dictionary<string, object>> framesData = new Dictionary<string, Dictionary<string, object>>();
+            foreach (KeyValuePair<string, Frame> frame in FramesDictionary)
+            {
+                framesData.Add(frame.Key, frame.Value.GetData());
+            }
+            return framesData;
+        }
+
         public static List<Frame> _parseFramesFromDataList(List<Dictionary<string, object>> framesData)
         {
             /*
@@ -332,7 +347,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         }
     }
 
-    [System.Serializable] //TODO: CHECK THIS.
+    [System.Serializable]
     public class MimicTrajectoryResultMessage
     {
         /*
@@ -728,13 +743,16 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         * It is sent to the CAD when a user requests a trajectory.
         */
         public Header Header { get; private set; }
-        public List<Frame> CurrentGeometryFrames { get; private set; }
+        public Dictionary<string, Frame> CurrentGeometryFrames { get; private set; }
         public string RobotName { get; private set; }
-        public InferenceRequestMessage(List<Frame> currentGeometryFrames, string robotName, Header header = null)
+
+        public bool InitialRequest { get; private set; }
+        public InferenceRequestMessage(Dictionary<string, Frame> currentGeometryFrames, bool initialRequest, string robotName, Header header = null)
         {
             Header = header ?? new Header();
             CurrentGeometryFrames = currentGeometryFrames;
             RobotName = robotName;
+            InitialRequest = initialRequest;
         }
         public Dictionary<string, object> GetData()
         {
@@ -744,10 +762,13 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             return new Dictionary<string, object>
             {
                 { "header", Header.GetData() },
-                { "geometry_frames", MessageHandelingExtensions._getDataFromFramesList(CurrentGeometryFrames) },
-                { "robot_name", RobotName }
+                { "geometry_frames",  MessageHandelingExtensions._getDataFromFramesDictionary(CurrentGeometryFrames) },
+                { "robot_name", RobotName },
+                { "initial_request", InitialRequest }
             };
         }
+
+
         public static InferenceRequestMessage Parse(string jsonString)
         {
             /*
@@ -757,10 +778,41 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
             Header header = Header.Parse(headerInfo);
 
-            var geometryFramesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["geometry_frames"].ToString());
-            List<Frame> geometryFrames = Frame._parseFramesData(geometryFramesData);
+            // geometry_frames: now a dictionary: name -> frameData
+            var geometryFrames = new Dictionary<string, Frame>();
+
+            //TODO: Get initial request boolean
+            var initialRequest = Convert.ToBoolean(jsonObject["initial_request"]);
+
+            if (jsonObject.TryGetValue("geometry_frames", out var framesObj) && framesObj != null)
+            {
+                // Expecting: { "geometry_frames": { "frameA": {...}, "frameB": {...}, ... } }
+                var framesDict = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, object>>>(
+                    framesObj.ToString()
+                );
+
+                if (framesDict != null)
+                {
+                    foreach (var kv in framesDict)
+                    {
+                        var frameName = kv.Key;
+                        var frameData = kv.Value; // Dictionary<string, object> for one frame
+
+                        try
+                        {
+                            geometryFrames[frameName] = Frame.FromData(frameData);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogWarning($"InferenceRequestMessage.Parse: Skipping frame '{frameName}': {ex.Message}");
+                        }
+                    }
+                }
+            }
+
+
             var robotName = jsonObject["robot_name"].ToString();
-            return new InferenceRequestMessage(geometryFrames, robotName, header);
+            return new InferenceRequestMessage(geometryFrames, initialRequest, robotName, header);
 
         }
     }
@@ -782,14 +834,17 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public Frame RobotBaseFrame { get; private set; }
 
         //TODO: Make Nullable.
+        public List<string> CompletedGoals { get; private set; }
+        //TODO: Make Nullable.
         public List<JointTrajectoryPoint> CombinedTrajectoryPoints { get; private set; }
         public string RobotName { get; private set; }
         public string InferenceGuess { get; set; }
 
-        public InferenceResultMessage(string inferenceGuess, List<Trajectory> trajectories, Frame robotBaseFrame = null, string robotName = null, Header header = null)
+        public InferenceResultMessage(string inferenceGuess,List<string> completedGoals, List<Trajectory> trajectories, Frame robotBaseFrame = null, string robotName = null, Header header = null)
         {
             Header = header ?? new Header();
             Trajectories = trajectories;
+            CompletedGoals = completedGoals;
             if (trajectories.Count > 0)
             {
                 CombinedTrajectoryPoints = _GetJointTrajectoryPoints(trajectories);
@@ -830,6 +885,8 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 { "inference_guess", InferenceGuess }
             };
         }
+        
+        //TODO: WORK IN PROGRESS...PLEASE FINISH ME
         public static InferenceResultMessage Parse(string jsonString)
         {
             /*
@@ -839,6 +896,17 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
             var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
             Header header = Header.Parse(headerInfo);
+
+            var inferenceGuess = jsonObject["inference_guess"].ToString();
+            if (string.IsNullOrEmpty(inferenceGuess))
+            {
+                Debug.LogWarning("InferenceResultMessage: Parse: Inference guess is null or empty.");
+                return new InferenceResultMessage(null, new List<string>(), new List<Trajectory>(), null, null, header);
+            }
+            else
+            {
+                Debug.Log($"InferenceResultMessage: Inference Guess Parsed Successfully: {inferenceGuess}");
+            }
 
             var trajectoriesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["trajectories"].ToString());
             List<Trajectory> trajectories = new List<Trajectory>();
@@ -875,10 +943,16 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
 
             //Parse the robot name
             var robotName = jsonObject["robot_name"].ToString();
-            var inferenceGuess = jsonObject["inference_guess"].ToString();
+            var completedGoalsData = DictionaryHelpers.GetSafeDictionary(jsonObject, "completed_goals");
+            if (completedGoalsData == null)
+            {
+                Debug.LogWarning("InferenceResultMessage: Parse: Completed goals data not found or is null in the message.");
+                return new InferenceResultMessage(inferenceGuess, new List<string>(), trajectories, robotBaseFrame, robotName, header);
+            }
+            List<string> completedGoalsUpdated = DataConverters.ConvertDataToStringList(completedGoalsData);
 
             //TODO: ALL OF THESE NEED TO DUMP IF IT IS NULL. NOT REACH SOME SORT OF EXCEPTION.
-            return new InferenceResultMessage(inferenceGuess, trajectories, robotBaseFrame, robotName, header);
+            return new InferenceResultMessage(inferenceGuess, completedGoalsUpdated, trajectories, robotBaseFrame, robotName, header);
         }
 
     [System.Serializable]
@@ -891,7 +965,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         */
         public Header Header { get; private set; }
         public int GoalStatusReply { get; private set; }
-        public string RobotName { get; private set; }
+        // public string RobotName { get; private set; }
         public InferenceReplyMessage(int goalStatusReply, Header header = null)
         {
             Header = header ?? new Header();

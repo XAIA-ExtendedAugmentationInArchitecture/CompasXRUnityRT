@@ -794,7 +794,7 @@ GameObject:
   - component: {fileID: 4328109288147508578}
   - component: {fileID: 2450330891859161600}
   m_Layer: 0
-  m_Name: G6
+  m_Name: G7
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -901,7 +901,7 @@ GameObject:
   - component: {fileID: 259776976705638773}
   - component: {fileID: 2547711323995236905}
   m_Layer: 0
-  m_Name: G7
+  m_Name: G6
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1030,8 +1030,8 @@ Transform:
   - {fileID: 8675938773544598926}
   - {fileID: 236360535860418609}
   - {fileID: 5280262076917903412}
-  - {fileID: 8653572124046086829}
   - {fileID: 2536609944117560723}
+  - {fileID: 8653572124046086829}
   - {fileID: 3339464397794459017}
   m_Father: {fileID: 8076211572409889134}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: 0}

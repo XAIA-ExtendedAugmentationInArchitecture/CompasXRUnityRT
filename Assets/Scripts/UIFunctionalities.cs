@@ -202,6 +202,7 @@ namespace CompasXR.UI
 
         //TODO: Inference Controls
         bool GOALINFERRED = false;
+        bool INITIALINFERENCEREQUEST = true;
         public GameObject InferenceRequestControlsObject;
         public GameObject InferenceRequestTrajectoryCalculationControlsObject;
         public GameObject RequestInferenceButtonObject;
@@ -226,6 +227,9 @@ namespace CompasXR.UI
         public GameObject PostInferenceRobotRejectTrajectoryButton;
         public GameObject PostInferenceTrajectoryReviewSliderObject;
         public Slider PostInferenceTrajectoryReviewSlider;
+
+        //TODO: Inference OnScreen Messages
+        public GameObject InferenceActiveRobotNullMessage;
 
         //TODO: Updating Canvas to the new one..........................................................
 
@@ -603,8 +607,6 @@ namespace CompasXR.UI
             /*
             * Method is used to toggle the IO for the Realtime Mimic.
             */
-            Debug.Log("TOGGLEIOFORREALTIMEMIMIC : NEW TOGGLE WORKS BUT STILL TESTING");
-            return;
             Debug.Log($"ToggleIOForRealtimeMimicMethod: Toggling IO for Realtime Mimic to {toggle}");
             if (RealtimeMimicIOToggleGameObject != null)
             {
@@ -638,7 +640,7 @@ namespace CompasXR.UI
             */
             //Find Objects for Inference Controls
             InferenceRequestControlsObject = RoboticTerritoriesInferenceControlsObject.FindObject("InferenceRequestControls");
-            UserInterface.FindButtonandSetOnClickAction(InferenceRequestControlsObject, ref RequestInferenceButtonObject, "RequestInferenceButton", () => UserInterface.PrintStringOnClick("Request Inference Button Pressed"));
+            UserInterface.FindButtonandSetOnClickAction(InferenceRequestControlsObject, ref RequestInferenceButtonObject, "RequestInferenceButton", RequestInferenceButtonMethod);
 
             ReviewInferenceControlsParentObject = InferenceRequestControlsObject.FindObject("InferenceReviewControls");
             UserInterface.FindButtonandSetOnClickActionDebug(ReviewInferenceControlsParentObject, ref InferenceRejectGoalandTargetButton, "RejectGoalButton", () => UserInterface.PrintStringOnClick("Reject Goal and Target Button Pressed"));
@@ -687,7 +689,6 @@ namespace CompasXR.UI
             }
 
         }
-
         public void SetInferenceUIPostInferenceSuccesState(bool selectTargetControlsVisibility, bool selectTargetControlsInteractibility, bool trajectoryReviewControlsVisibility, bool trajectoryReviewControlsInteractibility)
         {
             /*
@@ -922,6 +923,7 @@ namespace CompasXR.UI
                 if (PreviousZoneIndex == 1 && CurrentZoneIndex != 1)
                 {
                     GOALINFERRED = false;
+                    INITIALINFERENCEREQUEST = true;
                 }
 
                 CurrentZone = ZoneMenuItemsTest[CurrentZoneIndex];
@@ -993,6 +995,54 @@ namespace CompasXR.UI
 
         }
 
+        //TODO: This is inference button methods and testing
+        public void RequestInferenceButtonMethod()
+        {
+            /*
+            * Method is used to request inference from the robot.
+            */
+            Debug.Log("RequestInferenceButtonMethod: Requesting Inference from the Robot.");
+            if (trajectoryVisualizer.ActiveRobot == null)
+            {
+                Debug.Log("RequestInferenceButtonMethods: Active Robot is null");
+                string message = "WARNING: Active Robot is currently null. An active robot must be set before requesting inference.";
+                UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref InferenceActiveRobotNullMessage, "ActiveRobotNullWarningMessage", MessagesParent, message, "MimicRequestTrajectoryButtonMethod: Active Robot is null.");
+                return;
+            }
+            else
+            {
+                //TODO: This would be better to be a direct instance of the box object rather then the geometry frame, but it will just be the center frame information
+                Dictionary<string, Frame> currentGeometryFramesAsDict = new Dictionary<string, Frame>();
+                foreach (KeyValuePair<string, ObservedGeometry> item in databaseManager.observedGeometriesDict)
+                {
+                    if (item.Value.Box != null)
+                    {
+                        Frame geometryFrame = item.Value.Box.frame;
+                        currentGeometryFramesAsDict.Add(item.Key, geometryFrame);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"RequestInferenceButtonMethod JOEEE: {item.Key}, Value: null");
+                    }
+                }
+
+                InferenceRequestMessage inferenceRequestMessage = new InferenceRequestMessage
+                (
+                    currentGeometryFramesAsDict,
+                    INITIALINFERENCEREQUEST,
+                    mqttTrajectoryManager.serviceManager.ActiveRobotName
+                );
+                mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceRequestTopic, inferenceRequestMessage.GetData());
+                Debug.Log($"RequestInferenceButtonMethod: Published Inference Request Message to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceRequestTopic} with data: {inferenceRequestMessage.GetData()}");
+                if (INITIALINFERENCEREQUEST)
+                {
+                    INITIALINFERENCEREQUEST = false;
+                    Debug.Log("RequestInferenceButtonMethod: Setting INITIALINFERENCEREQUEST to false because this should only happend on the first request.");
+                }
+            }
+        }
+
+        //TODO: Other methods
         public void RealtimeMimicMirrorToggleMethod(bool value)
         {
             /*
