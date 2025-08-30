@@ -282,6 +282,54 @@ namespace CompasXR.Core.Data
 
             return result;
         }
+        public static List<string> GetStringListFromDict(Dictionary<string, object> dict, string key)
+        {
+            var result = new List<string>();
+            if (dict == null || !dict.TryGetValue(key, out var obj) || obj == null)
+            {
+                Debug.LogWarning($"GetStringListFromDict: Key '{key}' not found or value is null.");
+                return result;
+            }
+            // JArray of primitives
+            if (obj is JArray ja)
+            {
+                foreach (var t in ja)
+                {
+                    var s = t.Type == JTokenType.Null ? null : t.ToString();
+                    if (!string.IsNullOrEmpty(s)) result.Add(s);
+                }
+                return result;
+            }
+
+            // JToken that is an array
+            if (obj is JToken jt && jt.Type == JTokenType.Array)
+            {
+                foreach (var t in (JArray)jt)
+                {
+                    var s = t.Type == JTokenType.Null ? null : t.ToString();
+                    if (!string.IsNullOrEmpty(s)) result.Add(s);
+                }
+                return result;
+            }
+
+            // Plain List<object> with strings
+            if (obj is List<object> lo)
+            {
+                foreach (var v in lo)
+                {
+                    if (v == null) continue;
+                    if (v is string s && !string.IsNullOrEmpty(s)) result.Add(s);
+                    else result.Add(v.ToString());
+                }
+                return result;
+            }
+
+            // Single string value (fallback)
+            if (obj is string single && !string.IsNullOrEmpty(single))
+                result.Add(single);
+
+            return result;
+        }
         public static Dictionary<string, object> GetListItemAsDictionary(object obj)
         {
             if (obj is JArray jArray)

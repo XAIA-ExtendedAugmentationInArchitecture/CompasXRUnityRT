@@ -13,6 +13,7 @@ using CompasXR.UI;
 using CompasXR.Robots.MqttData;
 using CompasXR.Robots.MqttData.RoboticTerritories;
 using CompasXR.RoboticTerritories.Data;
+using System.IO;
 
 namespace CompasXR.Robots
 {
@@ -147,6 +148,7 @@ namespace CompasXR.Robots
             Debug.Log("MQTT: SubscribeToRoboticTerritoriesTopics: Subscribing to Robotic Territories Topics");
             SubscribeToTopic(roboticTerritoriesTopics.subscribers.mimicResultTopic);
             SubscribeToTopic(roboticTerritoriesTopics.subscribers.realtimeMimicResultTopic);
+            SubscribeToTopic(roboticTerritoriesTopics.subscribers.inferenceResultTopic);
         }
         public void UnsubscribeFromRoboticTerritoriesTopics()
         {
@@ -181,10 +183,37 @@ namespace CompasXR.Robots
             }
             else if (topic == roboticTerritoriesTopics.subscribers.realtimeMimicResultTopic)
             {
+                //TODO: Implement Realtime Mimic Result Message Handler (Needs to find the object and delete it if it existis in the scene)
                 Debug.Log("MQTT: RealtimeMimicResult Message Handeling");
                 RealtimeMimicResultMessage realtimeMimicResultMessage = RealtimeMimicResultMessage.Parse(message);
                 // RealtimeMimicResultReceivedMessageHandler(realtimeMimicResultMessage);
                 Debug.Log($"MQTT: RealtimeMimicResult Message Handeling: Received {JsonConvert.SerializeObject(realtimeMimicResultMessage)}");
+            }
+            else if (topic == roboticTerritoriesTopics.subscribers.inferenceResultTopic)
+            {
+                //TODO: Implement Inference Result Message Handler (Needs to find the object and delete it if it existis in the scene)
+                Debug.Log("MQTT: InferenceResult Message Handeling");
+
+                string filePath = 
+                    @"C:\Users\jk6372\Desktop\00_princeton_projects\00_robotic_territories\00_git\compas_xr_robotic_territories\dev\performance_operations\testing\20250830_json_testing_trajectory_dumps\inference_resultMessage.json";
+
+                try
+                {
+                    // Parse the raw string into a JSON object, then serialize back with indentation
+                    var parsed = JsonConvert.DeserializeObject(message);
+                    string prettyJson = JsonConvert.SerializeObject(parsed, Formatting.Indented);
+
+                    File.WriteAllText(filePath, prettyJson);
+                    Debug.Log($"MQTT: InferenceResult pretty JSON dumped to {filePath}");
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"MQTT: Failed to dump JSON: {e.Message}");
+                }
+
+                InferenceResultMessage inferenceResultMessage = InferenceResultMessage.Parse(message);
+                InferenceResultReceivedMessageHandler(inferenceResultMessage);
+                Debug.Log($"MQTT: InferenceResult Message Handeling: Received {JsonConvert.SerializeObject(inferenceResultMessage)}");
             }
             else
             {
@@ -262,6 +291,109 @@ namespace CompasXR.Robots
                 Debug.Log("MQTT: : MimicResultReceivedMessageHandler : Robot Name in the message is the same as the active robot name.");
             }
         }
+
+        public void InferenceResultReceivedMessageHandler(InferenceResultMessage inferenceResultMessage)
+        {
+            //Set the inference containing exacutable trajectory to false by default
+            serviceManager.InferenceContainsExacutableTrajectory = false;
+            serviceManager.InferenceSuggestedTargetName = "None";
+
+            if (databaseManager.ProjectZones.CurrentZone != ProjectZones.CurrentZoneMode.Inference)
+            {
+                Debug.LogWarning("MQTT: InferenceResultMessageHandler: Current Zone is not Inference. No action taken.");
+                string message = "WARNING: You received an inference result but are not in Inference mode.";
+                UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.InferenceResultReceivedWhileInOtherModeOnScreenMessage, "InferenceModeDeselected", UIFunctionalities.MessagesParent, message, "InferenceResultReceivedMessageHandler: Inference result received while not in inference mode.");
+                return;
+            }
+            else if (inferenceResultMessage.InferenceGuess == null || inferenceResultMessage.SuggestedTargetName == null || inferenceResultMessage.CompletedGoals.Count <= 0)
+            {
+                Debug.LogWarning("MQTT: InferenceResultMessageHandler: No inference guess or suggested target or completed goals");
+                string message = "WARNING: The inference planner was unable to infer a goal. Place more and request again.";
+                UIFunctionalities.SetInferenceRequestUIControlsVisibilityandInteractibility(true, true, false, false, false);
+                UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.InferenceUnableToInferGoalMessage, "InferenceUnableToInferGoal", UIFunctionalities.MessagesParent, message, "InferenceResultReceivedMessageHandler: Inference result has no guess or completed goals.");
+                return;
+            }
+            else if (inferenceResultMessage.InferenceGuess == null || inferenceResultMessage.CompletedGoals.Count <= 0)
+            {
+                Debug.LogWarning("MQTT: InferenceResultMessageHandler: No inference guess or completed goals");
+                string message = "WARNING: The inference planner was unable to infer a goal. Place more and request again.";
+                UIFunctionalities.SetInferenceRequestUIControlsVisibilityandInteractibility(true, true, false, false, false);
+                UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.InferenceUnableToInferGoalMessage, "InferenceUnableToInferGoal", UIFunctionalities.MessagesParent, message, "InferenceResultReceivedMessageHandler: Inference result has no guess or completed goals.");
+                return;
+            }
+            else if (inferenceResultMessage.Trajectories.Count <= 0)
+            {
+                Debug.LogWarning("MQTT: InferenceResultReceivedMessageHandler: No Trajectories in the Mimic Result Message.");
+                string message = "WARNING: The robotic controler replied with a null Trajectory, but the inference planner thinks this is your goal.";
+                //Update the slider in the UI to zero if it is not already
+                if (UIFunctionalities.InferenceReviewSlider.value != 0)
+                {
+                    UIFunctionalities.InferenceReviewSlider.value = 0;
+                }
+                serviceManager.InferenceResultsMessages.Add(inferenceResultMessage); //TODO: This is a strategy from compas XR class, but needs to be cleaned up
+                UIFunctionalities.ShowInferedGeometriesInSceeneWrapper(inferenceResultMessage.InferenceGuess, inferenceResultMessage.CompletedGoals, inferenceResultMessage.SuggestedTargetName);
+
+                UIFunctionalities.SetInferenceRequestUIControlsVisibilityandInteractibility(true, false, true, true, false);
+                UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.InferenceTrajectoryNullWarningMessageObject, "InferenceTrajectoryNullWarningMessage", UIFunctionalities.MessagesParent, message, "InferenceResultReceivedMessageHandler: Received trajectory is null");
+                return;
+            }
+            else if (inferenceResultMessage.RobotName != serviceManager.ActiveRobotName)  //TODO: THIS IS FROM COMPAS XR, BUT NEEDS TO BE THOUGHT ABOUT FOR ROBOT TERRITORIES
+            {
+                //Update Last Mimic Trajectory Result Message in the Service Manager
+                if (UIFunctionalities.InferenceReviewSlider.value != 0)
+                {
+                    UIFunctionalities.InferenceReviewSlider.value = 0;
+                }
+
+                UIFunctionalities.SignalActiveRobotUpdateFromPlannerRoboticTerritories(
+                    inferenceResultMessage.RobotName,
+                    serviceManager.ActiveRobotName,
+                    () => trajectoryVisualizer.InstantateRobotFromInferenceResultMessage(
+                        inferenceResultMessage,
+                        trajectoryVisualizer.ActiveRobot,
+                        trajectoryVisualizer.URDFLinkNames,
+                        trajectoryVisualizer.ActiveTrajectoryParentObject,
+                        true));
+
+                //Update Last Mimic Trajectory Result Message in the Service Manager
+                serviceManager.InferenceResultsMessages.Add(inferenceResultMessage); //TODO: This is a strategy from compas XR class, but needs to be cleaned up
+                serviceManager.InferenceContainsExacutableTrajectory = true;
+                serviceManager.InferenceSuggestedTargetName = inferenceResultMessage.SuggestedTargetName;
+
+                UIFunctionalities.ShowInferedGeometriesInSceeneWrapper(inferenceResultMessage.InferenceGuess, inferenceResultMessage.CompletedGoals, inferenceResultMessage.SuggestedTargetName);
+
+                UIFunctionalities.SetInferenceRequestUIControlsVisibilityandInteractibility(true, false, true, true, true);
+                Debug.Log("MQTT: InferenceResultReceivedMessageHandler : Robot Name in the message is not the same as the active robot name signaling on screen control.");
+                return;
+            }
+            else
+            {
+                //Update Last Inference Result Message in the Service Manager
+                if (UIFunctionalities.InferenceReviewSlider.value != 0)
+                {
+                    UIFunctionalities.InferenceReviewSlider.value = 0;
+                }
+
+                //Update Last Inference Result Message in the Service Manager
+                trajectoryVisualizer.InstantateRobotFromInferenceResultMessage(
+                    inferenceResultMessage,
+                    trajectoryVisualizer.ActiveRobot,
+                    trajectoryVisualizer.URDFLinkNames,
+                    trajectoryVisualizer.ActiveTrajectoryParentObject,
+                    true);
+
+                serviceManager.InferenceResultsMessages.Add(inferenceResultMessage); //TODO: This is a strategy from compas XR class, but needs to be cleaned up
+                serviceManager.InferenceContainsExacutableTrajectory = true;
+                serviceManager.InferenceSuggestedTargetName = inferenceResultMessage.SuggestedTargetName;
+
+                UIFunctionalities.ShowInferedGeometriesInSceeneWrapper(inferenceResultMessage.InferenceGuess, inferenceResultMessage.CompletedGoals, inferenceResultMessage.SuggestedTargetName);
+                UIFunctionalities.SetInferenceRequestUIControlsVisibilityandInteractibility(true, false, true, true, true);
+
+                Debug.Log("MQTT: InferenceResultReceivedMessageHandler : Robot Name in the message is the same as the active robot name.");
+            }
+            
+        }
+
 
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////
 

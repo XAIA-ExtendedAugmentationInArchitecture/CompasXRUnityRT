@@ -133,6 +133,14 @@ namespace CompasXR.Robots.MqttData
         public CancellationTokenSource GetTrajectoryRequestTimeOutCancelationToken { get; set; }
         public bool IsDirtyTrajectory { get; set; }
         public Header IsDirtyGetTrajectoryRequestHeader { get; set; }
+        
+        
+        //TODO: Robotic Territories Testing /////////////////////////////////////////////////////////////////////////
+        public List<InferenceResultMessage> InferenceResultsMessages { get; set; }
+        public bool InferenceContainsExacutableTrajectory { get; set; }
+        public string InferenceSuggestedTargetName { get; set; } = "None";
+        public List<InferenceRequestMessage> InferenceRequestMessages { get; set; }
+
         public ServiceManager()
         {
             UserCount = new SimpleCounter();
@@ -143,8 +151,12 @@ namespace CompasXR.Robots.MqttData
             LastGetTrajectoryRequestMessage = null;
             LastGetTrajectoryResultMessage = null;
             IsDirtyGetTrajectoryRequestHeader = null;
-            IsDirtyTrajectory = false;            
+            IsDirtyTrajectory = false;
             TrajectoryRequestTransactionLock = false;
+
+            //TODO: Robotic Territories Testing /////////////////////////////////////////////////////////////////////////
+            InferenceResultsMessages = new List<InferenceResultMessage>();
+            InferenceRequestMessages = new List<InferenceRequestMessage>();
         }
         public enum CurrentService
         {

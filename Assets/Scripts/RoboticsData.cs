@@ -86,6 +86,9 @@ namespace CompasXR.Robots.Data
             Dictionary<string, object> startConfigurationDict = null;
             if (jsonDataDict.ContainsKey("start_configuration"))
             {
+                Debug.Log("TrajectoryFromData: Found 'start_configuration' in trajectory data.");
+                Debug.Log("TrajectoryFromData: start_configuratoin data: " + JsonConvert.SerializeObject(jsonDataDict["start_configuration"]));
+                // Debug.Log("TrajectoryFromData: start_configuration data type: " + jsonDataDict["start_configuration"].GetType());
                 var startConfigurationObj = jsonDataDict["start_configuration"];
 
                 if (startConfigurationObj is JObject startConfigJObject)

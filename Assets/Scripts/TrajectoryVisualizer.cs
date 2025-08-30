@@ -295,6 +295,30 @@ namespace CompasXR.Robots
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////////////////////////////
 
         //TODO: TEST UPDATED THIS FOR THE MULTIPLE TRAJECTORY PARSING.
+        public void InstantateRobotFromInferenceResultMessage(InferenceResultMessage inferenceResultMessage, GameObject robotToConfigure, Dictionary<string, string> URDFLinks, GameObject parentObject, bool visibility)
+        {
+            /*
+            InstantiateRobotTrajectoryFromJointsDict is responsible for instantiating the robot trajectory in the scene.
+            */
+
+            List<JointTrajectoryPoint> trajectoryPointsList = inferenceResultMessage.CombinedTrajectoryPoints;
+            List<Trajectory> trajectoryList = inferenceResultMessage.Trajectories;
+            Debug.Log($"InstantateRobotFromInferenceResultMessage: {trajectoryPointsList.Count} configurations.");
+            
+            if (trajectoryPointsList.Count > 0 && robotToConfigure != null && URDFLinks.Count > 0 || parentObject != null)
+            {
+                InstatintaiteRobotFromTrajectoryList(trajectoryList, inferenceResultMessage.RobotBaseFrame, robotToConfigure, URDFLinks, parentObject, visibility);
+                // InstantiateRobotTrajectoryFromJointTrajectoryPoints(trajectoryPointsList, mimicResult.RobotBaseFrame, robotToConfigure, URDFLinks, parentObject, visibility);
+                // AttachedCollisionMesh attachedCollisionMesh = mimicResult.Trajectories[0].AttachedCollisionMeshes[0];
+                // attachedCollisionMesh.CollisionMesh.Mesh.GenerateMeshFromRHMesh();
+            }
+            else
+            {
+                
+                Debug.LogError("InstantateRobotFromInferenceResultMessage: Trajectory is empty, robotToConfigure is null, or joint_names is empty.");
+            }
+        }
+
         public void InstantateRobotFromMimicMessage(MimicTrajectoryResultMessage mimicResult, GameObject robotToConfigure, Dictionary<string, string> URDFLinks, GameObject parentObject, bool visibility)
         {
             /*
@@ -304,7 +328,7 @@ namespace CompasXR.Robots
             List<JointTrajectoryPoint> trajectoryPointsList = mimicResult.CombinedTrajectoryPoints;
             List<Trajectory> trajectoryList = mimicResult.Trajectories;
             Debug.Log($"InstantiateRobotFromConfigList: {trajectoryPointsList.Count} configurations.");
-            
+
             if (trajectoryPointsList.Count > 0 && robotToConfigure != null && URDFLinks.Count > 0 || parentObject != null)
             {
                 InstatintaiteRobotFromTrajectoryList(trajectoryList, mimicResult.RobotBaseFrame, robotToConfigure, URDFLinks, parentObject, visibility);
@@ -314,7 +338,7 @@ namespace CompasXR.Robots
             }
             else
             {
-                
+
                 Debug.LogError("InstantiateRobotTrajectory: Trajectory is empty, robotToConfigure is null, or joint_names is empty.");
             }
         }

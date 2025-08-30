@@ -93,6 +93,9 @@ namespace CompasXR.Core
         //TODO: Robotic Territories Materials //////////////////////////////////////////
         public Material ObservedGeometryMaterial;
         public Material AnchorCubeMaterial;
+        public Material InferenceInferedGoalMaterial;
+        public Material InferenceSuggestedTargetMaterial;
+        public Material InferenceCompletedItemsMaterial;
 
         //TODO: Robotic Territories Materials //////////////////////////////////////////
 
@@ -1161,7 +1164,7 @@ namespace CompasXR.Core
         return mirroredRotationB;
     }
 
-        //TODO: TODO: TODO: TODO: TESTING GEOMETRY UPDATES UPDATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+    //TODO: TODO: TODO: TODO: TESTING GEOMETRY UPDATES UPDATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
     public void OnObservedObjectsChangedWrapper(object source, UpdateObservedGeometryEventArgs e)
     {
         if(e.ObservedGeometryDict == null)
@@ -1389,6 +1392,78 @@ namespace CompasXR.Core
         }
     }
 
+        //TODO: Inference Geometries handlers ///////////////////////////
+        public void ShowInferedGeometriesInSceene(string inferedGoal, List<string> completedTargets, string suggestedTarget, Material suggestedTargetMaterial, Material SuggestedGoalIncompletedMaterial, Material SuggestedGoalCompletedMaterial, ref GameObject inferenceGoalsParentObject)
+        {
+            /*
+            * Method is used to show the infered geometries in the scene.
+            */
+            if (inferenceGoalsParentObject == null)
+            {
+                Debug.LogWarning("ShowInferedGeometriesInSceene: Inference Goals Parent Object is null.");
+                return;
+            }
+            if (suggestedTargetMaterial == null || SuggestedGoalIncompletedMaterial == null || SuggestedGoalCompletedMaterial == null)
+            {
+                Debug.LogWarning("ShowInferedGeometriesInSceene: One or more materials are null.");
+                return;
+            }
+
+            GoalObject inferedGoalObject = InferenceGoalsManager.GetByName(inferedGoal);
+            if (inferedGoalObject != null)
+            {
+                Debug.Log("ShowInferedGeometriesInSceene: Showing Infered Goal: " + inferedGoalObject.Name);
+
+                //Set the material to the infered goal material.
+                if (InferenceInferedGoalMaterial != null)
+                {
+                    foreach (KeyValuePair<string, GameObject> entry in inferedGoalObject.GoalObjectComponentsDict)
+                    {
+                        if (entry.Value != null && entry.Value != null)
+                        {
+                            Renderer renderer = entry.Value.GetComponentInChildren<Renderer>();
+                            if (renderer != null)
+                            {
+                                if (entry.Key == suggestedTarget)
+                                {
+                                    renderer.material = suggestedTargetMaterial;
+                                    Debug.Log("ShowInferedGeometriesInSceene: Setting Suggested Target Material for " + entry.Key);
+                                }
+                                else if (completedTargets.Contains(entry.Key))
+                                {
+                                    renderer.material = SuggestedGoalCompletedMaterial;
+                                    Debug.Log("ShowInferedGeometriesInSceene: Setting Completed Target Material for " + entry.Key);
+                                }
+                                else
+                                {
+                                    renderer.material = SuggestedGoalIncompletedMaterial;
+                                    Debug.Log("ShowInferedGeometriesInSceene: Setting Incompleted Target Material for " + entry.Key);
+                                }
+                            }
+                            else
+                            {
+                                Debug.LogWarning("ShowInferedGeometriesInSceene: Renderer is null for " + entry.Key);
+                            }
+                        }
+                        else
+                        {
+                            Debug.LogWarning("ShowInferedGeometriesInSceene: Goal Object Component is null for " + entry.Key);
+                        }
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning("ShowInferedGeometriesInSceene: Inference Infered Goal Material is null.");
+                }
+                inferedGoalObject.GoalGameObject.SetActive(true);
+            }
+            else
+            {
+                Debug.LogWarning("ShowInferedGeometriesInSceene: Infered Goal Object is null.");
+            }
+        }
+
+        
     //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
         {
@@ -1443,7 +1518,7 @@ namespace CompasXR.Core
             {
                 MimicGoalsManager = new GoalManager(MimicGoalsParentObject);
                 Debug.Log("MimicGoalsManager initialized. With Goals Parent Object: " + MimicGoalsParentObject.name);
-                foreach(GoalObject goal in MimicGoalsManager.Goals)
+                foreach (GoalObject goal in MimicGoalsManager.Goals)
                 {
                     Debug.Log("GoalsManager Mimic Goals: " + goal.Name);
                 }
@@ -1456,7 +1531,7 @@ namespace CompasXR.Core
             BoundaryZoneParent = ZonesParentObject.FindObject("BoundaryZoneParent");
             InferenceZonesParent = ZonesParentObject.FindObject("InferenceZonesParent");
             MimicZonesParent = ZonesParentObject.FindObject("MimicZonesParent");
-            
+
             ZonesParentObjectsDict.Add("BoundaryZoneParent", BoundaryZoneParent);
             ZonesParentObjectsDict.Add("InferenceZonesParent", InferenceZonesParent);
             ZonesParentObjectsDict.Add("MimicZonesParent", MimicZonesParent);
@@ -1470,6 +1545,11 @@ namespace CompasXR.Core
             ObservedGeometryMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("ObservedBoxLocations").GetComponentInChildren<Renderer>().material;
             AnchorCubeMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("AnchorCubeLocation").GetComponentInChildren<Renderer>().material;
 
+            //TODO: Inference inferring materials
+            InferenceInferedGoalMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("InferenceInferedGoalMaterial").GetComponentInChildren<Renderer>().material;
+            InferenceSuggestedTargetMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("InferenceSuggestedTargetMaterial").GetComponentInChildren<Renderer>().material;
+            InferenceCompletedItemsMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("InferenceCompletedItemsMaterial").GetComponentInChildren<Renderer>().material;
+
             //FindObjects for Mimic Controls
             MimicHumanObjects = ZonesARPrefabObjects.FindObject("HumanObjects");
             MimicHumanPointsParent = MimicHumanObjects.FindObject("Points").FindObject("UserSetPoints");
@@ -1482,7 +1562,7 @@ namespace CompasXR.Core
             MimicRobotLine = MimicRobotObjects.FindObject("RobotLine");
             MimicSystemProposedLineRobot = MimicRobotObjects.FindObject("RobotSystemProposedLine");
 
-            if(MimicHumanSystemProposedPointsParent == null || MimicRobotSystemProposedPointsParent == null)
+            if (MimicHumanSystemProposedPointsParent == null || MimicRobotSystemProposedPointsParent == null)
             {
                 Debug.LogWarning("MimicHumanSystemProposedPointsParent or MimicRobotSystemProposedPointsParent is null");
             }
@@ -1494,15 +1574,15 @@ namespace CompasXR.Core
             RealtimeMimicHumanPointsParent = RealtimeMimicObjects.FindObject("Points").FindObject("Human");
             RealtimeMimicRobotPointsParent = RealtimeMimicObjects.FindObject("Points").FindObject("Robot");
 
-            if(RealtimeMimicHumanPointsParent == null || RealtimeMimicRobotPointsParent == null)
+            if (RealtimeMimicHumanPointsParent == null || RealtimeMimicRobotPointsParent == null)
             {
                 Debug.LogWarning("JOETESTING : RealtimeMimicHumanPointsParent or RealtimeMimicRobotPointsParent is null");
             }
-            else if(RealtimeMimicHumanLine == null || RealtimeMimicRobotLine == null)
+            else if (RealtimeMimicHumanLine == null || RealtimeMimicRobotLine == null)
             {
                 Debug.LogWarning("JOETESTING : RealtimeMimicHumanLine or RealtimeMimicRobotLine is null");
             }
-            else if(RealtimeMimicHumanPointsParent == null || RealtimeMimicRobotPointsParent == null)
+            else if (RealtimeMimicHumanPointsParent == null || RealtimeMimicRobotPointsParent == null)
             {
                 Debug.LogWarning("JOETESTING : RealtimeMimicHumanPointsParent or RealtimeMimicRobotPointsParent is null");
             }
@@ -1535,7 +1615,7 @@ namespace CompasXR.Core
             ActiveRobotMaterial = GameObject.Find("Materials").FindObject("ActiveRobot").GetComponentInChildren<Renderer>().material;
             InactiveRobotMaterial = GameObject.Find("Materials").FindObject("InactiveRobot").GetComponentInChildren<Renderer>().material;
             OutlineMaterial = GameObject.Find("Materials").FindObject("OutlineMaterial").GetComponentInChildren<Renderer>().material;
-            
+
             //Find GameObjects fo internal use
             IdxImage = GameObject.Find("ImageTagTemplates").FindObject("Circle");
             PriorityImage = GameObject.Find("ImageTagTemplates").FindObject("Triangle");

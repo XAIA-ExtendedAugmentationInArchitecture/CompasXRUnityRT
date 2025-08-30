@@ -118,18 +118,26 @@ namespace CompasXR.RoboticTerritories.Data
     {
         public List<GoalObject> Goals { get; private set; }
         public string ParentObjectName { get; private set; }
-
+        public GoalObject CurrentGoal { get; set; }
         public GoalManager(GameObject parentObject)
         {
             Goals = new List<GoalObject>();
             ParentObjectName = parentObject.name;
 
-            foreach(Transform child in parentObject.transform)
+            foreach (Transform child in parentObject.transform)
             {
                 Debug.Log("Adding Goal: " + child.name);
                 Goals.Add(new GoalObject(child.name, child.gameObject));
             }
-
+            if (Goals.Count > 0)
+            {
+                CurrentGoal = Goals[0];   // first element
+            }
+            else
+            {
+                CurrentGoal = null;       // no goals, set null
+                Debug.LogWarning($"GoalManager: No child goals found under {ParentObjectName}");
+            }
         }
 
         // Accessors

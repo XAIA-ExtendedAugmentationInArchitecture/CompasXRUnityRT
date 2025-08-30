@@ -208,7 +208,7 @@ namespace CompasXR.UI
         public GameObject RequestInferenceButtonObject;
         public GameObject ReviewInferenceControlsParentObject;
 
-        //TODO: Inference Review After Guessing the Goal
+        //TODO: Inference Review Before Guessing the Goal
         public GameObject InferenceRejectGoalandTargetButton;
         public GameObject InferenceAcceptTargetButton;
         public GameObject InferenceAcceptGoalButton;
@@ -230,6 +230,9 @@ namespace CompasXR.UI
 
         //TODO: Inference OnScreen Messages
         public GameObject InferenceActiveRobotNullMessage;
+        public GameObject InferenceResultReceivedWhileInOtherModeOnScreenMessage;
+        public GameObject InferenceUnableToInferGoalMessage;
+        public GameObject InferenceTrajectoryNullWarningMessageObject;
 
         //TODO: Updating Canvas to the new one..........................................................
 
@@ -529,8 +532,10 @@ namespace CompasXR.UI
         {
             CurrentSelectedGoalName = instantiateObjects.MimicGoalsManager.Goals[selectedGoalIndex].Name;
             CurrentSelectedGoalTextObject.text = CurrentSelectedGoalName;
-            GameObject newSelectedGoal = instantiateObjects.MimicGoalsManager.Goals[selectedGoalIndex].GoalGameObject;
-            newSelectedGoal.SetActive(true);
+            GoalObject newSelectedGoal = instantiateObjects.MimicGoalsManager.Goals[selectedGoalIndex];
+            GameObject newSelectedGoalGameObject = newSelectedGoal.GoalGameObject;
+            instantiateObjects.MimicGoalsManager.CurrentGoal = newSelectedGoal;
+            newSelectedGoalGameObject.SetActive(true);
         }
         public void MimicSelectPreviousGoalButtonMethod() //TODO: Working on this now...
         {
@@ -630,7 +635,6 @@ namespace CompasXR.UI
 
             }
         }
-
         public void SetInferenceControlsOnStart()
         {
             /*
@@ -1505,7 +1509,22 @@ namespace CompasXR.UI
             }
         }
 
+        public void ShowInferedGeometriesInSceeneWrapper(string inferedGoal, List<string> completedTargets, string suggestedTarget)
+        {
+            /*
+            * Method is used to show the infered geometries in the scene.
+            */
 
+            if (inferedGoal != null && completedTargets != null && suggestedTarget != null)
+            {
+                Debug.Log($"ShowInferedGeometriesInSceene: Showing Infered Geometries {inferedGoal} with suggested target {suggestedTarget} and completed goals {JsonConvert.SerializeObject(completedTargets)} in Scene.");
+                instantiateObjects.ShowInferedGeometriesInSceene(inferedGoal, completedTargets, suggestedTarget, instantiateObjects.InferenceSuggestedTargetMaterial, instantiateObjects.InferenceInferedGoalMaterial, instantiateObjects.InferenceCompletedItemsMaterial, ref instantiateObjects.InferenceGoalsParentObject);
+            }
+            else
+            {
+                Debug.LogWarning("ShowInferedGeometriesInSceene: Infered Goal, Completed Targets or Suggested Target is null.");
+            }
+        }
         //UI Control Methods //TODO: I think that all of the updated methods for Mimic are working, but needs to be tested.
         public void SetUIObjectsFromCurrentMode(ProjectZones.CurrentZoneMode mode)
         {

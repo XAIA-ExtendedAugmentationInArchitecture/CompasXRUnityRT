@@ -839,8 +839,9 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public List<JointTrajectoryPoint> CombinedTrajectoryPoints { get; private set; }
         public string RobotName { get; private set; }
         public string InferenceGuess { get; set; }
+        public string SuggestedTargetName { get; set; }
 
-        public InferenceResultMessage(string inferenceGuess,List<string> completedGoals, List<Trajectory> trajectories, Frame robotBaseFrame = null, string robotName = null, Header header = null)
+        public InferenceResultMessage(List<string> completedGoals, List<Trajectory> trajectories, string inferenceGuess = null, string suggestedTargetName = null, Frame robotBaseFrame = null, string robotName = null, Header header = null)
         {
             Header = header ?? new Header();
             Trajectories = trajectories;
@@ -856,18 +857,19 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             RobotBaseFrame = robotBaseFrame;
             RobotName = robotName;
             InferenceGuess = inferenceGuess;
+            SuggestedTargetName = suggestedTargetName;
         }
 
         public static List<JointTrajectoryPoint> _GetJointTrajectoryPoints(List<Trajectory> trajectories)
         {
             if (trajectories.Count == 0)
             {
-                Debug.LogWarning("MimicTrajectoryResultMessage: No trajectories found in the message returning null list.");
+                Debug.LogWarning("InferenceResultMessage: No trajectories found in the message returning null list.");
                 return new List<JointTrajectoryPoint>();
             }
             else
             {
-                Debug.Log($"MimicTrajectoryResultMessage: Found {trajectories.Count} trajectories in the message.");
+                Debug.Log($"InferenceResultMessage: Found {trajectories.Count} trajectories in the message.");
                 return MessageHandelingExtensions._getCombinedTrajectoryPointsFromTrajectoryList(trajectories);
             }
         }
@@ -882,7 +884,9 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 { "trajectories", MessageHandelingExtensions._getTrajectoriesDataFromList(Trajectories) },
                 { "robot_base_frame", RobotBaseFrame.GetData() },
                 { "robot_name", RobotName },
-                { "inference_guess", InferenceGuess }
+                { "inference_guess", InferenceGuess },
+                { "suggested_target_name", SuggestedTargetName },
+                { "completed_goals", CompletedGoals }
             };
         }
         
@@ -897,21 +901,38 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
             Header header = Header.Parse(headerInfo);
 
-            var inferenceGuess = jsonObject["inference_guess"].ToString();
+            var inferenceGuess = (jsonObject.TryGetValue("inference_guess", out var ig) && ig != null)
+                ? ig.ToString()
+                : null;
+
             if (string.IsNullOrEmpty(inferenceGuess))
             {
                 Debug.LogWarning("InferenceResultMessage: Parse: Inference guess is null or empty.");
-                return new InferenceResultMessage(null, new List<string>(), new List<Trajectory>(), null, null, header);
+                return new InferenceResultMessage(new List<string>(), new List<Trajectory>(),
+                                                null, null, null, null, header);
+            }
+
+            //Parse the robot name
+            var robotName = jsonObject["robot_name"].ToString();
+            var completedGoals = DictionaryHelpers.GetStringListFromDict(jsonObject, "completed_goals");
+            Debug.Log($"Completed goals: {JsonConvert.SerializeObject(completedGoals)}"); // ["G0","G1"]
+            Debug.Log($"Completed goals type: {completedGoals.GetType()}");
+
+            var suggestedTargetName = jsonObject["suggested_target_name"] != null ? jsonObject["suggested_target_name"].ToString() : null;
+            if (string.IsNullOrEmpty(suggestedTargetName))
+            {
+                Debug.LogWarning("InferenceResultMessage: Parse: Suggested target name is null or empty.");
             }
             else
             {
-                Debug.Log($"InferenceResultMessage: Inference Guess Parsed Successfully: {inferenceGuess}");
+                Debug.Log($"InferenceResultMessage: Suggested Target Name Parsed Successfully: {suggestedTargetName}");
             }
 
             var trajectoriesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["trajectories"].ToString());
             List<Trajectory> trajectories = new List<Trajectory>();
             if (trajectoriesData.Count > 0)
             {
+                int i = 0;
                 foreach (Dictionary<string, object> trajectoryData in trajectoriesData)
                 {
                     if (trajectoryData.TryGetValue("data", out var trajectoryDataValue))
@@ -919,40 +940,46 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                         var trajectoryJson = JsonConvert.SerializeObject(trajectoryDataValue);
                         var trajectoryDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(trajectoryJson);
                         trajectories.Add(Trajectory.FromData(trajectoryDict));
+                        Debug.Log($"JOE : InferenceResultMessage: Parse: Trajectory {i} parsed successfully.");
+                        i++;
                     }
                     else
                     {
-                        Debug.LogWarning("MimicTrajectoryResultMessage: Parse: Trajectory data not found in the message.");
+                        Debug.LogWarning("InferenceResultMessage: Parse: Trajectory data not found in the message.");
                     }
                 }
             }
             else
             {
-                Debug.LogWarning("MimicTrajectoryResultMessage: Parse: No trajectories found in the message.");
+                Debug.LogWarning("InferenceResultMessage: Parse: No trajectories found in the message.");
             }
 
-            Frame robotBaseFrame = MessageHandelingExtensions._getBaseFrameFromMessage(jsonObject);
+            if (trajectories.Count <= 0)
+            {
+                Debug.LogWarning("InferenceResultMessage: Parse: No trajectories found in the message.");
+                return new InferenceResultMessage(completedGoals, new List<Trajectory>(), inferenceGuess, suggestedTargetName, null, robotName, header);
+            }
+
+            Frame robotBaseFrame = null;
+            try
+            {
+                robotBaseFrame = MessageHandelingExtensions._getBaseFrameFromMessage(jsonObject);
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"InferenceResultMessage: Failed to parse Robot Base Frame. Using empty. Error: {ex.Message}");
+            }
             if (robotBaseFrame == null)
             {
-                Debug.LogWarning("MimicTrajectoryResultMessage: Parse: Robot base frame not found in the message.");
+                Debug.LogWarning("InferenceResultMessage: Robot base frame is null (allowed).");
             }
             else
             {
-                Debug.Log($"MimicTrajectoryResultMessage: Robot Base Frame Parsed Successfully: {JsonConvert.SerializeObject(robotBaseFrame)}");
+                Debug.Log($"InferenceResultMessage: Robot Base Frame Parsed Successfully: {JsonConvert.SerializeObject(robotBaseFrame, Formatting.Indented)}");
             }
-
-            //Parse the robot name
-            var robotName = jsonObject["robot_name"].ToString();
-            var completedGoalsData = DictionaryHelpers.GetSafeDictionary(jsonObject, "completed_goals");
-            if (completedGoalsData == null)
-            {
-                Debug.LogWarning("InferenceResultMessage: Parse: Completed goals data not found or is null in the message.");
-                return new InferenceResultMessage(inferenceGuess, new List<string>(), trajectories, robotBaseFrame, robotName, header);
-            }
-            List<string> completedGoalsUpdated = DataConverters.ConvertDataToStringList(completedGoalsData);
 
             //TODO: ALL OF THESE NEED TO DUMP IF IT IS NULL. NOT REACH SOME SORT OF EXCEPTION.
-            return new InferenceResultMessage(inferenceGuess, completedGoalsUpdated, trajectories, robotBaseFrame, robotName, header);
+            return new InferenceResultMessage(completedGoals, trajectories, inferenceGuess, suggestedTargetName, robotBaseFrame, robotName, header);
         }
 
     [System.Serializable]
@@ -964,12 +991,28 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         * It is sent to the CAD when a user requests a trajectory.
         */
         public Header Header { get; private set; }
-        public int GoalStatusReply { get; private set; }
-        // public string RobotName { get; private set; }
-        public InferenceReplyMessage(int goalStatusReply, Header header = null)
+        public GoalStatusReplyEnum GoalStatusReply { get; private set; }
+
+        public enum GoalStatusReplyEnum
+        {
+            RejectGoalandTarget = 0,
+            AcceptTargetRejectGoal = 1,
+            AcceptTargetandGoal = 2
+        }
+
+        public string RobotName { get; private set; }
+        public bool IncludesExacutableTrajectory { get; private set; }
+        public string CurrentGoalName { get; set; }
+        public string SuggestedTargetName { get; set; }
+
+        public InferenceReplyMessage(GoalStatusReplyEnum goalStatusReply, string currentGoalName, string suggestedTargetName, string robotName, bool includesExacutableTrajectory, Header header = null)
         {
             Header = header ?? new Header();
             GoalStatusReply = goalStatusReply;
+            RobotName = robotName;
+            IncludesExacutableTrajectory = includesExacutableTrajectory;
+            CurrentGoalName = currentGoalName;
+            SuggestedTargetName = suggestedTargetName;
         }
         public Dictionary<string, object> GetData()
         {
@@ -979,8 +1022,11 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             return new Dictionary<string, object>
             {
                 { "header", Header.GetData() },
-                { "goal_status_reply", GoalStatusReply }
-                // { "robot_name", RobotName }
+                { "goal_status_reply", (int)GoalStatusReply },
+                { "robot_name", RobotName },
+                { "includes_exacutable_trajectory", IncludesExacutableTrajectory },
+                { "current_goal_name", CurrentGoalName },
+                { "suggested_target_name", SuggestedTargetName }
             };
         }
         public static InferenceReplyMessage Parse(string jsonString)
@@ -991,9 +1037,16 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
             var headerInfo = JsonConvert.SerializeObject(jsonObject["header"]);
             Header header = Header.Parse(headerInfo);
-            var goalStatusReply = Convert.ToInt32(jsonObject["goal_status_reply"]);
-            // var robotName = jsonObject["goal_status_reply"].ToInt();
-            return new InferenceReplyMessage(goalStatusReply, header);
+
+            int rawValue = Convert.ToInt32(jsonObject["goal_status_reply"]);
+            GoalStatusReplyEnum goalStatusReply = (GoalStatusReplyEnum)rawValue;
+
+            var robotName = jsonObject["robot_name"].ToString();
+            var includesExacutableTrajectory = Convert.ToBoolean(jsonObject["includes_exacutable_trajectory"]);
+            var currentGoalName = jsonObject["current_goal_name"] != null ? jsonObject["current_goal_name"].ToString() : null;
+            var suggestedTargetName = jsonObject["suggested_target_name"] != null ? jsonObject["suggested_target_name"].ToString() : null;
+
+            return new InferenceReplyMessage(goalStatusReply, currentGoalName, suggestedTargetName, robotName, includesExacutableTrajectory, header);
         }
     }
 
