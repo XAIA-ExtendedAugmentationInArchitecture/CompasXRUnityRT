@@ -292,7 +292,7 @@ namespace CompasXR.Robots
             }
         }
 
-        public void InferenceResultReceivedMessageHandler(InferenceResultMessage inferenceResultMessage)
+        public void InferenceResultReceivedMessageHandler(InferenceResultMessage inferenceResultMessage) //TODO: Remember CurrentGoal is updated in instantiateObjects
         {
             //Set the inference containing exacutable trajectory to false by default
             serviceManager.InferenceContainsExacutableTrajectory = false;
@@ -308,14 +308,6 @@ namespace CompasXR.Robots
             else if (inferenceResultMessage.InferenceGuess == null || inferenceResultMessage.SuggestedTargetName == null || inferenceResultMessage.CompletedGoals.Count <= 0)
             {
                 Debug.LogWarning("MQTT: InferenceResultMessageHandler: No inference guess or suggested target or completed goals");
-                string message = "WARNING: The inference planner was unable to infer a goal. Place more and request again.";
-                UIFunctionalities.SetInferenceRequestUIControlsVisibilityandInteractibility(true, true, false, false, false);
-                UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.InferenceUnableToInferGoalMessage, "InferenceUnableToInferGoal", UIFunctionalities.MessagesParent, message, "InferenceResultReceivedMessageHandler: Inference result has no guess or completed goals.");
-                return;
-            }
-            else if (inferenceResultMessage.InferenceGuess == null || inferenceResultMessage.CompletedGoals.Count <= 0)
-            {
-                Debug.LogWarning("MQTT: InferenceResultMessageHandler: No inference guess or completed goals");
                 string message = "WARNING: The inference planner was unable to infer a goal. Place more and request again.";
                 UIFunctionalities.SetInferenceRequestUIControlsVisibilityandInteractibility(true, true, false, false, false);
                 UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.InferenceUnableToInferGoalMessage, "InferenceUnableToInferGoal", UIFunctionalities.MessagesParent, message, "InferenceResultReceivedMessageHandler: Inference result has no guess or completed goals.");

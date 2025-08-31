@@ -84,8 +84,7 @@ namespace CompasXR.RoboticTerritories.Data
     {
         public string Name { get; private set; }
         public GameObject GoalGameObject { get; private set; }
-        public Dictionary<string, GameObject> GoalObjectComponentsDict { get; private set; }
-
+        public Dictionary<string, GoalObjectComponent> GoalObjectComponentsDict { get; private set; }
         public GoalObject(string name, GameObject parentObject)
         {
             Name = name;
@@ -94,15 +93,16 @@ namespace CompasXR.RoboticTerritories.Data
         }
 
         // Internal method to build the dictionary from child objects
-        private Dictionary<string, GameObject> BuildComponentsDict(GameObject parent)
+        private Dictionary<string, GoalObjectComponent> BuildComponentsDict(GameObject parent)
         {
-            var dict = new Dictionary<string, GameObject>();
+            var dict = new Dictionary<string, GoalObjectComponent>();
             Debug.Log("Building components dictionary for Goal: " + parent.name);
             foreach (Transform child in parent.transform)
             {
                 if (!dict.ContainsKey(child.name))
                 {
-                    dict.Add(child.name, child.gameObject);
+                    GoalObjectComponent goalComponent = new GoalObjectComponent(child.name, child.gameObject);
+                    dict.Add(goalComponent.Name, goalComponent);
                 }
                 else
                 {
@@ -119,24 +119,17 @@ namespace CompasXR.RoboticTerritories.Data
         public List<GoalObject> Goals { get; private set; }
         public string ParentObjectName { get; private set; }
         public GoalObject CurrentGoal { get; set; }
+        public GoalStateObserver GoalStatusObserver { get; set; }
         public GoalManager(GameObject parentObject)
         {
             Goals = new List<GoalObject>();
             ParentObjectName = parentObject.name;
+            CurrentGoal = null;
 
             foreach (Transform child in parentObject.transform)
             {
                 Debug.Log("Adding Goal: " + child.name);
                 Goals.Add(new GoalObject(child.name, child.gameObject));
-            }
-            if (Goals.Count > 0)
-            {
-                CurrentGoal = Goals[0];   // first element
-            }
-            else
-            {
-                CurrentGoal = null;       // no goals, set null
-                Debug.LogWarning($"GoalManager: No child goals found under {ParentObjectName}");
             }
         }
 
@@ -145,6 +138,136 @@ namespace CompasXR.RoboticTerritories.Data
 
         public GoalObject GetByName(string name) =>
             Goals.Find(g => g.Name == name);
+
+        public void UpdateCurrentGoal(GoalObject newGoal)
+        {
+            CurrentGoal = newGoal;
+
+            if (GoalStatusObserver != null)
+            {
+                if (GoalStatusObserver.Active)
+                {
+                    GoalStatusObserver.InitializeComponentStates(newGoal);
+                }
+                else
+                {
+                    Debug.LogWarning("GoalManager: GoalStateObserver is not active. Cannot initialize component states.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("GoalManager: GoalStateObserver is null. Cannot initialize component states.");
+            }
+        }
+    }
+    public class GoalObjectComponent
+        {
+            public string Name { get; private set; }
+            public bool IsSatisfied { get; set; }
+            public GameObject ComponentGameObject { get; private set; }
+            public ObservedGeometry SatisfyingObservedGeometry { get; set; }
+
+            public GoalObjectComponent(string name, GameObject componentObject)
+            {
+                Name = name;
+                ComponentGameObject = componentObject;
+                IsSatisfied = false;
+                SatisfyingObservedGeometry = null;
+            }
+        }
+
+    public class GoalStateObserver //TODO: Integrate this class within the GoalManager Class. (Active when zones switch (For Mimic), but When Inference, active when inference is complete)
+    {
+        public Dictionary<string, GoalObjectComponent> ComponentStates { get; private set; }
+        public bool Active { get; set; }
+        public bool AllComponentsSatisfied
+        {
+            get
+            {
+                return ComponentStates.Values.All(g => g.IsSatisfied);
+            }
+        }
+
+        public GoalStateObserver(GoalObject goalObject=null)
+        {
+            ComponentStates = new Dictionary<string, GoalObjectComponent>();
+            if (goalObject != null)
+            {
+                InitializeComponentStates(goalObject);
+            }
+
+            Active = false;
+        }
+
+        public void InitializeComponentStates(GoalObject goal)
+        {
+            ComponentStates.Clear();
+            foreach (var component in goal.GoalObjectComponentsDict)
+            {
+                if (!ComponentStates.ContainsKey(component.Key))
+                {
+                    ComponentStates.Add(component.Key, component.Value);
+                }
+                else
+                {
+                    Debug.LogWarning($"GoalStateObserver: Duplicate component name '{component.Key}' in goal '{goal.Name}'");
+                }
+            }
+        }
+        public void ColorGoalComponentbySatisfaction(bool isSatisfied, Material satisfiedMaterial, Material unsatisfiedMaterial)
+        {
+            foreach (var component in ComponentStates.Values)
+            {
+                Renderer renderer = component.ComponentGameObject.GetComponentInChildren<Renderer>();
+                if (renderer != null)
+                {
+                    renderer.material = component.IsSatisfied ? satisfiedMaterial : unsatisfiedMaterial;
+                }
+                else
+                {
+                    Debug.LogWarning($"GoalStateObserver: No Renderer found on component '{component.Name}'");
+                }
+            }
+        }
+        public void ClearComponentStates()
+        {
+            ComponentStates.Clear();
+        }
+        public void CheckAllGoalsStatesFromObservedGeometriesDict(Dictionary<string, ObservedGeometry> observedGeometriesDict, Material satisfiedMaterial, Material unsatisfiedMaterial)
+        {
+            foreach (var observedGeometry in observedGeometriesDict.Values)
+            {
+                foreach (var component in ComponentStates.Values)
+                {
+                    GoalObjectComponent checkedComponent = CheckGoalStateFromObservedGeometry(observedGeometry, component.Name);
+                    if (checkedComponent != null && checkedComponent.IsSatisfied)
+                    {
+                        Debug.Log($"GoalStateObserver: Component '{checkedComponent.Name}' is satisfied by observed geometry '{observedGeometry.Name}'");
+                        ColorGoalComponentbySatisfaction(true, satisfiedMaterial, unsatisfiedMaterial);
+                        break; // Exit inner loop if a match is found
+                    }
+                }
+            }
+        }
+
+        //TODO: Update Coloring....
+        public GoalObjectComponent CheckGoalStateFromObservedGeometry(ObservedGeometry observedGeometry, string componentName, float positionTolerance = 0.03f, float rotationTolerance = 3f)
+        {
+            GoalObjectComponent component = ComponentStates.ContainsKey(componentName) ? ComponentStates[componentName] : null;
+            if (component != null)
+            {
+                bool isSatisfied = ObjectInstantiaion.IsWithinPoseTolerance(observedGeometry.GeometryObject, component.ComponentGameObject, positionTolerance, rotationTolerance);
+                component.IsSatisfied = isSatisfied;
+                component.SatisfyingObservedGeometry = isSatisfied ? observedGeometry : null;
+                return component;
+            }
+            else
+            {
+                Debug.LogWarning($"GoalStateObserver: Component '{componentName}' not found in the current goal.");
+                return null;
+            }
+        }
+
     }
 
     [System.Serializable]
@@ -156,7 +279,6 @@ namespace CompasXR.RoboticTerritories.Data
         */
         public Box Box { get; set; }
         public string MarkerType { get; set; }
-
         public String Name { get; set; }
         public GameObject GeometryObject { get; set; }
 

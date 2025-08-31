@@ -26,6 +26,7 @@ using Vuforia;
 using RosSharp.RosBridgeClient.MessageTypes.Actionlib;
 using Unity.PlasticSCM.Editor.WebApi;
 using UnityEngine.Analytics;
+using System.ComponentModel;
 
 namespace CompasXR.UI
 {
@@ -527,14 +528,15 @@ namespace CompasXR.UI
                 }
             }
         }
-
         public void SetMimicGoalFromIndex(int selectedGoalIndex)
         {
             CurrentSelectedGoalName = instantiateObjects.MimicGoalsManager.Goals[selectedGoalIndex].Name;
             CurrentSelectedGoalTextObject.text = CurrentSelectedGoalName;
             GoalObject newSelectedGoal = instantiateObjects.MimicGoalsManager.Goals[selectedGoalIndex];
             GameObject newSelectedGoalGameObject = newSelectedGoal.GoalGameObject;
-            instantiateObjects.MimicGoalsManager.CurrentGoal = newSelectedGoal;
+            instantiateObjects.MimicGoalsManager.UpdateCurrentGoal(newSelectedGoal);
+            GoalStateObserver goalStateObserver = instantiateObjects.MimicGoalsManager.GoalStatusObserver;
+            goalStateObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, instantiateObjects.GoalSatisfiedMaterial, instantiateObjects.GoalUnsatisfiedMaterial);
             newSelectedGoalGameObject.SetActive(true);
         }
         public void MimicSelectPreviousGoalButtonMethod() //TODO: Working on this now...
@@ -652,7 +654,7 @@ namespace CompasXR.UI
             UserInterface.FindButtonandSetOnClickAction(ReviewInferenceControlsParentObject, ref InferenceAcceptGoalButton, "AcceptGoalButton", () => UserInterface.PrintStringOnClick("Accept Goal Button Pressed"));
 
             InferenceReviewSliderParentGameObject = ReviewInferenceControlsParentObject.FindObject("InferenceReviewTrajectorySlider");
-            UserInterface.FindSliderandSetOnValueChangeAction(InferenceReviewSliderParentGameObject, ref InferenceReviewSliderObject, ref InferenceReviewSlider, "TrajectoryReviewSlider", (value) => UserInterface.PrintStringOnClick("Review Inference Slider Value Changed to: " + value));
+            UserInterface.FindSliderandSetOnValueChangeAction(InferenceReviewSliderParentGameObject, ref InferenceReviewSliderObject, ref InferenceReviewSlider, "TrajectoryReviewSlider", (value) => InferenceReviewSliderReviewCompoundTrajectories(value));
 
             //TODO: This is to select a goal and plan after success in guessing the correct goal.
             InferenceRequestTrajectoryCalculationControlsObject = RoboticTerritoriesInferenceControlsObject.FindObject("RobotTrajectoryCalculationControls");
@@ -1045,7 +1047,125 @@ namespace CompasXR.UI
                 }
             }
         }
+        public void InferenceReviewSliderReviewCompoundTrajectories(float value)
+        {
+            if (mqttTrajectoryManager.serviceManager.InferenceResultsMessages.Count > 0)
+            {
+                if (mqttTrajectoryManager.serviceManager.InferenceResultsMessages[-1].Trajectories.Count <= 0)
+                {
+                    Debug.LogWarning("InferenceReviewSliderReviewCompoundTrajectories: Using InferenceResultsMessages for Trajectories.");
+                    return;
+                }
 
+                List<Trajectory> trajectories = mqttTrajectoryManager.serviceManager.InferenceResultsMessages[-1].Trajectories;
+                List<(int start, int end)> trajectoryRanges = new List<(int, int)>();
+                int configCount = 0;
+
+                foreach (Trajectory trajectory in trajectories)
+                {
+                    int count = trajectory.Points.Count;
+                    trajectoryRanges.Add((configCount, configCount + count - 1));
+                    configCount += count;
+                }
+
+                float SliderValue = value;
+                float SliderMin = 0f;
+                float SliderMax = 1f;
+                int targetGlobalIndex = Mathf.RoundToInt(
+                    HelpersExtensions.Remap(SliderValue, SliderMin, SliderMax, 0f, configCount - 1)
+                );
+
+                int selectedTrajectoryIndex = -1;
+                int localIndex = -1;
+
+                for (int i = 0; i < trajectoryRanges.Count; i++)
+                {
+                    var (start, end) = trajectoryRanges[i];
+                    if (targetGlobalIndex >= start && targetGlobalIndex <= end)
+                    {
+                        selectedTrajectoryIndex = i;
+                        localIndex = targetGlobalIndex - start;
+                        break;
+                    }
+                }
+
+                if (selectedTrajectoryIndex >= 0 && localIndex >= 0)
+                {
+                    Debug.Log($"Slider = {SliderValue:0.000} → Global Config #{targetGlobalIndex}");
+                    Debug.Log($"Belongs to Trajectory #{selectedTrajectoryIndex}, Local Config #{localIndex}");
+                    //TODO: CHECK THIS WITH UI MIMIC SLIDER IF THE PREVIOUS AND CURRENT INDEX ARE WORKING PROPERLY.
+                    trajectoryVisualizer.ColorRobotConfigfromSliderInputCompoundTrajectories(selectedTrajectoryIndex, localIndex, trajectories, instantiateObjects.InactiveRobotMaterial, instantiateObjects.ActiveRobotMaterial, ref trajectoryVisualizer.previousConfigIndex, ref trajectoryVisualizer.previousTrajectoryIndex);
+                }
+                else
+                {
+                    Debug.LogWarning("Could not map slider to trajectory index.");
+                }
+
+            }
+            else
+            {
+                Debug.Log("InferenceReviewSliderReviewCompoundTrajectories: Current Trajectory is null.");
+            }
+        }
+        public void InferenceReviewRejectGoalAndTargetButtonMethod()
+        {
+            /*
+            * Method is used to reject the infered goal and target.
+            */
+            InferenceUserReplyMessage inferenceReplyMessage = new InferenceUserReplyMessage
+            (
+                GoalStatusReplyEnum.RejectGoalandTarget,
+                instantiateObjects.InferenceGoalsManager.CurrentGoal.Name,
+                mqttTrajectoryManager.serviceManager.InferenceSuggestedTargetName,
+                mqttTrajectoryManager.serviceManager.ActiveRobotName,
+                mqttTrajectoryManager.serviceManager.InferenceContainsExacutableTrajectory
+            );
+            mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceUserReplyTopic, inferenceReplyMessage.GetData());
+            Debug.Log($"InferenceRejectGoalAndTargetButtonMethod: Rejecting Infered Goal {instantiateObjects.InferenceGoalsManager.CurrentGoal.Name} and Target {mqttTrajectoryManager.serviceManager.InferenceSuggestedTargetName}.");
+            SetInferenceRequestUIControlsVisibilityandInteractibility(true, true, false, false, false);
+            instantiateObjects.ResetInferenceGoalsAndTargets();
+            //TODO: Destroy Trajectory if it exists, and set active robot active again
+        }
+
+        public void InferenceAcceptTargetRejectGoalButtonMethod()
+        {
+            /*
+            * Method is used to reject the infered goal and target.
+            */
+            InferenceUserReplyMessage inferenceReplyMessage = new InferenceUserReplyMessage
+            (
+                GoalStatusReplyEnum.AcceptTargetRejectGoal,
+                instantiateObjects.InferenceGoalsManager.CurrentGoal.Name,
+                mqttTrajectoryManager.serviceManager.InferenceSuggestedTargetName,
+                mqttTrajectoryManager.serviceManager.ActiveRobotName,
+                mqttTrajectoryManager.serviceManager.InferenceContainsExacutableTrajectory
+            );
+
+            mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceUserReplyTopic, inferenceReplyMessage.GetData());
+            Debug.Log($"InferenceRejectGoalAndTargetButtonMethod: Rejecting Infered Goal {instantiateObjects.InferenceGoalsManager.CurrentGoal.Name} and Target {mqttTrajectoryManager.serviceManager.InferenceSuggestedTargetName}.");
+            SetInferenceRequestUIControlsVisibilityandInteractibility(true, true, false, false, false);
+            instantiateObjects.ResetInferenceGoalsAndTargets();
+            //TODO: Destroy Trajectory if it exists, and set active robot active again???? Or Wait a bit???
+        }
+        public void InferenceAcceptGoalButtonMethod()
+        {
+            /*
+            * Method is used to accept the infered goal.
+            */
+            InferenceUserReplyMessage inferenceReplyMessage = new InferenceUserReplyMessage
+            (
+                GoalStatusReplyEnum.AcceptTargetandGoal,
+                instantiateObjects.InferenceGoalsManager.CurrentGoal.Name,
+                mqttTrajectoryManager.serviceManager.InferenceSuggestedTargetName,
+                mqttTrajectoryManager.serviceManager.ActiveRobotName,
+                mqttTrajectoryManager.serviceManager.InferenceContainsExacutableTrajectory
+            );
+            mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceUserReplyTopic, inferenceReplyMessage.GetData());
+            Debug.Log($"InferenceAcceptGoalButtonMethod: Accepting Infered Goal {instantiateObjects.InferenceGoalsManager.CurrentGoal.Name}.");
+            SetInferenceRequestUIControlsVisibilityandInteractibility(false, false, true, true, true);
+            GOALINFERRED = true;
+            //TODO: UPDATE GOAL STATE OBSERVER....
+        }
         //TODO: Other methods
         public void RealtimeMimicMirrorToggleMethod(bool value)
         {
@@ -1127,6 +1247,8 @@ namespace CompasXR.UI
                     {
                         instantiateObjects.MimicGoalsParentObject.SetActive(false);
                     }
+                    instantiateObjects.InferenceGoalsManager.GoalStatusObserver.Active = false;
+                    instantiateObjects.MimicGoalsManager.GoalStatusObserver.Active = false;
 
                     break;
                 case ProjectZones.CurrentZoneMode.Inference:
@@ -1150,14 +1272,20 @@ namespace CompasXR.UI
                     {
                         instantiateObjects.MimicGoalsParentObject.SetActive(false);
                     }
-
+                    instantiateObjects.InferenceGoalsManager.GoalStatusObserver.Active = true;
+                    instantiateObjects.MimicGoalsManager.GoalStatusObserver.Active = false;
                     break;
                 case ProjectZones.CurrentZoneMode.Mimic:
                     Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Mimic Mode.");
                     ControlRobotVisibilityBasedOnMode(ProjectZones.CurrentZoneMode.Mimic);
-                    if(trajectoryVisualizer.ActiveRobot!= null)
+
+                    instantiateObjects.InferenceGoalsManager.GoalStatusObserver.Active = false;
+                    instantiateObjects.MimicGoalsManager.GoalStatusObserver.Active = true;
+                    instantiateObjects.MimicGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, instantiateObjects.GoalSatisfiedMaterial, instantiateObjects.GoalUnsatisfiedMaterial);
+
+                    if (trajectoryVisualizer.ActiveRobot != null)
                     {
-                        if(trajectoryVisualizer.humanZoneMimicReachibility == null)
+                        if (trajectoryVisualizer.humanZoneMimicReachibility == null)
                         {
                             trajectoryVisualizer.AddReachabilitlyToHumanZone(trajectoryVisualizer.ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName),
                             databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, ReachabilityToggleObject.GetComponentInChildren<Toggle>().isOn);
@@ -1514,7 +1642,6 @@ namespace CompasXR.UI
             /*
             * Method is used to show the infered geometries in the scene.
             */
-
             if (inferedGoal != null && completedTargets != null && suggestedTarget != null)
             {
                 Debug.Log($"ShowInferedGeometriesInSceene: Showing Infered Geometries {inferedGoal} with suggested target {suggestedTarget} and completed goals {JsonConvert.SerializeObject(completedTargets)} in Scene.");
@@ -1886,11 +2013,12 @@ namespace CompasXR.UI
                 Debug.Log("MimicTrajectorySliderReviewMethod: Current Trajectory is null.");
             }
         }
+
         public void UserInitiatedMimicExecuteTrajectoryButtonMethod()
         {
             Debug.Log("MimicExecuteTrajectoryButton: Executing Mimic Trajectory.");
-            if(mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints == null 
-            || mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints.Count <= 0 
+            if (mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints == null
+            || mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.CombinedTrajectoryPoints.Count <= 0
             || mqttTrajectoryManager.serviceManager.ActiveRobotName != mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.RobotName)
             {
                 Debug.Log("MimicExecuteTrajectoryButton: Current Trajectory is null or empty.");

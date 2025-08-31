@@ -97,6 +97,9 @@ namespace CompasXR.Core
         public Material InferenceSuggestedTargetMaterial;
         public Material InferenceCompletedItemsMaterial;
 
+        public Material GoalSatisfiedMaterial;
+        public Material GoalUnsatisfiedMaterial;
+
         //TODO: Robotic Territories Materials //////////////////////////////////////////
 
 
@@ -1165,25 +1168,27 @@ namespace CompasXR.Core
     }
 
     //TODO: TODO: TODO: TODO: TESTING GEOMETRY UPDATES UPDATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
-    public void OnObservedObjectsChangedWrapper(object source, UpdateObservedGeometryEventArgs e)
-    {
-        if(e.ObservedGeometryDict == null)
+
+    //TODO: Joe Actual: Update GoalStateObserver based on movement updates.
+        public void OnObservedObjectsChangedWrapper(object source, UpdateObservedGeometryEventArgs e)
         {
-            Debug.LogWarning("OnObservedObjectsChangedWrapper: ObservedGeometryDict is null.");
-            return;
+            if (e.ObservedGeometryDict == null)
+            {
+                Debug.LogWarning("OnObservedObjectsChangedWrapper: ObservedGeometryDict is null.");
+                return;
+            }
+            if (e.NewObservedGeometry == null)
+            {
+                Debug.LogWarning("OnObservedObjectsChangedWrapper: NewObservedGeometry is null.");
+                return;
+            }
+            if (string.IsNullOrEmpty(e.Key))
+            {
+                Debug.LogWarning("OnObservedObjectsChangedWrapper: Key is null or empty.");
+                return;
+            }
+            OnObservedGeometryUpdated(e.ObservedGeometryDict, e.NewObservedGeometry, e.Key);
         }
-        if(e.NewObservedGeometry == null)
-        {
-            Debug.LogWarning("OnObservedObjectsChangedWrapper: NewObservedGeometry is null.");
-            return;
-        }
-        if(string.IsNullOrEmpty(e.Key))
-        {
-            Debug.LogWarning("OnObservedObjectsChangedWrapper: Key is null or empty.");
-            return;
-        }
-        OnObservedGeometryUpdated(e.ObservedGeometryDict, e.NewObservedGeometry, e.Key);
-    }
     public void OnObservedGeometryUpdated(Dictionary<string, ObservedGeometry> currentGeometryDict, ObservedGeometry observedGeometry, string key)
     {
         /*
@@ -1413,15 +1418,16 @@ namespace CompasXR.Core
             if (inferedGoalObject != null)
             {
                 Debug.Log("ShowInferedGeometriesInSceene: Showing Infered Goal: " + inferedGoalObject.Name);
+                InferenceGoalsManager.UpdateCurrentGoal(inferedGoalObject);
 
                 //Set the material to the infered goal material.
                 if (InferenceInferedGoalMaterial != null)
                 {
-                    foreach (KeyValuePair<string, GameObject> entry in inferedGoalObject.GoalObjectComponentsDict)
+                    foreach (KeyValuePair<string, GoalObjectComponent> entry in inferedGoalObject.GoalObjectComponentsDict)
                     {
                         if (entry.Value != null && entry.Value != null)
                         {
-                            Renderer renderer = entry.Value.GetComponentInChildren<Renderer>();
+                            Renderer renderer = entry.Value.ComponentGameObject.GetComponentInChildren<Renderer>();
                             if (renderer != null)
                             {
                                 if (entry.Key == suggestedTarget)
@@ -1462,9 +1468,47 @@ namespace CompasXR.Core
                 Debug.LogWarning("ShowInferedGeometriesInSceene: Infered Goal Object is null.");
             }
         }
+        public void ResetInferenceGoalsAndTargets()
+        {
+            /*
+            * Method is used to reset the inference goals and targets.
+            */
+            if (InferenceGoalsManager == null)
+            {
+                Debug.LogWarning("ResetInferenceGoalsAndTargets: Inference Goals Manager is null.");
+                return;
+            }
+            if (InferenceGoalsManager.CurrentGoal != null)
+            {
+                InferenceGoalsManager.CurrentGoal.GoalGameObject.SetActive(false);
+                foreach(KeyValuePair<string, GoalObjectComponent> entry in InferenceGoalsManager.CurrentGoal.GoalObjectComponentsDict)
+                {
+                    if (entry.Value != null)
+                    {
+                        Renderer renderer = entry.Value.ComponentGameObject.GetComponentInChildren<Renderer>();
+                        if (renderer != null && InferenceInferedGoalMaterial != null)
+                        {
+                            renderer.material = InferenceInferedGoalMaterial;
+                        }
+                        else
+                        {
+                            Debug.LogWarning("ResetInferenceGoalsAndTargets: Renderer or ObservedGeometryMaterial is null for " + entry.Key);
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("ResetInferenceGoalsAndTargets: Goal Object Component is null for " + entry.Key);
+                    }
+                }
+            }
+            else
+            {
+                Debug.Log("ResetInferenceGoalsAndTargets: No current goal to reset.");
+            }
+            Debug.Log("ResetInferenceGoalsAndTargets: Inference Goals and Targets have been reset.");
+        }
 
-        
-    //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+        //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
         {
             /*
@@ -1502,6 +1546,7 @@ namespace CompasXR.Core
             if (InferenceGoalsParentObject != null)
             {
                 InferenceGoalsManager = new GoalManager(InferenceGoalsParentObject);
+                InferenceGoalsManager.GoalStatusObserver = new GoalStateObserver();
                 foreach (GoalObject goal in InferenceGoalsManager.Goals)
                 {
                     Debug.Log("GoalsManager Inference Goal: " + goal.Name);
@@ -1517,6 +1562,9 @@ namespace CompasXR.Core
             if (MimicGoalsParentObject != null)
             {
                 MimicGoalsManager = new GoalManager(MimicGoalsParentObject);
+                GoalObject mimicInitGoal = MimicGoalsManager.GetByName("Goal00");
+                MimicGoalsManager.GoalStatusObserver = new GoalStateObserver(mimicInitGoal);
+
                 Debug.Log("MimicGoalsManager initialized. With Goals Parent Object: " + MimicGoalsParentObject.name);
                 foreach (GoalObject goal in MimicGoalsManager.Goals)
                 {
@@ -1549,6 +1597,10 @@ namespace CompasXR.Core
             InferenceInferedGoalMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("InferenceInferedGoalMaterial").GetComponentInChildren<Renderer>().material;
             InferenceSuggestedTargetMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("InferenceSuggestedTargetMaterial").GetComponentInChildren<Renderer>().material;
             InferenceCompletedItemsMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("InferenceCompletedItemsMaterial").GetComponentInChildren<Renderer>().material;
+
+            //TODO: GOAL SATISFACTION MATERIALS
+            GoalSatisfiedMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("GoalSatisfiedMaterial").GetComponentInChildren<Renderer>().material;
+            GoalUnsatisfiedMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("GoalUnsatisfiedMaterial").GetComponentInChildren<Renderer>().material;
 
             //FindObjects for Mimic Controls
             MimicHumanObjects = ZonesARPrefabObjects.FindObject("HumanObjects");
@@ -2636,7 +2688,7 @@ namespace CompasXR.Core
         * Class is used to handle the object instantiation in the AR space
         * It contains methods for the creation of 3D objects, text, and etc. in the AR space
         */
-        public static GameObject CreateTextinARSpaceAsGameObject(string text, string gameObjectName, float fontSize, TextAlignmentOptions textAlignment, Color textColor, Vector3 position, Quaternion rotation, bool isBillboard, bool isVisible, GameObject parentObject=null, bool storePositionData=true)
+        public static GameObject CreateTextinARSpaceAsGameObject(string text, string gameObjectName, float fontSize, TextAlignmentOptions textAlignment, Color textColor, Vector3 position, Quaternion rotation, bool isBillboard, bool isVisible, GameObject parentObject = null, bool storePositionData = true)
         {
             GameObject textContainer = new GameObject(gameObjectName);
             textContainer.transform.position = position;
@@ -2665,7 +2717,7 @@ namespace CompasXR.Core
             textContainer.SetActive(isVisible);
             return textContainer;
         }
-        public static GameObject InstantiateObjectFromPrefabRefrence(ref GameObject prefabReference, string gameObjectName, Vector3 position, Quaternion rotation, GameObject parentObject=null)
+        public static GameObject InstantiateObjectFromPrefabRefrence(ref GameObject prefabReference, string gameObjectName, Vector3 position, Quaternion rotation, GameObject parentObject = null)
         {
             /*
             * Method is used to instantiate the object from the prefab reference
@@ -2690,7 +2742,7 @@ namespace CompasXR.Core
             ObjectTransformations.Rotation rotationData = ObjectTransformations.GetRotationFromRightHand(xAxisData, yAxisData);
             Quaternion rotationQuaternion;
 
-            if(isObj)
+            if (isObj)
             {
                 rotationQuaternion = ObjectTransformations.GetQuaternionFromFrameDataForObj(rotationData, z_remapped);
             }
@@ -2699,7 +2751,7 @@ namespace CompasXR.Core
                 rotationQuaternion = ObjectTransformations.GetQuaternionFromFrameDataForUnityObject(rotationData);
             }
 
-            if(rotationQuaternion == null)
+            if (rotationQuaternion == null)
             {
                 Debug.LogError("placeElement: Cannot assign object rotation because it is null");
             }
@@ -2810,10 +2862,10 @@ namespace CompasXR.Core
                 }
             }
             return true; // All objects are within the target object
-            }
+        }
         public static bool Vector3sAreCloserThenThreshold(Vector3 pointA, Vector3 pointB, float threshold)
         {
-            
+
             if (threshold <= 0)
             {
                 Debug.LogError("Vector3sAreCloserThenThreshold: Threshold must be greater than zero.");
@@ -2831,5 +2883,23 @@ namespace CompasXR.Core
             float distance = Vector3.Distance(pointA, pointB);
             return distance < threshold;
         }
+
+        public static bool IsWithinPositionTolerance(GameObject gameObject1, GameObject gameObject2, float tolerance)
+        {
+            float dist = Vector3.Distance(gameObject1.transform.position, gameObject2.transform.position);
+            return dist <= tolerance;
+        }
+        public static bool IsWithinRotationTolerance(GameObject gameObject1, GameObject gameObject2, float toleranceDegrees)
+        {
+            // Use Quaternion.Angle to get the smallest difference between rotations
+            float angle = Quaternion.Angle(gameObject1.transform.rotation, gameObject2.transform.rotation);
+            return angle <= toleranceDegrees;
+        }
+        public static bool IsWithinPoseTolerance(GameObject gameObject1, GameObject gameObject2, float posTolerance, float rotToleranceDegrees)
+        {
+            return IsWithinPositionTolerance(gameObject1, gameObject2, posTolerance) &&
+                IsWithinRotationTolerance(gameObject1, gameObject2, rotToleranceDegrees);
+        }
+
     }
 }

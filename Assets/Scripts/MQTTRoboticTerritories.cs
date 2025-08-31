@@ -48,7 +48,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public string realtimeMimicIOToggleRequestTopic { get; set; }
 
         public string inferenceRequestTopic { get; set; }
-        public string inferenceReplyTopic { get; set; }
+        public string inferenceUserReplyTopic { get; set; }
         // public string inferenceRequestTargetTopic { get; set; }
         // public string inferenceExecuteTargetRequestTopic { get; set; }
         public RTPublishers(string projectName)
@@ -59,7 +59,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             realtimeMimicIOToggleRequestTopic = $"robotic_territories/real_time_mimic_io_toggle_request/{projectName}";
 
             inferenceRequestTopic = $"robotic_territories/inference_request/{projectName}";
-            inferenceReplyTopic = $"robotic_territories/inference_user_reply/{projectName}";
+            inferenceUserReplyTopic = $"robotic_territories/inference_user_reply/{projectName}";
             // inferenceRequestTargetTopic = $"robotic_territories/inference_request_target/{projectName}";
             // inferenceExecuteTargetRequestTopic = $"robotic_territories/inference_execute_target/{projectName}";
         }
@@ -981,9 +981,16 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             //TODO: ALL OF THESE NEED TO DUMP IF IT IS NULL. NOT REACH SOME SORT OF EXCEPTION.
             return new InferenceResultMessage(completedGoals, trajectories, inferenceGuess, suggestedTargetName, robotBaseFrame, robotName, header);
         }
+    }
 
+    public enum GoalStatusReplyEnum
+    {
+        RejectGoalandTarget = 0,
+        AcceptTargetRejectGoal = 1,
+        AcceptTargetandGoal = 2
+    }
     [System.Serializable]
-    public class InferenceReplyMessage
+    public class InferenceUserReplyMessage
     {
         /*
         * InferenceRequestMessage : Class is used to manage the InferenceRequestMessage message for Compas XR communication.
@@ -993,19 +1000,12 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public Header Header { get; private set; }
         public GoalStatusReplyEnum GoalStatusReply { get; private set; }
 
-        public enum GoalStatusReplyEnum
-        {
-            RejectGoalandTarget = 0,
-            AcceptTargetRejectGoal = 1,
-            AcceptTargetandGoal = 2
-        }
-
         public string RobotName { get; private set; }
         public bool IncludesExacutableTrajectory { get; private set; }
         public string CurrentGoalName { get; set; }
         public string SuggestedTargetName { get; set; }
 
-        public InferenceReplyMessage(GoalStatusReplyEnum goalStatusReply, string currentGoalName, string suggestedTargetName, string robotName, bool includesExacutableTrajectory, Header header = null)
+        public InferenceUserReplyMessage(GoalStatusReplyEnum goalStatusReply, string currentGoalName, string suggestedTargetName, string robotName, bool includesExacutableTrajectory, Header header = null)
         {
             Header = header ?? new Header();
             GoalStatusReply = goalStatusReply;
@@ -1029,7 +1029,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 { "suggested_target_name", SuggestedTargetName }
             };
         }
-        public static InferenceReplyMessage Parse(string jsonString)
+        public static InferenceUserReplyMessage Parse(string jsonString)
         {
             /*
             * Method is used to parse an instance of the class from a JSON string.
@@ -1046,9 +1046,8 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             var currentGoalName = jsonObject["current_goal_name"] != null ? jsonObject["current_goal_name"].ToString() : null;
             var suggestedTargetName = jsonObject["suggested_target_name"] != null ? jsonObject["suggested_target_name"].ToString() : null;
 
-            return new InferenceReplyMessage(goalStatusReply, currentGoalName, suggestedTargetName, robotName, includesExacutableTrajectory, header);
+            return new InferenceUserReplyMessage(goalStatusReply, currentGoalName, suggestedTargetName, robotName, includesExacutableTrajectory, header);
         }
     }
 
-    }
 }
