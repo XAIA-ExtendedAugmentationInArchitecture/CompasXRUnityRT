@@ -360,7 +360,7 @@ namespace CompasXR.Robots
             }
             else
             {
-                //Update Last Inference Result Message in the Service Manager
+                //Update Last Inference Result Message in the Service Manager //TODO: Soemtimes I get an error from this.
                 if (UIFunctionalities.InferenceReviewSlider.value != 0)
                 {
                     UIFunctionalities.InferenceReviewSlider.value = 0;

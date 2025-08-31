@@ -456,7 +456,8 @@ namespace CompasXR.UI
                     //TODO: This was not 100% Correct. It kills the active Robot when it shouldn't.
                     if(trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
                     {
-                        trajectoryVisualizer.DestroyActiveTrajectoryChildren();
+                        // trajectoryVisualizer.DestroyActiveTrajectoryChildren();
+                        trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
                     }
                     Debug.Log($"NextMimicModeButtonMethod: Changed Mimic Mode from {previousMimicMode} to {newMimicMode}");
                 }
@@ -649,9 +650,9 @@ namespace CompasXR.UI
             UserInterface.FindButtonandSetOnClickAction(InferenceRequestControlsObject, ref RequestInferenceButtonObject, "RequestInferenceButton", RequestInferenceButtonMethod);
 
             ReviewInferenceControlsParentObject = InferenceRequestControlsObject.FindObject("InferenceReviewControls");
-            UserInterface.FindButtonandSetOnClickActionDebug(ReviewInferenceControlsParentObject, ref InferenceRejectGoalandTargetButton, "RejectGoalButton", () => UserInterface.PrintStringOnClick("Reject Goal and Target Button Pressed"));
-            UserInterface.FindButtonandSetOnClickAction(ReviewInferenceControlsParentObject, ref InferenceAcceptTargetButton, "AcceptTargetButton", () => UserInterface.PrintStringOnClick("Accept Target Button Pressed"));
-            UserInterface.FindButtonandSetOnClickAction(ReviewInferenceControlsParentObject, ref InferenceAcceptGoalButton, "AcceptGoalButton", () => UserInterface.PrintStringOnClick("Accept Goal Button Pressed"));
+            UserInterface.FindButtonandSetOnClickActionDebug(ReviewInferenceControlsParentObject, ref InferenceRejectGoalandTargetButton, "RejectGoalButton", InferenceReviewRejectGoalAndTargetButtonMethod);
+            UserInterface.FindButtonandSetOnClickAction(ReviewInferenceControlsParentObject, ref InferenceAcceptTargetButton, "AcceptTargetButton", InferenceAcceptTargetRejectGoalButtonMethod);
+            UserInterface.FindButtonandSetOnClickAction(ReviewInferenceControlsParentObject, ref InferenceAcceptGoalButton, "AcceptGoalButton", InferenceAcceptGoalButtonMethod);
 
             InferenceReviewSliderParentGameObject = ReviewInferenceControlsParentObject.FindObject("InferenceReviewTrajectorySlider");
             UserInterface.FindSliderandSetOnValueChangeAction(InferenceReviewSliderParentGameObject, ref InferenceReviewSliderObject, ref InferenceReviewSlider, "TrajectoryReviewSlider", (value) => InferenceReviewSliderReviewCompoundTrajectories(value));
@@ -1051,13 +1052,13 @@ namespace CompasXR.UI
         {
             if (mqttTrajectoryManager.serviceManager.InferenceResultsMessages.Count > 0)
             {
-                if (mqttTrajectoryManager.serviceManager.InferenceResultsMessages[-1].Trajectories.Count <= 0)
+                if (mqttTrajectoryManager.serviceManager.InferenceResultsMessages[mqttTrajectoryManager.serviceManager.InferenceResultsMessages.Count-1].Trajectories.Count <= 0)
                 {
                     Debug.LogWarning("InferenceReviewSliderReviewCompoundTrajectories: Using InferenceResultsMessages for Trajectories.");
                     return;
                 }
 
-                List<Trajectory> trajectories = mqttTrajectoryManager.serviceManager.InferenceResultsMessages[-1].Trajectories;
+                List<Trajectory> trajectories = mqttTrajectoryManager.serviceManager.InferenceResultsMessages[mqttTrajectoryManager.serviceManager.InferenceResultsMessages.Count-1].Trajectories;
                 List<(int start, int end)> trajectoryRanges = new List<(int, int)>();
                 int configCount = 0;
 
@@ -1124,9 +1125,17 @@ namespace CompasXR.UI
             Debug.Log($"InferenceRejectGoalAndTargetButtonMethod: Rejecting Infered Goal {instantiateObjects.InferenceGoalsManager.CurrentGoal.Name} and Target {mqttTrajectoryManager.serviceManager.InferenceSuggestedTargetName}.");
             SetInferenceRequestUIControlsVisibilityandInteractibility(true, true, false, false, false);
             instantiateObjects.ResetInferenceGoalsAndTargets();
+
+            if(trajectoryVisualizer.ActiveTrajectoryParentObject!= null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+            {
+                trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
+            }
+            else
+            {
+                Debug.LogWarning("InferenceReviewRejectGoalAndTargetButtonMethod: Active Robot is null, cannot set interactable state.");
+            }
             //TODO: Destroy Trajectory if it exists, and set active robot active again
         }
-
         public void InferenceAcceptTargetRejectGoalButtonMethod()
         {
             /*
@@ -1145,6 +1154,15 @@ namespace CompasXR.UI
             Debug.Log($"InferenceRejectGoalAndTargetButtonMethod: Rejecting Infered Goal {instantiateObjects.InferenceGoalsManager.CurrentGoal.Name} and Target {mqttTrajectoryManager.serviceManager.InferenceSuggestedTargetName}.");
             SetInferenceRequestUIControlsVisibilityandInteractibility(true, true, false, false, false);
             instantiateObjects.ResetInferenceGoalsAndTargets();
+
+            if (trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+            {
+                trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
+            }
+            else
+            {
+                Debug.LogWarning("InferenceReviewRejectGoalAndTargetButtonMethod: Active Robot is null, cannot set interactable state.");
+            }
             //TODO: Destroy Trajectory if it exists, and set active robot active again???? Or Wait a bit???
         }
         public void InferenceAcceptGoalButtonMethod()
@@ -1162,10 +1180,18 @@ namespace CompasXR.UI
             );
             mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceUserReplyTopic, inferenceReplyMessage.GetData());
             Debug.Log($"InferenceAcceptGoalButtonMethod: Accepting Infered Goal {instantiateObjects.InferenceGoalsManager.CurrentGoal.Name}.");
-            SetInferenceRequestUIControlsVisibilityandInteractibility(false, false, true, true, true);
+            SetInferenceRequestUIControlsVisibilityandInteractibility(false, false, false, false, false);
             GOALINFERRED = true;
-            //TODO: UPDATE GOAL STATE OBSERVER....
+
+            instantiateObjects.InferenceGoalsManager.GoalStatusObserver.Active = true;
+            instantiateObjects.InferenceGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, instantiateObjects.GoalSatisfiedMaterial, instantiateObjects.GoalUnsatisfiedMaterial);
+            //TODO: Find the first unbuilt goal and set it to current selected target
+            //TODO: Then do set goal target tracking.
+
+
+            SetInferenceUIPostInferenceSuccesState(true, true, false, false);
         }
+
         //TODO: Other methods
         public void RealtimeMimicMirrorToggleMethod(bool value)
         {
@@ -1255,7 +1281,8 @@ namespace CompasXR.UI
                     instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();
                     if(trajectoryVisualizer.ActiveTrajectoryParentObject!= null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
                     {
-                        trajectoryVisualizer.DestroyActiveTrajectoryChildren();
+                        trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
+                        // trajectoryVisualizer.DestroyActiveTrajectoryChildren();
                     }
                     if(trajectoryVisualizer.humanZoneMimicReachibility != null)
                     {
@@ -1409,7 +1436,6 @@ namespace CompasXR.UI
                 }
             }
         }
-
         public void SetRealtimeMimicPointBasicTEMPORARY()
         {
             /*

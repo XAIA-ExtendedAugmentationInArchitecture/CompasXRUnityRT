@@ -47,7 +47,7 @@ namespace CompasXR.Robots
         public Dictionary<string, string> URDFRenderComponents = new Dictionary<string, string>();
 
         //List of available robots
-        public List<string> RobotPreFabList = new List<string> {"UR3", "UR5", "UR10e", "UR20", "ETHZurichRFL"};
+        public List<string> RobotPreFabList = new List<string> { "UR3", "UR5", "UR10e", "UR20", "ETHZurichRFL" };
 
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////////////////////////////
         public Frame databaseRobotBaseFrame;
@@ -56,7 +56,7 @@ namespace CompasXR.Robots
 
         public int? previousTrajectoryIndex;
         public int? previousConfigIndex;
-            
+
         ////////////////////////////////////////// Monobehaviour Methods ////////////////////////////////////////////////////////
         void Start()
         {
@@ -82,28 +82,28 @@ namespace CompasXR.Robots
             /*
             SetActiveRobotFromDropdown is called from the UI Dropdown and is responsible for setting the active robot in the scene.
             */
-            if(URDFLinkNames.Count > 0)
+            if (URDFLinkNames.Count > 0)
             {
                 URDFLinkNames.Clear();
             }
-            if(URDFRenderComponents.Count > 0)
+            if (URDFRenderComponents.Count > 0)
             {
                 URDFRenderComponents.Clear();
             }
-            if(humanZoneMimicReachibility != null)
+            if (humanZoneMimicReachibility != null)
             {
                 Destroy(humanZoneMimicReachibility);
             }
 
             SetActiveRobot(BuiltInRobotsParent, robotName, yRotation, ActiveRobotObjects, ref ActiveRobot, ref ActiveTrajectoryParentObject, instantiateObjects.InactiveRobotMaterial, visibility);
-        
+
             //TODO: Updated for Robotic Territories /////////////////////////////////////////////////////////////////////////////////////////////////////
-            if(databaseRobotBaseFrame != null)
+            if (databaseRobotBaseFrame != null)
             {
                 URDFManagement.SetRobotLocalPositionandRotationFromFrame(databaseRobotBaseFrame, ActiveRobot);
 
                 //TODO: This is a hot fix, but the code should probably be restructured.
-                if(databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
+                if (databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
                 {
                     bool reachVisibiility = uiFunctionalities.ReachabilityToggleObject.GetComponent<Toggle>().isOn;
                     AddReachabilitlyToHumanZone(ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName), databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, reachVisibiility);
@@ -121,19 +121,19 @@ namespace CompasXR.Robots
             */
             GameObject selectedRobot = BuiltInRobotsParent.FindObject(robotName);
 
-            if(selectedRobot != null)
+            if (selectedRobot != null)
             {
-                if(ActiveRobot != null)
+                if (ActiveRobot != null)
                 {
                     Destroy(ActiveRobot);
                 }
-                if(ActiveTrajectoryParentObject != null)
+                if (ActiveTrajectoryParentObject != null)
                 {
                     Destroy(ActiveTrajectoryParentObject);
                 }
                 GameObject temporaryRobot = Instantiate(selectedRobot, ActiveRobotObjectsParent.transform.position, ActiveRobotObjectsParent.transform.rotation);
                 temporaryRobot.name = selectedRobot.name;
-                if(yRotation)
+                if (yRotation)
                 {
                     temporaryRobot.transform.Rotate(0, 90, 0);
                 }
@@ -147,7 +147,7 @@ namespace CompasXR.Robots
 
                 mqttTrajectoryManager.serviceManager.ActiveRobotName = robotName; //TODO: THIS IS FROM COMPAS XR, BUT NEEDS TO BE THOUGHT ABOUT FOR ROBOT TERRITORIES
 
-                if(uiFunctionalities.ReachabilityToggleObject.GetComponent<Toggle>().isOn)
+                if (uiFunctionalities.ReachabilityToggleObject.GetComponent<Toggle>().isOn)
                 {
                     SetReachabilityActive(temporaryRobot, visibility);
                 }
@@ -169,7 +169,7 @@ namespace CompasXR.Robots
             /*
             SetReachabilityActive is responsible for setting the reachability of the robot in the scene.
             */
-            if(robotObject != null)
+            if (robotObject != null)
             {
 
                 GameObject reachabilityObject = null;
@@ -177,18 +177,18 @@ namespace CompasXR.Robots
                 {
                     GameObject child = robotObject.transform.GetChild(i).gameObject;
                     Debug.Log($"SetReachabilityActive: Checking child {i} with name {child.name}.");
-                    if(child.name.Contains("Reachability"))
+                    if (child.name.Contains("Reachability"))
                     {
                         Debug.Log("SetReachabilityActive: Reachability object found in the robot object.");
                         reachabilityObject = child;
                     }
                 }
 
-                if(reachabilityObject != null)
+                if (reachabilityObject != null)
                 {
                     Debug.Log("SetReachabilityActive: Reachability object found in the robot object.");
                     reachabilityObject.SetActive(visibility);
-                    if(databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
+                    if (databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
                     {
                         AddReachabilitlyToHumanZone(robotObject, databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, visibility);
                     }
@@ -212,23 +212,23 @@ namespace CompasXR.Robots
             AddReachabilitlyToHumanZone is responsible for adding reachability to the human zone in the scene.
             */
             Debug.Log("AddReachabilitlyToHumanZone: Adding reachability to the human zone.");
-            if(robotObject != null)
+            if (robotObject != null)
             {
                 GameObject reachabilityObject = null;
                 for (int i = 0; i < robotObject.transform.childCount; i++)
                 {
                     GameObject child = robotObject.transform.GetChild(i).gameObject;
                     Debug.Log($"AddReachabilitlyToHumanZone: Checking child {i} with name {child.name}.");
-                    if(child.name.Contains("Reachability"))
+                    if (child.name.Contains("Reachability"))
                     {
                         Debug.Log("AddReachabilitlyToHumanZone: Reachability object found in the robot object.");
                         reachabilityObject = child;
                     }
                 }
-                if(humanZoneObject != null && reachabilityObject != null)
+                if (humanZoneObject != null && reachabilityObject != null)
                 {
-                    GameObject humanZoneReachability = instantiateObjects.ZonesARPrefabObjects.FindObject("MimicObjects").FindObject("HumanZoneMimicReachibility"); 
-                    if(humanZoneReachability == null)
+                    GameObject humanZoneReachability = instantiateObjects.ZonesARPrefabObjects.FindObject("MimicObjects").FindObject("HumanZoneMimicReachibility");
+                    if (humanZoneReachability == null)
                     {
                         Debug.Log("AddReachabilitlyToHumanZone: HumanZoneMimicReachibility does not exist.");
                         humanZoneReachability = Instantiate(reachabilityObject, reachabilityObject.transform.position, reachabilityObject.transform.rotation);
@@ -243,9 +243,9 @@ namespace CompasXR.Robots
 
                     Vector3 reachibilitysphereScale = ScaleReachibilitySphereProportionally(robotZoneObject, reachabilityObject, humanZoneObject);
                     humanZoneReachability.transform.localScale = reachibilitysphereScale;
-                    
+
                     Vector3 tempPos = reachabilityObject.transform.position;
-                    if(uiFunctionalities.UserInitiatedMimicMirrorToggle.isOn)
+                    if (uiFunctionalities.UserInitiatedMimicMirrorToggle.isOn)
                     {
                         tempPos = InstantiateObjects.MirrorPositionAcrossBox(robotZoneObject, reachabilityObject.transform.position); //TODO: CHECK THIS IDK WHATS UP.
                         // tempPos = InstantiateObjects.MirrorPositionAcrossBox(robotZoneObject, reachabilityObject.transform.position, robotZoneObject.transform.right); //TODO: CHECK THIS IDK WHATS UP.
@@ -304,7 +304,7 @@ namespace CompasXR.Robots
             List<JointTrajectoryPoint> trajectoryPointsList = inferenceResultMessage.CombinedTrajectoryPoints;
             List<Trajectory> trajectoryList = inferenceResultMessage.Trajectories;
             Debug.Log($"InstantateRobotFromInferenceResultMessage: {trajectoryPointsList.Count} configurations.");
-            
+
             if (trajectoryPointsList.Count > 0 && robotToConfigure != null && URDFLinks.Count > 0 || parentObject != null)
             {
                 InstatintaiteRobotFromTrajectoryList(trajectoryList, inferenceResultMessage.RobotBaseFrame, robotToConfigure, URDFLinks, parentObject, visibility);
@@ -314,7 +314,7 @@ namespace CompasXR.Robots
             }
             else
             {
-                
+
                 Debug.LogError("InstantateRobotFromInferenceResultMessage: Trajectory is empty, robotToConfigure is null, or joint_names is empty.");
             }
         }
@@ -349,7 +349,7 @@ namespace CompasXR.Robots
             */
 
             Debug.Log($"InstantiateRobotFromConfigList: {trajectories.Count} configurations.");
-            
+
             if (trajectories.Count > 0 && robotToConfigure != null && URDFLinks.Count > 0 || parentObject != null)
             {
                 int trajectoryCount = trajectories.Count;
@@ -360,13 +360,13 @@ namespace CompasXR.Robots
                     trajectoryParent.name = $"Trajectory{i}";
                     trajectoryParent.transform.SetParent(parentObject.transform, false);
                     InstantiateRobotTrajectoryFromJointTrajectoryPoints(trajectories[i].Points, robotBaseFrame, robotToConfigure, URDFLinks, trajectoryParent, visibility);
-                
-                    if(trajectories[i].AttachedCollisionMeshes.Count > 0)
+
+                    if (trajectories[i].AttachedCollisionMeshes.Count > 0)
                     {
                         foreach (AttachedCollisionMesh attachedCollisionMesh in trajectories[i].AttachedCollisionMeshes)
                         {
                             GameObject acmGameObject = attachedCollisionMesh.CollisionMesh.Mesh.GenerateMeshFromRHMesh(attachedCollisionMesh.CollisionMesh.Id);
-                            if(acmGameObject != null)
+                            if (acmGameObject != null)
                             {
                                 acmGameObject.transform.GetComponentInChildren<MeshRenderer>().material = instantiateObjects.InactiveRobotMaterial;
                                 Debug.Log(attachedCollisionMesh.CollisionMesh.Id);
@@ -405,11 +405,11 @@ namespace CompasXR.Robots
             {
                 Debug.Log($"AttachCollisionMeshToTrajectoryConfigs: Config {i} with {trajectory.Points[i].JointValues.Count} joints.");
                 GameObject trajectoryConfig = trajectoryParent.FindObject($"Config {i}");
-                if(trajectoryConfig != null)
+                if (trajectoryConfig != null)
                 {
                     Debug.Log($"AttachCollisionMeshToTrajectoryConfigs: Trajectory Config {trajectoryConfig.name} found.");
                     GameObject linkToAttachTo = trajectoryConfig.FindObject(acm.LinkName);
-                    if(linkToAttachTo != null)
+                    if (linkToAttachTo != null)
                     {
                         attachedCollisionMeshObject = Instantiate(attachedCollisionMeshObject, linkToAttachTo.transform.position, linkToAttachTo.transform.rotation);
                         attachedCollisionMeshObject.name = $"{acm.CollisionMesh.Id}";
@@ -433,7 +433,7 @@ namespace CompasXR.Robots
             */
 
             Debug.Log($"InstantiateRobotFromConfigList: {points.Count} configurations.");
-            
+
             if (points.Count > 0 && robotToConfigure != null && URDFLinks.Count > 0 || parentObject != null)
             {
                 int trajectoryCount = points.Count;
@@ -444,7 +444,7 @@ namespace CompasXR.Robots
                     GameObject temporaryRobot = Instantiate(robotToConfigure, robotToConfigure.transform.position, robotToConfigure.transform.rotation);
 
                     //TODO: This is hardcoded to turn off reachability once the robot is active.
-                    if(uiFunctionalities.ReachabilityToggleObject.GetComponent<Toggle>().isOn)
+                    if (uiFunctionalities.ReachabilityToggleObject.GetComponent<Toggle>().isOn)
                     {
                         SetReachabilityActive(temporaryRobot.transform.GetChild(0).gameObject, false);
                     }
@@ -453,7 +453,7 @@ namespace CompasXR.Robots
 
                     SetRobotConfigfromDictWrapper(points[i].JointsDict, $"Config {i}", temporaryRobot, URDFLinkNames);
                     temporaryRobot.transform.SetParent(parentObject.transform);
-                    
+
                     URDFManagement.SetRobotLocalPositionandRotationFromFrame(robotBaseFrame, temporaryRobot);
                     temporaryRobot.SetActive(visibility);
                 }
@@ -468,7 +468,7 @@ namespace CompasXR.Robots
             }
             else
             {
-                
+
                 Debug.LogError("InstantiateRobotTrajectory: Trajectory is empty, robotToConfigure is null, or joint_names is empty.");
             }
         }
@@ -481,7 +481,7 @@ namespace CompasXR.Robots
             */
 
             Debug.Log($"InstantiateRobotTrajectory: For {trajectoryID} with {TrajectoryConfigs.Count} configurations.");
-            
+
             if (TrajectoryConfigs.Count > 0 && robotToConfigure != null && URDFLinks.Count > 0 || parentObject != null)
             {
                 int trajectoryCount = TrajectoryConfigs.Count;
@@ -494,31 +494,31 @@ namespace CompasXR.Robots
 
                     SetRobotConfigfromDictWrapper(TrajectoryConfigs[i], $"Config {i}", temporaryRobot, URDFLinkNames);
                     temporaryRobot.transform.SetParent(parentObject.transform);
-                    
+
                     URDFManagement.SetRobotLocalPositionandRotationFromFrame(robotBaseFrame, temporaryRobot);
                     temporaryRobot.SetActive(visibility);
                 }
 
-                if(result.PickAndPlace)
-                {    
+                if (result.PickAndPlace)
+                {
                     StartCoroutine(AttachElementAfterDelay(result, parentObject, 0.2f));
                 }
             }
             else
             {
-                
+
                 Debug.LogError("InstantiateRobotTrajectory: Trajectory is empty, robotToConfigure is null, or joint_names is empty.");
             }
-            
+
         }
-        public void VisualizeRobotTrajectoryFromResultMessage(GetTrajectoryResult result, Dictionary<string,string> URDFLinkNames, GameObject robotToConfigure, GameObject parentObject, bool visibility)
+        public void VisualizeRobotTrajectoryFromResultMessage(GetTrajectoryResult result, Dictionary<string, string> URDFLinkNames, GameObject robotToConfigure, GameObject parentObject, bool visibility)
         {
             /*
             VisualizeRobotTrajectoryFromJointsDict is responsible for visualizing the robot trajectory in the scene.
             */
 
             Debug.Log($"VisualizeRobotTrajectory: For {result.TrajectoryID} with {result.Trajectory} configurations.");
-            if(!ActiveRobot.transform.GetChild(0).gameObject.activeSelf)
+            if (!ActiveRobot.transform.GetChild(0).gameObject.activeSelf)
             {
                 ActiveRobot.transform.GetChild(0).gameObject.SetActive(true);
             }
@@ -574,11 +574,11 @@ namespace CompasXR.Robots
             DestroyActiveRobotObjects is responsible for destroying the active robot objects in the scene.
             */
 
-            if(ActiveRobot != null)
+            if (ActiveRobot != null)
             {
                 Destroy(ActiveRobot);
             }
-            if(ActiveTrajectoryParentObject != null)
+            if (ActiveTrajectoryParentObject != null)
             {
                 Destroy(ActiveTrajectoryParentObject);
             }
@@ -588,7 +588,7 @@ namespace CompasXR.Robots
             /*
             DestroyActiveTrajectoryChildren is responsible for destroying child objects in the trajectory parent.
             */
-            if(ActiveTrajectoryParentObject != null)
+            if (ActiveTrajectoryParentObject != null)
             {
                 foreach (Transform child in ActiveTrajectoryParentObject.transform)
                 {
@@ -596,6 +596,42 @@ namespace CompasXR.Robots
                 }
             }
         }
+
+        public void DestroyActiveTrajectoryandShowRobot()
+
+        {
+            /*
+            DestroyActiveTrajectoryandShowRobot is responsible for destroying the active trajectory and showing the robot.
+            */
+            if (ActiveTrajectoryParentObject != null)
+            {
+                DestroyActiveTrajectoryChildren();
+            }
+            if (ActiveRobot != null)
+            {
+                if (!ActiveRobot.activeSelf)
+                {
+                    ActiveRobot.SetActive(true);
+                }
+                else
+                {
+                    Debug.Log("DestroyActiveTrajectoryandShowRobot: ActiveRobot is already active.");
+                }
+                if (!ActiveRobot.transform.GetChild(0).gameObject.activeSelf)
+                {
+                    ActiveRobot.transform.GetChild(0).gameObject.SetActive(true);
+                }
+                else
+                {
+                    Debug.Log("DestroyActiveTrajectoryandShowRobot: ActiveRobot child is already active.");
+                }
+            }
+            else
+            {
+                Debug.Log("DestroyActiveTrajectoryandShowRobot: ActiveRobot is null.");
+            }
+        }
+
         public void SetRobotConfigfromDictWrapper(Dictionary<string, float> config, string configName, GameObject robotToConfigure, Dictionary<string, string> urdfLinkNames)
         {
             /*
@@ -603,23 +639,23 @@ namespace CompasXR.Robots
             */
 
             Debug.Log($"SetRobotConfigfromDictWrapper: Visulizing robot configuration for gameObject {robotToConfigure.name}.");
-            
+
             if (urdfLinkNames.Count == 0)
             {
                 URDFManagement.FindLinkNamesFromJointNames(robotToConfigure.transform, config, ref urdfLinkNames);
             }
-            if(URDFManagement.ConfigJointsEqualURDFLinks(config, urdfLinkNames))
+            if (URDFManagement.ConfigJointsEqualURDFLinks(config, urdfLinkNames))
             {
                 URDFManagement.SetRobotConfigfromJointsDict(config, robotToConfigure, urdfLinkNames);
             }
             else
             {
-                if(uiFunctionalities.ConfigDoesNotMatchURDFStructureWarningMessageObject == null)
+                if (uiFunctionalities.ConfigDoesNotMatchURDFStructureWarningMessageObject == null)
                 {
                     string message = $"WARNING: {configName} structure does not match the URDF structure and will not be visualized.";
                     UserInterface.SignalOnScreenMessageFromPrefab(ref uiFunctionalities.OnScreenErrorMessagePrefab, ref uiFunctionalities.ConfigDoesNotMatchURDFStructureWarningMessageObject, "ConfigDoesNotMatchURDFStructureWarningMessage", uiFunctionalities.MessagesParent, message, "SetRobotConfigfromDictWrapper: Config does not match URDF");
                 }
-                else if(uiFunctionalities.ConfigDoesNotMatchURDFStructureWarningMessageObject.activeSelf == false)
+                else if (uiFunctionalities.ConfigDoesNotMatchURDFStructureWarningMessageObject.activeSelf == false)
                 {
                     string message = $"WARNING: {configName} structure does not match the URDF structure and will not be visualized.";
                     UserInterface.SignalOnScreenMessageFromPrefab(ref uiFunctionalities.OnScreenErrorMessagePrefab, ref uiFunctionalities.ConfigDoesNotMatchURDFStructureWarningMessageObject, "ConfigDoesNotMatchURDFStructureWarningMessage", uiFunctionalities.MessagesParent, message, "SetRobotConfigfromDictWrapper: Config does not match URDF");
@@ -634,14 +670,14 @@ namespace CompasXR.Robots
             ColorRobotConfigfromSlider is responsible for coloring the robot configuration from the slider input for trajectory review.
             */
             Debug.Log($"ColorRobotConfigfromSlider: Coloring robot config {sliderValue} for active trajectory.");
-            if(previousTrajectoryReviewSliderValue != null)
+            if (previousTrajectoryReviewSliderValue != null)
             {
                 GameObject previousRobotGameObject = ActiveTrajectoryParentObject.FindObject($"Config {previousTrajectoryReviewSliderValue}");
                 URDFManagement.ColorURDFGameObject(previousRobotGameObject, inactiveMaterial, ref URDFRenderComponents);
 
                 //Attached GameObject
                 GameObject previousAttachedGameObject = previousRobotGameObject.FindObject($"AttachedElement{previousTrajectoryReviewSliderValue}");
-                if(previousAttachedGameObject != null)
+                if (previousAttachedGameObject != null)
                 {
                     previousAttachedGameObject.GetComponentInChildren<Renderer>().material = inactiveMaterial;
                 }
@@ -656,7 +692,7 @@ namespace CompasXR.Robots
 
             //Attached GameObject
             GameObject attachedGameObject = robotGameObject.FindObject($"AttachedElement{sliderValue}");
-            if(attachedGameObject != null)
+            if (attachedGameObject != null)
             {
                 attachedGameObject.GetComponentInChildren<Renderer>().material = activeMaterial;
             }
@@ -669,14 +705,14 @@ namespace CompasXR.Robots
             ColorRobotConfigfromSlider is responsible for coloring the robot configuration from the slider input for trajectory review.
             */
             Debug.Log($"ColorRobotConfigfromSliderInputCompoundTrajectories: Coloring robot Trajectory {trajectoryIndex} config {configIndex} for active trajectory.");
-            if(previousConfigIndex != null && previoustrajectoryIndex != null)
+            if (previousConfigIndex != null && previoustrajectoryIndex != null)
             {
                 GameObject previousRobotGameObject = ActiveTrajectoryParentObject.FindObject($"Trajectory{previousTrajectoryIndex.Value}").FindObject($"Config {previousConfigIndex.Value}");
                 URDFManagement.ColorURDFGameObject(previousRobotGameObject, inactiveMaterial, ref URDFRenderComponents);
 
                 //Attached GameObject
                 Trajectory previousTrajectory = trajectories[previoustrajectoryIndex.Value];
-                if(previousTrajectory == null)
+                if (previousTrajectory == null)
                 {
                     Debug.Log($"ColorRobotConfigfromSliderInputCompoundTrajectories: Previous Trajectory {previoustrajectoryIndex} is null.");
                 }
@@ -715,12 +751,12 @@ namespace CompasXR.Robots
             //Attached GameObject
             Trajectory trajectory = trajectories[trajectoryIndex];
             List<AttachedCollisionMesh> attachedCollisionMeshes = trajectory.AttachedCollisionMeshes;
-            if(attachedCollisionMeshes != null)
+            if (attachedCollisionMeshes != null)
             {
                 foreach (AttachedCollisionMesh attachedCollisionMesh in attachedCollisionMeshes)
                 {
                     GameObject attachedGameObject = robotGameObject.FindObject(attachedCollisionMesh.CollisionMesh.Id);
-                    if(attachedGameObject != null)
+                    if (attachedGameObject != null)
                     {
                         attachedGameObject.GetComponentInChildren<Renderer>().material = activeMaterial;
                     }
@@ -770,6 +806,7 @@ namespace CompasXR.Robots
                 Debug.Log("OnRobotBaseFrameReceived: SetActiveRobotToggle is not on but robot baseframe is updates.");
             }
         }
+
     }
 
 
