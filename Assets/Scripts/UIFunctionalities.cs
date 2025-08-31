@@ -684,19 +684,19 @@ namespace CompasXR.UI
             if (goalInfered)
             {
 
-                SetInferenceUIPostInferenceSuccesState(true, true, false, false);
+                SetInferenceUIPostInferenceSuccesState(true, true, true, false, false);
                 SetInferenceRequestUIControlsVisibilityandInteractibility(false, false, false, false, false);
                 Debug.Log("SetInferanceGoalsBasedOnInferenceState: Goal Inferred, setting inference controls to visible and interactable.");
             }
             else
             {
-                SetInferenceUIPostInferenceSuccesState(false, false, false, false);
+                SetInferenceUIPostInferenceSuccesState(false, false, false, false, false);
                 SetInferenceRequestUIControlsVisibilityandInteractibility(true, true, false, false, false);
                 Debug.Log("SetInferanceGoalsBasedOnInferenceState: Goal Not Inferred, setting inference controls to not visible and not interactable.");
             }
 
         }
-        public void SetInferenceUIPostInferenceSuccesState(bool selectTargetControlsVisibility, bool selectTargetControlsInteractibility, bool trajectoryReviewControlsVisibility, bool trajectoryReviewControlsInteractibility)
+        public void SetInferenceUIPostInferenceSuccesState(bool selectTargetControlsVisibility, bool selectTargetControlsInteractibility, bool requestTargetInteractable, bool trajectoryReviewControlsVisibility, bool trajectoryReviewControlsInteractibility)
         {
             /*
             * Method is used to set the inference UI controls post inference success state.
@@ -716,7 +716,7 @@ namespace CompasXR.UI
                 InferenceSelectTargetParentObject.SetActive(selectTargetControlsVisibility);
                 InferenceNextTargetButtonObject.GetComponentInChildren<Button>().interactable = selectTargetControlsInteractibility;
                 InferencePreviousTargetButtonObject.GetComponentInChildren<Button>().interactable = selectTargetControlsInteractibility;
-                InferenceRequestTargetButtonObject.GetComponentInChildren<Button>().interactable = selectTargetControlsInteractibility;
+                InferenceRequestTargetButtonObject.GetComponentInChildren<Button>().interactable = requestTargetInteractable;
             }
             if (PostInferenceReviewTrajectoryParentObject != null)
             {
@@ -1189,7 +1189,7 @@ namespace CompasXR.UI
 
             instantiateObjects.PostInferenceSetFirstUnsatisfiedInferenceGoalAsCurrent(instantiateObjects.InferenceGoalsManager.GoalStatusObserver.ComponentStates, instantiateObjects.InferenceSelectedTargetMaterialUnbuilt, instantiateObjects.InferenceSelectedTargetMaterialBuilt);
             instantiateObjects.InferenceGoalsManager.GoalStatusObserver.DebugLogAllComponentStatesAsDictionary();
-            SetInferenceUIPostInferenceSuccesState(true, true, false, false);
+            SetInferenceUIPostInferenceSuccesState(true, true, true, false, false);
         }
 
         //TODO: Post Inference Button Methods
@@ -1843,7 +1843,7 @@ namespace CompasXR.UI
                     SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
                     SetRealtimeMimicControlsActivity(false, false);
 
-                    SetInferenceUIPostInferenceSuccesState(false, false, false, false);
+                    SetInferenceUIPostInferenceSuccesState(false, false, false, false, false);
                     SetInferenceRequestUIControlsVisibilityandInteractibility(false, false, false, false, false);
 
                     MimicControlsParent.gameObject.SetActive(false);
@@ -1867,7 +1867,7 @@ namespace CompasXR.UI
 
                     //Reset Inference Controls
                     RoboticTerritoriesInferenceControlsObject.SetActive(false);
-                    SetInferenceUIPostInferenceSuccesState(false, false, false, false);
+                    SetInferenceUIPostInferenceSuccesState(false, false, false, false, false);
                     SetInferenceRequestUIControlsVisibilityandInteractibility(false, false, false, false, false);
 
                     Debug.Log("SetUIObjectsFromCurrentMode: Setting Active Controls for Mimic Mode.");
@@ -1877,7 +1877,7 @@ namespace CompasXR.UI
                     SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
 
                     //Reset Inference Controls
-                    SetInferenceUIPostInferenceSuccesState(false, false, false, false);
+                    SetInferenceUIPostInferenceSuccesState(false, false, false, false, false);
                     SetInferenceRequestUIControlsVisibilityandInteractibility(false, false, false, false, false);
 
                     //Set both parents to false.

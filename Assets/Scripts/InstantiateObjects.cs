@@ -1585,6 +1585,8 @@ namespace CompasXR.Core
             }
             PreviousGoalMaterial = goalComponent.ComponentGameObject.GetComponentInChildren<Renderer>().material;
             Renderer renderer = goalComponent.ComponentGameObject.GetComponentInChildren<Renderer>();
+            bool oppositeSatisfactionState = !goalComponent.IsSatisfied;
+            UIFunctionalities.SetInferenceUIPostInferenceSuccesState(true, true, oppositeSatisfactionState, false, false);
             if (renderer != null && selectedUnbuiltMaterial != null && selectetdBuiltMaterial != null)
             {
                 if (goalComponent.IsSatisfied)
