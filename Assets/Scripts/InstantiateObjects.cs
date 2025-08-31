@@ -15,6 +15,7 @@ using CompasXR.Robots;
 using CompasXR.Robots.Data;
 using Vuforia;
 using RosSharp.RosBridgeClient.MessageTypes.ObjectRecognition;
+using System.Linq;
 
 
 namespace CompasXR.Core
@@ -96,6 +97,8 @@ namespace CompasXR.Core
         public Material InferenceInferedGoalMaterial;
         public Material InferenceSuggestedTargetMaterial;
         public Material InferenceCompletedItemsMaterial;
+        public Material InferenceSelectedTargetMaterialUnbuilt;
+        public Material InferenceSelectedTargetMaterialBuilt;
 
         public Material GoalSatisfiedMaterial;
         public Material GoalUnsatisfiedMaterial;
@@ -131,6 +134,9 @@ namespace CompasXR.Core
         public GameObject MimicGoalsParentObject;
         public GoalManager MimicGoalsManager { get; private set; }
 
+        public float OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE = 0.03f; //5 cm
+        public float OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE = 3.0f; //5 degrees
+
         //TODO: REALTIME MIMIC OBJECT TESTING
         public GameObject RealtimeMimicObjects;
         public GameObject RealtimeMimicHumanLine;
@@ -149,6 +155,12 @@ namespace CompasXR.Core
 
         public delegate void InitialTrackedGeometryCreated(object source, EventArgs e);
         public event InitialTrackedGeometryCreated InitialTrackedGeometryPlaced;
+
+        //TODO: Robotic Territories Inference Helpers
+
+        public GoalObjectComponent CurrentSelectedGoalComponet = null;
+        public Material PreviousGoalMaterial;
+        public string CurrentSelectedGoalName = "None";
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1507,6 +1519,120 @@ namespace CompasXR.Core
             }
             Debug.Log("ResetInferenceGoalsAndTargets: Inference Goals and Targets have been reset.");
         }
+        public void PostInferenceSetFirstUnsatisfiedInferenceGoalAsCurrent(Dictionary<string, GoalObjectComponent> goalComponentsDict, Material selectedTargetUnbuiltMaterial, Material selectedTargetBuiltMaterial)
+        {
+            /*
+            * Method is used to set the first unsatisfied inference goal as current.
+            */
+            if (goalComponentsDict == null)
+            {
+                Debug.LogWarning("SetFistUnsatisfiedInferenceGoalAsCurrent: Goal Components Dict is null.");
+                return;
+            }
+            List<GoalObjectComponent> goalComponentsList = goalComponentsDict.Values.ToList();
+            foreach (GoalObjectComponent entry in goalComponentsList)
+            {
+                if (entry != null && entry.IsSatisfied == false)
+                {
+                    
+                    if (entry != null)
+                    {
+                        PostInferenceSetGoalComponentForSelection(entry, selectedTargetUnbuiltMaterial, selectedTargetBuiltMaterial);
+                        Debug.Log("SetFistUnsatisfiedInferenceGoalAsCurrent: Setting Current Goal to " + entry.Name);
+                        return;
+                    }
+                    else
+                    {
+                        Debug.LogWarning("SetFistUnsatisfiedInferenceGoalAsCurrent: Goal is null for " + entry.Name);
+                    }
+                }
+            }
+        }
+        public void PostInferenceSetGoalComponentForSelection(GoalObjectComponent goalComponent, Material selectedUnbuiltMaterial, Material selectetdBuiltMaterial)
+        {
+            /*
+            * Method is used to set the goal component for selection.
+            */
+            if (goalComponent == null)
+            {
+                Debug.LogWarning("SetGoalComponentForSelection: Goal Component is null.");
+                return;
+            }
+            if (MimicGoalsManager == null)
+            {
+                Debug.LogWarning("SetGoalComponentForSelection: Mimic Goals Manager is null.");
+                return;
+            }
+            if (MimicGoalsManager.CurrentGoal == null)
+            {
+                Debug.LogWarning("SetGoalComponentForSelection: Mimic Goals Manager Current Goal is null.");
+                return;
+            }
+        
+            if (CurrentSelectedGoalComponet != null)
+            {
+                //Reset the material of the previously selected goal component.
+                Renderer previousRenderer = CurrentSelectedGoalComponet.ComponentGameObject.GetComponentInChildren<Renderer>();
+                if (PreviousGoalMaterial != null)
+                {
+                    previousRenderer.material = PreviousGoalMaterial;
+                    Debug.Log("SetGoalComponentForSelection: Resetting Previous Selected Goal Component Material for " + CurrentSelectedGoalComponet.Name);
+                }
+                else
+                {
+                    Debug.LogWarning("SetGoalComponentForSelection: Previous Renderer or GoalUnsatisfiedMaterial is null for " + CurrentSelectedGoalComponet.Name);
+                }
+            }
+            PreviousGoalMaterial = goalComponent.ComponentGameObject.GetComponentInChildren<Renderer>().material;
+            Renderer renderer = goalComponent.ComponentGameObject.GetComponentInChildren<Renderer>();
+            if (renderer != null && selectedUnbuiltMaterial != null && selectetdBuiltMaterial != null)
+            {
+                if (goalComponent.IsSatisfied)
+                {
+                    renderer.material = selectetdBuiltMaterial;
+                    Debug.Log("SetGoalComponentForSelection: Setting Selected Built Goal Component Material for " + goalComponent.Name);
+                }
+                else
+                {
+                    renderer.material = selectedUnbuiltMaterial;
+                    Debug.Log("SetGoalComponentForSelection: Setting Selected Goal Component Material for " + goalComponent.Name);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("SetGoalComponentForSelection: Renderer or Selected Material is null for " + goalComponent.Name);
+            }
+            CurrentSelectedGoalComponet = goalComponent;
+            CurrentSelectedGoalName = goalComponent.Name;
+            Debug.Log("SetGoalComponentForSelection: Setting Selected Goal Component to " + goalComponent.Name);
+        }
+        public void PostInferenceResetSelectedGoalComponent()
+        {
+            /*
+            * Method is used to reset the selected goal component.
+            */
+            if (CurrentSelectedGoalComponet != null)
+            {
+                //Reset the material of the previously selected goal component.
+                Renderer previousRenderer = CurrentSelectedGoalComponet.ComponentGameObject.GetComponentInChildren<Renderer>();
+                if (PreviousGoalMaterial != null)
+                {
+                    previousRenderer.material = PreviousGoalMaterial;
+                    Debug.Log("ResetSelectedGoalComponent: Resetting Previous Selected Goal Component Material for " + CurrentSelectedGoalComponet.Name);
+                }
+                else
+                {
+                    Debug.LogWarning("ResetSelectedGoalComponent: Previous Renderer or GoalUnsatisfiedMaterial is null for " + CurrentSelectedGoalComponet.Name);
+                }
+                CurrentSelectedGoalComponet = null;
+                CurrentSelectedGoalName = "";
+                PreviousGoalMaterial = null;
+            }
+            else
+            {
+                Debug.Log("ResetSelectedGoalComponent: No current selected goal component to reset.");
+            }
+        }
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()
@@ -1597,6 +1723,8 @@ namespace CompasXR.Core
             InferenceInferedGoalMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("InferenceInferedGoalMaterial").GetComponentInChildren<Renderer>().material;
             InferenceSuggestedTargetMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("InferenceSuggestedTargetMaterial").GetComponentInChildren<Renderer>().material;
             InferenceCompletedItemsMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("InferenceCompletedItemsMaterial").GetComponentInChildren<Renderer>().material;
+            InferenceSelectedTargetMaterialUnbuilt = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("InferenceSelectedTargetMaterialUnbuilt").GetComponentInChildren<Renderer>().material;
+            InferenceSelectedTargetMaterialBuilt = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("InferenceSelectedTargetMaterialBuilt").GetComponentInChildren<Renderer>().material;
 
             //TODO: GOAL SATISFACTION MATERIALS
             GoalSatisfiedMaterial = GameObject.Find("Materials").FindObject("RoboticTerritories").FindObject("GoalSatisfiedMaterial").GetComponentInChildren<Renderer>().material;

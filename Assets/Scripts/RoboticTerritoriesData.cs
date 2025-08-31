@@ -6,6 +6,7 @@ using System.Linq;
 using System;
 using CompasXR.Core;
 using Newtonsoft.Json;
+using UnityEngine.InputSystem;
 
 namespace CompasXR.RoboticTerritories.Data
 {   
@@ -233,24 +234,143 @@ namespace CompasXR.RoboticTerritories.Data
         {
             ComponentStates.Clear();
         }
-        public void CheckAllGoalsStatesFromObservedGeometriesDict(Dictionary<string, ObservedGeometry> observedGeometriesDict, Material satisfiedMaterial, Material unsatisfiedMaterial)
+        public void CheckAllGoalsStatesFromObservedGeometriesDict(
+            Dictionary<string, ObservedGeometry> observedGeometriesDict,
+            Material satisfiedMaterial,
+            Material unsatisfiedMaterial,
+            float positionTolerance = 0.03f,
+            float rotationTolerance = 3f)
         {
-            foreach (var observedGeometry in observedGeometriesDict.Values)
+            if (ComponentStates == null || ComponentStates.Count == 0) return;
+
+            foreach (var kvp in ComponentStates.ToList())
             {
-                foreach (var component in ComponentStates.Values)
+                var component = kvp.Value;
+
+                // 1) overwrite/reset at the start of THIS component's evaluation
+                component.IsSatisfied = false;
+                component.SatisfyingObservedGeometry = null;
+
+                // 2) scan observed; break on first match
+                foreach (var observed in observedGeometriesDict.Values)
                 {
-                    GoalObjectComponent checkedComponent = CheckGoalStateFromObservedGeometry(observedGeometry, component.Name);
-                    if (checkedComponent != null && checkedComponent.IsSatisfied)
+                    // Use the SAME destructive checker you already have
+                    var updated = CheckGoalStateFromObservedGeometry(
+                        observed, component.Name, positionTolerance, rotationTolerance);
+
+                    if (updated != null && updated.IsSatisfied)
                     {
-                        Debug.Log($"GoalStateObserver: Component '{checkedComponent.Name}' is satisfied by observed geometry '{observedGeometry.Name}'");
-                        ColorGoalComponentbySatisfaction(true, satisfiedMaterial, unsatisfiedMaterial);
-                        break; // Exit inner loop if a match is found
+                        updated.SatisfyingObservedGeometry = observed;   // explicit bind (ok but optional)
+                        ComponentStates[kvp.Key] = updated;               // explicit reassign (optional; it's a class)
+                        Debug.Log($"GoalStateObserver: Component '{kvp.Key}' satisfied by '{observed.Name}'");
+                        break;
                     }
                 }
             }
+
+            // 3) color once at the end (final states only)
+            ColorGoalComponentbySatisfaction(true, satisfiedMaterial, unsatisfiedMaterial);
         }
 
-        //TODO: Update Coloring....
+        // TODO: THIS METHOD IS THE KEY TO OPTITRACK UPDAETS.
+        public void ApplySingleObservedGeometryOverwrite(
+            ObservedGeometry observed, Material satisfiedMaterial, Material unsatisfiedMaterial, float positionTolerance = 0.03f, float rotationToleranceDeg = 3f)
+        {
+            if (observed == null || ComponentStates == null || ComponentStates.Count == 0)
+            {
+                Debug.LogWarning("GoalStateObserver: ApplySingleObservedGeometryOverwrite: missing observed or components.");
+                return;
+            }
+
+            // 1) Find if this observed is currently assigned to any component
+            GoalObjectComponent previouslyAssigned = null;
+            foreach (var comp in ComponentStates.Values)
+            {
+                if (ReferenceEquals(comp.SatisfyingObservedGeometry, observed))
+                {
+                    previouslyAssigned = comp;
+                    break;
+                }
+            }
+
+            // 2) Find the BEST matching component (within tolerance) for this observed (no mutation yet)
+            GoalObjectComponent bestComp = null;
+            float bestScore = float.MaxValue;
+
+            foreach (var comp in ComponentStates.Values)
+            {
+                float posErr = (observed.GeometryObject.transform.position - comp.ComponentGameObject.transform.position).magnitude;
+                if (posErr > positionTolerance) continue;
+
+                float rotErr = Quaternion.Angle(
+                    observed.GeometryObject.transform.rotation,
+                    comp.ComponentGameObject.transform.rotation);
+                if (rotErr > rotationToleranceDeg) continue;
+
+                // simple combined score; tweak weights as needed
+                float score = posErr + 0.02f * rotErr; // 0.02 scales degrees roughly vs meters
+                if (score < bestScore)
+                {
+                    bestScore = score;
+                    bestComp = comp;
+                }
+            }
+
+            // 3) Overwrite states for only the involved components
+            //    Case A: no component in tolerance -> unsatisfy previous (if any)
+            if (bestComp == null)
+            {
+                if (previouslyAssigned != null)
+                {
+                    previouslyAssigned.IsSatisfied = false;
+                    previouslyAssigned.SatisfyingObservedGeometry = null;
+
+                    var rPrev = previouslyAssigned.ComponentGameObject?.GetComponentInChildren<Renderer>();
+                    if (rPrev != null) rPrev.material = unsatisfiedMaterial;
+
+                    Debug.Log($"GoalStateObserver: '{observed.Name}' no longer satisfies '{previouslyAssigned.Name}'.");
+                }
+                return;
+            }
+
+            //    Case B: we have a best match -> assign it; unsatisfy previous if different
+            if (previouslyAssigned != null && !ReferenceEquals(previouslyAssigned, bestComp))
+            {
+                previouslyAssigned.IsSatisfied = false;
+                previouslyAssigned.SatisfyingObservedGeometry = null;
+
+                var rPrev = previouslyAssigned.ComponentGameObject?.GetComponentInChildren<Renderer>();
+                if (rPrev != null) rPrev.material = unsatisfiedMaterial;
+
+                Debug.Log($"GoalStateObserver: '{observed.Name}' moved from '{previouslyAssigned.Name}' to '{bestComp.Name}'.");
+            }
+
+            // Assign observed to best component (overwrite semantics)
+            bestComp.IsSatisfied = true;
+            bestComp.SatisfyingObservedGeometry = observed;
+
+            var rBest = bestComp.ComponentGameObject?.GetComponentInChildren<Renderer>();
+            if (rBest != null) rBest.material = satisfiedMaterial;
+
+            // Optional: if previouslyAssigned == bestComp and it stayed in tolerance, this just reaffirms the link.
+            Debug.Log($"GoalStateObserver: '{observed.Name}' satisfies '{bestComp.Name}' (score {bestScore:F4}).");
+        }
+        public void DebugLogComponentsStates()
+        {
+            foreach (var component in ComponentStates.Values)
+            {
+                Debug.Log($"Component: {component.Name}, IsSatisfied: {component.IsSatisfied}, SatisfyingObservedGeometry: {(component.SatisfyingObservedGeometry != null ? component.SatisfyingObservedGeometry.Name : "None")}");
+            }
+        }
+        public void DebugLogAllComponentStatesAsDictionary()
+        {
+            var dict = new Dictionary<string, (bool isSatisfied, string observedName)>();
+            foreach (var component in ComponentStates.Values)
+            {
+                dict[component.Name] = (component.IsSatisfied, component.SatisfyingObservedGeometry != null ? component.SatisfyingObservedGeometry.Name : "None");
+            }
+            Debug.Log("Component States Dictionary: " + JsonConvert.SerializeObject(dict, Formatting.Indented));
+        }
         public GoalObjectComponent CheckGoalStateFromObservedGeometry(ObservedGeometry observedGeometry, string componentName, float positionTolerance = 0.03f, float rotationTolerance = 3f)
         {
             GoalObjectComponent component = ComponentStates.ContainsKey(componentName) ? ComponentStates[componentName] : null;

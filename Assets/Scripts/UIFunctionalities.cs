@@ -27,6 +27,7 @@ using RosSharp.RosBridgeClient.MessageTypes.Actionlib;
 using Unity.PlasticSCM.Editor.WebApi;
 using UnityEngine.Analytics;
 using System.ComponentModel;
+using System.Text.RegularExpressions;
 
 namespace CompasXR.UI
 {
@@ -537,7 +538,8 @@ namespace CompasXR.UI
             GameObject newSelectedGoalGameObject = newSelectedGoal.GoalGameObject;
             instantiateObjects.MimicGoalsManager.UpdateCurrentGoal(newSelectedGoal);
             GoalStateObserver goalStateObserver = instantiateObjects.MimicGoalsManager.GoalStatusObserver;
-            goalStateObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, instantiateObjects.GoalSatisfiedMaterial, instantiateObjects.GoalUnsatisfiedMaterial);
+            goalStateObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, instantiateObjects.GoalSatisfiedMaterial, instantiateObjects.GoalUnsatisfiedMaterial, instantiateObjects.OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, instantiateObjects.OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
+            goalStateObserver.DebugLogAllComponentStatesAsDictionary();
             newSelectedGoalGameObject.SetActive(true);
         }
         public void MimicSelectPreviousGoalButtonMethod() //TODO: Working on this now...
@@ -558,9 +560,7 @@ namespace CompasXR.UI
                     previousSelectedGoal.SetActive(false);
 
                     mimicCurrentSelectedGoalIndex -= 1;
-
                     SetMimicGoalFromIndex(mimicCurrentSelectedGoalIndex);
-
                     Debug.Log($"MimicSelectPreviousGoalButtonMethod: Changed Selected Goal to {CurrentSelectedGoalName}");
                 }
                 else
@@ -660,9 +660,9 @@ namespace CompasXR.UI
             //TODO: This is to select a goal and plan after success in guessing the correct goal.
             InferenceRequestTrajectoryCalculationControlsObject = RoboticTerritoriesInferenceControlsObject.FindObject("RobotTrajectoryCalculationControls");
             InferenceSelectTargetParentObject = InferenceRequestTrajectoryCalculationControlsObject.FindObject("SelectTargetControls");
-            UserInterface.FindButtonandSetOnClickAction(InferenceSelectTargetParentObject, ref InferenceNextTargetButtonObject, "NextTargetButton", () => UserInterface.PrintStringOnClick("Next Target Button Pressed"));
-            UserInterface.FindButtonandSetOnClickAction(InferenceSelectTargetParentObject, ref InferencePreviousTargetButtonObject, "PreviousTargetButton", () => UserInterface.PrintStringOnClick("Previous Target Button Pressed"));
-            UserInterface.FindButtonandSetOnClickActionDebug(InferenceSelectTargetParentObject, ref InferenceRequestTargetButtonObject, "RequestTargetButton", () => UserInterface.PrintStringOnClick("Request Target Button Pressed"));
+            UserInterface.FindButtonandSetOnClickAction(InferenceSelectTargetParentObject, ref InferenceNextTargetButtonObject, "NextTargetButton", PostInferenceNextTargetButtonMethod);
+            UserInterface.FindButtonandSetOnClickAction(InferenceSelectTargetParentObject, ref InferencePreviousTargetButtonObject, "PreviousTargetButton", PostInferencePreviousTargetButtonMethod);
+            UserInterface.FindButtonandSetOnClickActionDebug(InferenceSelectTargetParentObject, ref InferenceRequestTargetButtonObject, "RequestTargetButton", PostInferenceRequestTargetButtonMethod);
 
             //TODO: This is for trajectory review after inference success.
             PostInferenceReviewTrajectoryParentObject = InferenceRequestTrajectoryCalculationControlsObject.FindObject("ReviewAndExecuteTrajectoryUI");
@@ -915,7 +915,7 @@ namespace CompasXR.UI
             // RobotSelectionDropdown.onValueChanged.AddListener(RobotSelectionDropdownValueChanged);
 
         }
-        public void SetCurrentZoneFromDropdown(int dropDownValue)
+        public void SetCurrentZoneFromDropdown(int dropDownValue) //TODO: Some Hacky things in here for resetting inference state.
         {
             /*
             * Method is used to set the current zone based on the dropdown value.
@@ -931,6 +931,7 @@ namespace CompasXR.UI
                 {
                     GOALINFERRED = false;
                     INITIALINFERENCEREQUEST = true;
+                    instantiateObjects.PostInferenceResetSelectedGoalComponent();
                 }
 
                 CurrentZone = ZoneMenuItemsTest[CurrentZoneIndex];
@@ -1184,12 +1185,162 @@ namespace CompasXR.UI
             GOALINFERRED = true;
 
             instantiateObjects.InferenceGoalsManager.GoalStatusObserver.Active = true;
-            instantiateObjects.InferenceGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, instantiateObjects.GoalSatisfiedMaterial, instantiateObjects.GoalUnsatisfiedMaterial);
-            //TODO: Find the first unbuilt goal and set it to current selected target
-            //TODO: Then do set goal target tracking.
+            instantiateObjects.InferenceGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, instantiateObjects.GoalSatisfiedMaterial, instantiateObjects.GoalUnsatisfiedMaterial, instantiateObjects.OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, instantiateObjects.OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
 
-
+            instantiateObjects.PostInferenceSetFirstUnsatisfiedInferenceGoalAsCurrent(instantiateObjects.InferenceGoalsManager.GoalStatusObserver.ComponentStates, instantiateObjects.InferenceSelectedTargetMaterialUnbuilt, instantiateObjects.InferenceSelectedTargetMaterialBuilt);
+            instantiateObjects.InferenceGoalsManager.GoalStatusObserver.DebugLogAllComponentStatesAsDictionary();
             SetInferenceUIPostInferenceSuccesState(true, true, false, false);
+        }
+
+        //TODO: Post Inference Button Methods
+        public void PostInferenceNextTargetButtonMethod()
+        {
+            /*
+            * Method is used to select the next target in the inference targets list.
+            */
+            if (instantiateObjects.CurrentSelectedGoalComponet == null)
+            {
+                Debug.LogWarning("PostInferenceNextTargetButtonMethod: CurrentSelectedGoalComponet is null, cannot select next target.");
+                return;
+            }
+            if (instantiateObjects.CurrentSelectedGoalName == "None")
+            {
+                Debug.LogWarning("PostInferenceNextTargetButtonMethod: CurrentSelectedGoalName is 'None', cannot select next target.");
+                return;
+            }
+            if (trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+            {
+                if (SetActiveRobotToggleObject.GetComponentInChildren<Toggle>().isOn)
+                {
+                    trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
+                }
+                else
+                {
+                    trajectoryVisualizer.DestroyActiveTrajectoryChildren();
+                    Debug.LogWarning("PostInferenceNextTargetButtonMethod: Active Robot is null, cannot set interactable state.");
+                }
+            }
+            GoalObjectComponent currentGoalComponent = instantiateObjects.CurrentSelectedGoalComponet;
+            string currentGoalComponentName = instantiateObjects.CurrentSelectedGoalName;
+            Dictionary<string, GoalObjectComponent> states = instantiateObjects.InferenceGoalsManager.GoalStatusObserver.ComponentStates;
+
+            var m = Regex.Match(currentGoalComponentName, @"^(?<prefix>[A-Za-z]+)(?<num>\d+)$");
+            if (m.Success)
+            {
+                string prefix  = m.Groups["prefix"].Value;
+                string numStr  = m.Groups["num"].Value;
+                int    width   = numStr.Length;
+                int    num     = int.Parse(numStr);
+                string nextKey = prefix + (num + 1).ToString($"D{width}");
+                if (num == states.Count - 1)
+                {
+                    Debug.Log("PostInferenceNextTargetButtonMethod: Reached the end of the list, not moving anymore.");
+                    return;
+                }
+                if (states.ContainsKey(nextKey))
+                {
+                    GoalObjectComponent nextGoalComponent = states[nextKey];
+                    instantiateObjects.PostInferenceSetGoalComponentForSelection(nextGoalComponent, instantiateObjects.InferenceSelectedTargetMaterialUnbuilt, instantiateObjects.InferenceSelectedTargetMaterialBuilt);
+                    Debug.Log($"PostInferenceNextTargetButtonMethod: Selecting Next Target {nextKey} in the Inference Targets List.");
+                    return;
+                }
+            }
+            else
+            {
+                Debug.LogWarning("PostInferenceNextTargetButtonMethod: CurrentSelectedGoalName does not match expected pattern, cannot select next target.");
+                return;
+            }
+        }
+        public void PostInferencePreviousTargetButtonMethod()
+        {
+            /*
+            * Method is used to select the previous target in the inference targets list.
+            */
+            /*
+            * Method is used to select the next target in the inference targets list.
+            */
+            if (instantiateObjects.CurrentSelectedGoalComponet == null)
+            {
+                Debug.LogWarning("PostInferenceNextTargetButtonMethod: CurrentSelectedGoalComponet is null, cannot select next target.");
+                return;
+            }
+            if (instantiateObjects.CurrentSelectedGoalName == "None")
+            {
+                Debug.LogWarning("PostInferenceNextTargetButtonMethod: CurrentSelectedGoalName is 'None', cannot select next target.");
+                return;
+            }
+            if (trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+            {
+                if (SetActiveRobotToggleObject.GetComponentInChildren<Toggle>().isOn)
+                {
+                    trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
+                }
+                else
+                {
+                    trajectoryVisualizer.DestroyActiveTrajectoryChildren();
+                    Debug.LogWarning("PostInferenceNextTargetButtonMethod: Active Robot is null, cannot set interactable state.");
+                }
+            }
+
+            GoalObjectComponent currentGoalComponent = instantiateObjects.CurrentSelectedGoalComponet;
+            string currentGoalComponentName = instantiateObjects.CurrentSelectedGoalName;
+            Dictionary<string, GoalObjectComponent> states = instantiateObjects.InferenceGoalsManager.GoalStatusObserver.ComponentStates;
+
+            var m = Regex.Match(currentGoalComponentName, @"^(?<prefix>[A-Za-z]+)(?<num>\d+)$");
+            if (m.Success)
+            {
+                string prefix  = m.Groups["prefix"].Value;
+                string numStr  = m.Groups["num"].Value;
+                int    width   = numStr.Length;
+                int    num     = int.Parse(numStr);
+                string prevKey = prefix + (num - 1).ToString($"D{width}");
+                if (num == 0)
+                {
+                    Debug.Log("PostInferenceNextTargetButtonMethod: Reached the start of the list, not moving anymore.");
+                    return;
+                }
+                if (states.ContainsKey(prevKey))
+                {
+                    GoalObjectComponent prevGoalComponent = states[prevKey];
+                    instantiateObjects.PostInferenceSetGoalComponentForSelection(prevGoalComponent, instantiateObjects.InferenceSelectedTargetMaterialUnbuilt, instantiateObjects.InferenceSelectedTargetMaterialBuilt);
+                    Debug.Log($"PostInferenceNextTargetButtonMethod: Selecting Next Target {prevKey} in the Inference Targets List.");
+                    return;
+                }
+            }
+            else
+            {
+                Debug.LogWarning("PostInferenceNextTargetButtonMethod: CurrentSelectedGoalName does not match expected pattern, cannot select next target.");
+                return;
+            }          
+        }
+        public void PostInferenceRequestTargetButtonMethod()
+        {
+            /*
+            * Method is used to request a target for the current goal.
+            */
+            Debug.Log("PostInferenceRequestTargetButtonMethod: Requesting Target for Current Goal.");
+            // if (instantiateObjects.InferenceGoalsManager.CurrentGoal == null)
+            // {
+            //     Debug.LogWarning("PostInferenceRequestTargetButtonMethod: Current Goal is null, cannot request target.");
+            //     string message = "WARNING: Current Goal is currently null. A current goal must be set before requesting a target.";
+            //     UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref InferenceCurrentGoalNullMessage, "CurrentGoalNullWarningMessage", MessagesParent, message, "PostInferenceRequestTargetButtonMethod: Current Goal is null.");
+            //     return;
+            // }
+            // if (trajectoryVisualizer.ActiveRobot == null)
+            // {
+            //     Debug.LogWarning("PostInferenceRequestTargetButtonMethod: Active Robot is null, cannot request target.");
+            //     string message = "WARNING: Active Robot is currently null. An active robot must be set before requesting a target.";
+            //     UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref InferenceActiveRobotNullMessage, "ActiveRobotNullWarningMessage", MessagesParent, message, "PostInferenceRequestTargetButtonMethod: Active Robot is null.");
+            //     return;
+            // }
+
+            // InferenceTargetRequestMessage inferenceTargetRequestMessage = new InferenceTargetRequestMessage
+            // (
+            //     instantiateObjects.InferenceGoalsManager.CurrentGoal.Name,
+            //     mqttTrajectoryManager.serviceManager.ActiveRobotName
+            // );
+            // mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceTargetRequestTopic, inferenceTargetRequestMessage.GetData());
+            // Debug.Log($"PostInferenceRequestTargetButtonMethod: Published Inference Target Request Message to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceTargetRequestTopic} with data: {inferenceTargetRequestMessage.GetData()}");
         }
 
         //TODO: Other methods
@@ -1301,6 +1452,7 @@ namespace CompasXR.UI
                     }
                     instantiateObjects.InferenceGoalsManager.GoalStatusObserver.Active = true;
                     instantiateObjects.MimicGoalsManager.GoalStatusObserver.Active = false;
+
                     break;
                 case ProjectZones.CurrentZoneMode.Mimic:
                     Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Mimic Mode.");
@@ -1308,7 +1460,7 @@ namespace CompasXR.UI
 
                     instantiateObjects.InferenceGoalsManager.GoalStatusObserver.Active = false;
                     instantiateObjects.MimicGoalsManager.GoalStatusObserver.Active = true;
-                    instantiateObjects.MimicGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, instantiateObjects.GoalSatisfiedMaterial, instantiateObjects.GoalUnsatisfiedMaterial);
+                    instantiateObjects.MimicGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, instantiateObjects.GoalSatisfiedMaterial, instantiateObjects.GoalUnsatisfiedMaterial, instantiateObjects.OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, instantiateObjects.OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
 
                     if (trajectoryVisualizer.ActiveRobot != null)
                     {
