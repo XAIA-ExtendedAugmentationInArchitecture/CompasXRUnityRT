@@ -1796,7 +1796,8 @@ namespace CompasXR.UI
                         if (instantiateObjects.RealtimeMimicHumanPoints.Count >= 1 && instantiateObjects.RealtimeMimicRobotPoints.Count >= 1)
                         {
                             Vector3 lastRealtimeMimicPointPosition = instantiateObjects.RealtimeMimicHumanPoints[instantiateObjects.RealtimeMimicHumanPoints.Count - 1].transform.position;
-                            Quaternion lastRealtimeMimicPointRotation = instantiateObjects.RealtimeMimicHumanPoints[instantiateObjects.RealtimeMimicHumanPoints.Count - 1].transform.rotation;
+                            //TODO: This needs to be checked...
+                            // Quaternion lastRealtimeMimicPointRotation = instantiateObjects.RealtimeMimicHumanPoints[instantiateObjects.RealtimeMimicHumanPoints.Count - 1].transform.rotation;
                             if (lastRealtimeMimicPointPosition == null)
                             {
                                 Debug.LogError("CreateRealtimeMimicPointsBasicTEMPORARY: Last Realtime Mimic Point is null.");
@@ -1814,11 +1815,11 @@ namespace CompasXR.UI
                                 Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Points are closer than threshold, not creating new points.");
                                 return;
                             }
-                            if (ObjectInstantiaion.RotationsAreCloserThanThreshold(cameraRotationObjectRotation, lastRealtimeMimicPointRotation, ROTTHRESHOLD))
-                            {
-                                Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Rotations are closer than threshold, not creating new points.");
-                                return;
-                            }
+                            // if (ObjectInstantiaion.RotationsAreCloserThanThreshold(cameraRotationObjectRotation, lastRealtimeMimicPointRotation, ROTTHRESHOLD))
+                            // {
+                            //     Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Rotations are closer than threshold, not creating new points.");
+                            //     return;
+                            // }
                             else
                             {
                                 Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Camera Position is within the Human Zone Object and Points are not closer than threshold.");
