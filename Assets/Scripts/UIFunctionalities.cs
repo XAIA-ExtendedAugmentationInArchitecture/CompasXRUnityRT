@@ -1760,10 +1760,11 @@ namespace CompasXR.UI
 
                     // Additional logic for both zones can go here
                     Vector3 cameraPositionObjectPosition = arCamera.transform.position;
+                    Quaternion cameraRotationObjectRotation = arCamera.transform.rotation;
 
-                    if(ObjectInstantiaion.IsPositionWithinObject(humanZoneObject, cameraPositionObjectPosition))
+                    if (ObjectInstantiaion.IsPositionWithinObject(humanZoneObject, cameraPositionObjectPosition))
                     {
-                        if(trajectoryVisualizer.ActiveRobot == null)
+                        if (trajectoryVisualizer.ActiveRobot == null)
                         {
                             Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Active Robot is Null.");
                             string message = "WARNING: You must select an active robot in order to mimic realtime.";
@@ -1771,14 +1772,14 @@ namespace CompasXR.UI
                             return;
                         }
 
-                        if(trajectoryVisualizer.humanZoneMimicReachibility == null)
+                        if (trajectoryVisualizer.humanZoneMimicReachibility == null)
                         {
                             Debug.LogError("CreateRealtimeMimicPointsBasicTEMPORARY: Human Zone Reachability is null for some weird reason.");
                             return;
                         }
                         else
                         {
-                            if(!ObjectInstantiaion.IsPositionWithinObject(trajectoryVisualizer.humanZoneMimicReachibility, cameraPositionObjectPosition))
+                            if (!ObjectInstantiaion.IsPositionWithinObject(trajectoryVisualizer.humanZoneMimicReachibility, cameraPositionObjectPosition))
                             {
                                 Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Camera Position is not within the Human Zone Object.");
                                 string message = "WARNING: This mimic point is outside of the Robots reachability.";
@@ -1791,9 +1792,11 @@ namespace CompasXR.UI
                         // float DRAWINGTHRESHOLD = 0.035f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
                         // float DRAWINGTHRESHOLD = 0.038f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
                         float DRAWINGTHRESHOLD = 0.02f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
+                        float ROTTHRESHOLD = 1.0f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
                         if (instantiateObjects.RealtimeMimicHumanPoints.Count >= 1 && instantiateObjects.RealtimeMimicRobotPoints.Count >= 1)
                         {
                             Vector3 lastRealtimeMimicPointPosition = instantiateObjects.RealtimeMimicHumanPoints[instantiateObjects.RealtimeMimicHumanPoints.Count - 1].transform.position;
+                            Quaternion lastRealtimeMimicPointRotation = instantiateObjects.RealtimeMimicHumanPoints[instantiateObjects.RealtimeMimicHumanPoints.Count - 1].transform.rotation;
                             if (lastRealtimeMimicPointPosition == null)
                             {
                                 Debug.LogError("CreateRealtimeMimicPointsBasicTEMPORARY: Last Realtime Mimic Point is null.");
@@ -1804,10 +1807,16 @@ namespace CompasXR.UI
                                 Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Last Realtime Mimic Point is not null.");
                             }
 
+                            //TODO: I think this needs to be rot and position.
                             Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Last Realtime Mimic Point Position: {lastRealtimeMimicPointPosition} Camera Position: {cameraPositionObjectPosition} Distance: {Vector3.Distance(cameraPositionObjectPosition, lastRealtimeMimicPointPosition)} Bool Value: {ObjectInstantiaion.Vector3sAreCloserThenThreshold(cameraPositionObjectPosition, lastRealtimeMimicPointPosition, DRAWINGTHRESHOLD)}");
                             if (ObjectInstantiaion.Vector3sAreCloserThenThreshold(cameraPositionObjectPosition, lastRealtimeMimicPointPosition, DRAWINGTHRESHOLD))
                             {
                                 Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Points are closer than threshold, not creating new points.");
+                                return;
+                            }
+                            if (ObjectInstantiaion.RotationsAreCloserThanThreshold(cameraRotationObjectRotation, lastRealtimeMimicPointRotation, ROTTHRESHOLD))
+                            {
+                                Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Rotations are closer than threshold, not creating new points.");
                                 return;
                             }
                             else

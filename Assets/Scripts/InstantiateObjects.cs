@@ -3031,5 +3031,10 @@ namespace CompasXR.Core
                 IsWithinRotationTolerance(gameObject1, gameObject2, rotToleranceDegrees);
         }
 
+        public static bool RotationsAreCloserThanThreshold(Quaternion a, Quaternion b, float degreesThreshold)
+        {
+            return Quaternion.Angle(a, b) < degreesThreshold;
+        }
+
     }
 }
