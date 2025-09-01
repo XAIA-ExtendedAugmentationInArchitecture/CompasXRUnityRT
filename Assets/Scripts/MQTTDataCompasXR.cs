@@ -136,10 +136,11 @@ namespace CompasXR.Robots.MqttData
         
         
         //TODO: Robotic Territories Testing /////////////////////////////////////////////////////////////////////////
-        public List<InferenceResultMessage> InferenceResultsMessages { get; set; }
+        public List<InferenceResultMessage> InferenceResultsMessages { get; set; } = new List<InferenceResultMessage>();
         public bool InferenceContainsExacutableTrajectory { get; set; }
         public string InferenceSuggestedTargetName { get; set; } = "None";
         public List<InferenceRequestMessage> InferenceRequestMessages { get; set; }
+        public List<PostInferenceTrajectoryResultMessage> PostInferenceTrajectoryResultsMessages { get; set; } = new List<PostInferenceTrajectoryResultMessage>();
 
         public ServiceManager()
         {

@@ -189,7 +189,7 @@ namespace CompasXR.RoboticTerritories.Data
             }
         }
 
-        public GoalStateObserver(GoalObject goalObject=null)
+        public GoalStateObserver(GoalObject goalObject = null)
         {
             ComponentStates = new Dictionary<string, GoalObjectComponent>();
             if (goalObject != null)
@@ -386,6 +386,15 @@ namespace CompasXR.RoboticTerritories.Data
                 Debug.LogWarning($"GoalStateObserver: Component '{componentName}' not found in the current goal.");
                 return null;
             }
+        }
+
+        public List<string> GetCompletedComponentsNames()
+        {
+            return ComponentStates.Values.Where(c => c.IsSatisfied).Select(c => c.Name).ToList();
+        }
+        public List<string> GetIncompleteComponentsNames()
+        {
+            return ComponentStates.Values.Where(c => !c.IsSatisfied).Select(c => c.Name).ToList();
         }
 
     }

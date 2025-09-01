@@ -232,7 +232,11 @@ namespace CompasXR.UI
 
         //TODO: Inference OnScreen Messages
         public GameObject InferenceActiveRobotNullMessage;
+        public GameObject PostInferenceActiveRobotNullMessage;
+        public GameObject PostInferenceCurrentGoalNull;
         public GameObject InferenceResultReceivedWhileInOtherModeOnScreenMessage;
+        public GameObject PostInferenceMessageErrorOnScreenMessage;
+        public GameObject PostInferencePlannerRepliedWithNullTrajectory;
         public GameObject InferenceUnableToInferGoalMessage;
         public GameObject InferenceTrajectoryNullWarningMessageObject;
 
@@ -1020,19 +1024,7 @@ namespace CompasXR.UI
             else
             {
                 //TODO: This would be better to be a direct instance of the box object rather then the geometry frame, but it will just be the center frame information
-                Dictionary<string, Frame> currentGeometryFramesAsDict = new Dictionary<string, Frame>();
-                foreach (KeyValuePair<string, ObservedGeometry> item in databaseManager.observedGeometriesDict)
-                {
-                    if (item.Value.Box != null)
-                    {
-                        Frame geometryFrame = item.Value.Box.frame;
-                        currentGeometryFramesAsDict.Add(item.Key, geometryFrame);
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"RequestInferenceButtonMethod JOEEE: {item.Key}, Value: null");
-                    }
-                }
+                Dictionary<string, Frame> currentGeometryFramesAsDict = databaseManager.GetObservedGeometryFramesAsDict();
 
                 InferenceRequestMessage inferenceRequestMessage = new InferenceRequestMessage
                 (
@@ -1322,28 +1314,59 @@ namespace CompasXR.UI
             * Method is used to request a target for the current goal.
             */
             Debug.Log("PostInferenceRequestTargetButtonMethod: Requesting Target for Current Goal.");
-            // if (instantiateObjects.InferenceGoalsManager.CurrentGoal == null)
-            // {
-            //     Debug.LogWarning("PostInferenceRequestTargetButtonMethod: Current Goal is null, cannot request target.");
-            //     string message = "WARNING: Current Goal is currently null. A current goal must be set before requesting a target.";
-            //     UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref InferenceCurrentGoalNullMessage, "CurrentGoalNullWarningMessage", MessagesParent, message, "PostInferenceRequestTargetButtonMethod: Current Goal is null.");
-            //     return;
-            // }
-            // if (trajectoryVisualizer.ActiveRobot == null)
-            // {
-            //     Debug.LogWarning("PostInferenceRequestTargetButtonMethod: Active Robot is null, cannot request target.");
-            //     string message = "WARNING: Active Robot is currently null. An active robot must be set before requesting a target.";
-            //     UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref InferenceActiveRobotNullMessage, "ActiveRobotNullWarningMessage", MessagesParent, message, "PostInferenceRequestTargetButtonMethod: Active Robot is null.");
-            //     return;
-            // }
 
-            // InferenceTargetRequestMessage inferenceTargetRequestMessage = new InferenceTargetRequestMessage
-            // (
-            //     instantiateObjects.InferenceGoalsManager.CurrentGoal.Name,
-            //     mqttTrajectoryManager.serviceManager.ActiveRobotName
-            // );
-            // mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceTargetRequestTopic, inferenceTargetRequestMessage.GetData());
-            // Debug.Log($"PostInferenceRequestTargetButtonMethod: Published Inference Target Request Message to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceTargetRequestTopic} with data: {inferenceTargetRequestMessage.GetData()}");
+            if(trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+            {
+                if (SetActiveRobotToggleObject.GetComponentInChildren<Toggle>().isOn)
+                {
+                    trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
+                }
+                else
+                {
+                    trajectoryVisualizer.DestroyActiveTrajectoryChildren();
+                    Debug.LogWarning("PostInferenceRequestTargetButtonMethod: Active Robot is null, cannot set interactable state.");
+                }
+            }
+
+            if (instantiateObjects.InferenceGoalsManager.CurrentGoal == null)
+            {
+                Debug.LogWarning("PostInferenceRequestTargetButtonMethod: Current Goal is null, cannot request target.");
+                string message = "WARNING: Current Goal is currently null. A current goal must be set before requesting a target.";
+                UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref PostInferenceCurrentGoalNull, "CurrentGoalNullWarningMessage", MessagesParent, message, "PostInferenceRequestTargetButtonMethod: Current Goal is null.");
+                return;
+            }
+            else
+            {
+                Debug.LogWarning("PostInferenceRequestTargetButtonMethod: Current Goal is null, cannot request target.");
+                if (instantiateObjects.CurrentSelectedGoalComponet.IsSatisfied)
+                {
+                    Debug.LogWarning("PostInferenceRequestTargetButtonMethod: Current Goal is already satisfied, cannot request target.");
+                    return;
+                }
+            }
+
+            if (trajectoryVisualizer.ActiveRobot == null)
+            {
+                Debug.LogWarning("PostInferenceRequestTargetButtonMethod: Active Robot is null, cannot request target.");
+                string message = "WARNING: Active Robot is currently null. An active robot must be set before requesting a target.";
+                UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref PostInferenceActiveRobotNullMessage, "PostInferenceActiveRobotNullWarningMessage", MessagesParent, message, "PostInferenceRequestTargetButtonMethod: Active Robot is null.");
+                return;
+            }
+
+            List<string> satisfiedGoals = instantiateObjects.InferenceGoalsManager.GoalStatusObserver.GetCompletedComponentsNames();
+            Dictionary<string, Frame> currentGeometryFramesAsDict = databaseManager.GetObservedGeometryFramesAsDict();
+
+            PostInferenceTargetRequestMessage postInferenceTargetRequestMessage = new PostInferenceTargetRequestMessage
+            (
+                satisfiedGoals,
+                instantiateObjects.InferenceGoalsManager.CurrentGoal.Name,
+                instantiateObjects.CurrentSelectedGoalComponet.Name,
+                mqttTrajectoryManager.serviceManager.ActiveRobotName,
+                currentGeometryFramesAsDict
+            );
+
+            Debug.Log($"PostInferenceRequestTargetButtonMethod: Topic : {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferencePostInferenceRequestTarget}  Msg: {JsonConvert.SerializeObject(postInferenceTargetRequestMessage.GetData())}");
+            mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferencePostInferenceRequestTarget, postInferenceTargetRequestMessage.GetData());
         }
 
         //TODO: Other methods

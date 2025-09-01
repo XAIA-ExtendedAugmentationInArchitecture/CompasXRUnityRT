@@ -568,6 +568,23 @@ namespace CompasXR.Core
             }
         }
 
+        public Dictionary<string, Frame> GetObservedGeometryFramesAsDict()
+        {
+            Dictionary<string, Frame> currentGeometryFramesAsDict = new Dictionary<string, Frame>();
+            foreach (KeyValuePair<string, ObservedGeometry> item in observedGeometriesDict)
+            {
+                if (item.Value.Box != null)
+                {
+                    Frame geometryFrame = item.Value.Box.frame;
+                    currentGeometryFramesAsDict.Add(item.Key, geometryFrame);
+                }
+                else
+                {
+                    Debug.LogWarning($"RequestInferenceButtonMethod JOEEE: {item.Key}, Value: null");
+                }
+            }
+            return currentGeometryFramesAsDict;
+        }
 
         //EVENTS //TODO: UPDATE EVENT FOR GEOMETRY INFORMATOIN.
         protected virtual void OnZonesReceived(ProjectZones ProjectZones)
