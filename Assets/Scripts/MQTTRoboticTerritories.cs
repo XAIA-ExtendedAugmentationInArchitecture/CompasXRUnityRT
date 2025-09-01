@@ -77,7 +77,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public string mimicResultTopic { get; set; }
         public string realtimeMimicResultTopic { get; set; }
         public string inferenceResultTopic { get; set; }
-        public string inferencePostInferenceTargetTrajectoryResult { get; set; }
+        public string inferencePostInferenceTargetTrajectoryResultTopic { get; set; }
 
         //Constructer for subscribers that takes an input project name
         public RTSubscribers(string projectName)
@@ -86,7 +86,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             realtimeMimicResultTopic = $"robotic_territories/real_time_mimic_result/{projectName}";
 
             inferenceResultTopic = $"robotic_territories/inference_result/{projectName}";
-            inferencePostInferenceTargetTrajectoryResult = $"robotic_territories/post_inference_target_result/{projectName}";
+            inferencePostInferenceTargetTrajectoryResultTopic = $"robotic_territories/post_inference_target_result/{projectName}";
         }
     }
 
@@ -1000,16 +1000,16 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public GoalStatusReplyEnum GoalStatusReply { get; private set; }
 
         public string RobotName { get; private set; }
-        public bool IncludesExacutableTrajectory { get; private set; }
+        public bool IncludesExecutableTrajectory { get; private set; }
         public string CurrentGoalName { get; set; }
         public string SuggestedTargetName { get; set; }
 
-        public InferenceUserReplyMessage(GoalStatusReplyEnum goalStatusReply, string currentGoalName, string suggestedTargetName, string robotName, bool includesExacutableTrajectory, Header header = null)
+        public InferenceUserReplyMessage(GoalStatusReplyEnum goalStatusReply, string currentGoalName, string suggestedTargetName, string robotName, bool includesExecutableTrajectory, Header header = null)
         {
             Header = header ?? new Header();
             GoalStatusReply = goalStatusReply;
             RobotName = robotName;
-            IncludesExacutableTrajectory = includesExacutableTrajectory;
+            IncludesExecutableTrajectory = includesExecutableTrajectory;
             CurrentGoalName = currentGoalName;
             SuggestedTargetName = suggestedTargetName;
         }
@@ -1023,7 +1023,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 { "header", Header.GetData() },
                 { "goal_status_reply", (int)GoalStatusReply },
                 { "robot_name", RobotName },
-                { "includes_exacutable_trajectory", IncludesExacutableTrajectory },
+                { "includes_executable_trajectory", IncludesExecutableTrajectory },
                 { "current_goal_name", CurrentGoalName },
                 { "suggested_target_name", SuggestedTargetName }
             };
@@ -1041,7 +1041,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             GoalStatusReplyEnum goalStatusReply = (GoalStatusReplyEnum)rawValue;
 
             var robotName = jsonObject["robot_name"].ToString();
-            var includesExacutableTrajectory = Convert.ToBoolean(jsonObject["includes_exacutable_trajectory"]);
+            var includesExacutableTrajectory = Convert.ToBoolean(jsonObject["includes_executable_trajectory"]);
             var currentGoalName = jsonObject["current_goal_name"] != null ? jsonObject["current_goal_name"].ToString() : null;
             var suggestedTargetName = jsonObject["suggested_target_name"] != null ? jsonObject["suggested_target_name"].ToString() : null;
 

@@ -149,6 +149,7 @@ namespace CompasXR.Robots
             SubscribeToTopic(roboticTerritoriesTopics.subscribers.mimicResultTopic);
             SubscribeToTopic(roboticTerritoriesTopics.subscribers.realtimeMimicResultTopic);
             SubscribeToTopic(roboticTerritoriesTopics.subscribers.inferenceResultTopic);
+            SubscribeToTopic(roboticTerritoriesTopics.subscribers.inferencePostInferenceTargetTrajectoryResultTopic);
         }
         public void UnsubscribeFromRoboticTerritoriesTopics()
         {
@@ -214,6 +215,10 @@ namespace CompasXR.Robots
                 InferenceResultMessage inferenceResultMessage = InferenceResultMessage.Parse(message);
                 InferenceResultReceivedMessageHandler(inferenceResultMessage);
                 Debug.Log($"MQTT: InferenceResult Message Handeling: Received {JsonConvert.SerializeObject(inferenceResultMessage)}");
+            }
+            else if (topic == roboticTerritoriesTopics.subscribers.inferencePostInferenceTargetTrajectoryResultTopic)
+            {
+                Debug.Log("MQTT: InferencePostInferenceTargetTrajectoryResult Message Handeling");
             }
             else
             {

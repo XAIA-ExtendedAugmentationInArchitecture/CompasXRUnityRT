@@ -1122,6 +1122,7 @@ namespace CompasXR.UI
                 mqttTrajectoryManager.serviceManager.ActiveRobotName,
                 mqttTrajectoryManager.serviceManager.InferenceContainsExacutableTrajectory
             );
+            Debug.Log("InferenceRejectGoalAndTargetButtonMethod: Sending Inference Reject Goal and Target Message. Msg: " + JsonConvert.SerializeObject(inferenceReplyMessage.GetData()));
             mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceUserReplyTopic, inferenceReplyMessage.GetData());
             Debug.Log($"InferenceRejectGoalAndTargetButtonMethod: Rejecting Infered Goal {instantiateObjects.InferenceGoalsManager.CurrentGoal.Name} and Target {mqttTrajectoryManager.serviceManager.InferenceSuggestedTargetName}.");
             SetInferenceRequestUIControlsVisibilityandInteractibility(true, true, false, false, false);
@@ -1151,8 +1152,9 @@ namespace CompasXR.UI
                 mqttTrajectoryManager.serviceManager.InferenceContainsExacutableTrajectory
             );
 
+            Debug.Log("InferenceAcceptTargetRejectGoalButtonMethod: Sending Inference Reject Goal and Accept Target Message. Msg: " + JsonConvert.SerializeObject(inferenceReplyMessage.GetData()));
             mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceUserReplyTopic, inferenceReplyMessage.GetData());
-            Debug.Log($"InferenceRejectGoalAndTargetButtonMethod: Rejecting Infered Goal {instantiateObjects.InferenceGoalsManager.CurrentGoal.Name} and Target {mqttTrajectoryManager.serviceManager.InferenceSuggestedTargetName}.");
+            Debug.Log($"InferenceAcceptTargetRejectGoalButtonMethod: Rejecting Infered Goal {instantiateObjects.InferenceGoalsManager.CurrentGoal.Name} and Target {mqttTrajectoryManager.serviceManager.InferenceSuggestedTargetName}.");
             SetInferenceRequestUIControlsVisibilityandInteractibility(true, true, false, false, false);
             instantiateObjects.ResetInferenceGoalsAndTargets();
 
@@ -1179,6 +1181,7 @@ namespace CompasXR.UI
                 mqttTrajectoryManager.serviceManager.ActiveRobotName,
                 mqttTrajectoryManager.serviceManager.InferenceContainsExacutableTrajectory
             );
+            Debug.Log("InferenceAcceptGoalButtonMethod: Sending Inference Accept Goal and Target Message. Msg: " + JsonConvert.SerializeObject(inferenceReplyMessage.GetData()));
             mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceUserReplyTopic, inferenceReplyMessage.GetData());
             Debug.Log($"InferenceAcceptGoalButtonMethod: Accepting Infered Goal {instantiateObjects.InferenceGoalsManager.CurrentGoal.Name}.");
             SetInferenceRequestUIControlsVisibilityandInteractibility(false, false, false, false, false);
