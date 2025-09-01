@@ -422,9 +422,9 @@ namespace CompasXR.Robots
             else if (postInferenceTrajectoryResultMessage.RobotName != serviceManager.ActiveRobotName)  //TODO: THIS IS FROM COMPAS XR, BUT NEEDS TO BE THOUGHT ABOUT FOR ROBOT TERRITORIES
             {
                 //Update Last Mimic Trajectory Result Message in the Service Manager
-                if (UIFunctionalities.InferenceReviewSlider.value != 0)
+                if (UIFunctionalities.PostInferenceTrajectoryReviewSlider.value != 0)
                 {
-                    UIFunctionalities.InferenceReviewSlider.value = 0;
+                    UIFunctionalities.PostInferenceTrajectoryReviewSlider.value = 0;
                 }
 
                 UIFunctionalities.SignalActiveRobotUpdateFromPlannerRoboticTerritories(
@@ -439,16 +439,16 @@ namespace CompasXR.Robots
 
                 //Update Last Mimic Trajectory Result Message in the Service Manager
                 serviceManager.PostInferenceTrajectoryResultsMessages.Add(postInferenceTrajectoryResultMessage); //TODO: This is a strategy from compas XR class, but needs to be cleaned up
-                UIFunctionalities.SetInferenceUIPostInferenceSuccesState(false, false, false, true, true);
+                UIFunctionalities.SetInferenceUIPostInferenceSuccesState(true, false, false, true, true);
                 Debug.Log("MQTT: PostInferenceTargetTrajectoryResultReceivedMessageHandler : Robot Name in the message is not the same as the active robot name signaling on screen control.");
                 return;
             }
             else
             {
                 //Update Last Inference Result Message in the Service Manager //TODO: Soemtimes I get an error from this.
-                if (UIFunctionalities.InferenceReviewSlider.value != 0)
+                if (UIFunctionalities.PostInferenceTrajectoryReviewSlider.value != 0)
                 {
-                    UIFunctionalities.InferenceReviewSlider.value = 0;
+                    UIFunctionalities.PostInferenceTrajectoryReviewSlider.value = 0;
                 }
 
                 //Update Last Inference Result Message in the Service Manager
@@ -460,7 +460,7 @@ namespace CompasXR.Robots
                     true);
 
                 serviceManager.PostInferenceTrajectoryResultsMessages.Add(postInferenceTrajectoryResultMessage); //TODO: This is a strategy from compas XR class, but needs to be cleaned up
-                UIFunctionalities.SetInferenceUIPostInferenceSuccesState(false, false, false, true, true);
+                UIFunctionalities.SetInferenceUIPostInferenceSuccesState(true, false, false, true, true);
                 Debug.Log("MQTT: PostInferenceTargetTrajectoryResultReceivedMessageHandler : Robot Name in the message is the same as the active robot name.");
             }
         }

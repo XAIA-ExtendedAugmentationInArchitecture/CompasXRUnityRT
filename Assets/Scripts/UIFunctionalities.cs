@@ -670,9 +670,9 @@ namespace CompasXR.UI
 
             //TODO: This is for trajectory review after inference success.
             PostInferenceReviewTrajectoryParentObject = InferenceRequestTrajectoryCalculationControlsObject.FindObject("ReviewAndExecuteTrajectoryUI");
-            UserInterface.FindButtonandSetOnClickAction(PostInferenceReviewTrajectoryParentObject, ref PostInferenceRobotExecuteButton, "ExecuteTrajectory", () => UserInterface.PrintStringOnClick("Execute Trajectory Button Pressed"));
-            UserInterface.FindButtonandSetOnClickAction(PostInferenceReviewTrajectoryParentObject, ref PostInferenceRobotRejectTrajectoryButton, "RejectTrajectory", () => UserInterface.PrintStringOnClick("Reject Trajectory Button Pressed"));
-            UserInterface.FindSliderandSetOnValueChangeAction(InferenceRequestTrajectoryCalculationControlsObject, ref PostInferenceTrajectoryReviewSliderObject, ref PostInferenceTrajectoryReviewSlider, "TrajectoryReviewSlider", (value) => UserInterface.PrintStringOnClick("Post Inference Review Slider Value Changed to: " + value));
+            UserInterface.FindButtonandSetOnClickAction(PostInferenceReviewTrajectoryParentObject, ref PostInferenceRobotExecuteButton, "ExecuteTrajectory", PostInferenceExecuteTrajectoryButtonMethod);
+            UserInterface.FindButtonandSetOnClickAction(PostInferenceReviewTrajectoryParentObject, ref PostInferenceRobotRejectTrajectoryButton, "RejectTrajectory", PostInferenceRejectTrajectoryButtonMethod);
+            UserInterface.FindSliderandSetOnValueChangeAction(InferenceRequestTrajectoryCalculationControlsObject, ref PostInferenceTrajectoryReviewSliderObject, ref PostInferenceTrajectoryReviewSlider, "TrajectoryReviewSlider", (value) => PostInferenceTrajectoryReviewSliderMethod(value));
 
             //TODO: This is incorrect because it not set to this mode needs to be called in the set mode.
             SetInferanceUIBasedOnInferenceState(GOALINFERRED);
@@ -1369,6 +1369,134 @@ namespace CompasXR.UI
             mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferencePostInferenceRequestTarget, postInferenceTargetRequestMessage.GetData());
         }
 
+        public void PostInferenceExecuteTrajectoryButtonMethod()
+        {
+            if (trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+            {
+                if (SetActiveRobotToggleObject.GetComponentInChildren<Toggle>().isOn)
+                {
+                    trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
+                }
+                else
+                {
+                    trajectoryVisualizer.DestroyActiveTrajectoryChildren();
+                    Debug.LogWarning("PostInferenceExecuteTrajectoryButtonMethod: Active Robot is null, cannot set interactable state.");
+                }
+            }
+            if (instantiateObjects.CurrentSelectedGoalComponet == null)
+            {
+                Debug.LogWarning("PostInferenceExecuteTrajectoryButtonMethod: CurrentSelectedGoalComponet is null, cannot execute trajectory.");
+                return;
+            }
+            if (instantiateObjects.CurrentSelectedGoalName == "None")
+            {
+                Debug.LogWarning("PostInferenceExecuteTrajectoryButtonMethod: CurrentSelectedGoalName is 'None', cannot execute trajectory.");
+                return;
+            }
+            if (mqttTrajectoryManager.serviceManager.PostInferenceTrajectoryResultsMessages.Count == 0)
+            {
+                Debug.LogWarning("PostInferenceExecuteTrajectoryButtonMethod: No Post Inference Trajectory Results Messages, cannot execute trajectory.");
+                return;
+            }
+            if (mqttTrajectoryManager.serviceManager.PostInferenceTrajectoryResultsMessages[mqttTrajectoryManager.serviceManager.PostInferenceTrajectoryResultsMessages.Count - 1].Trajectories.Count == 0)
+            {
+                Debug.LogWarning("PostInferenceExecuteTrajectoryButtonMethod: No Trajectories in the last Post Inference Trajectory Results Message, cannot execute trajectory.");
+                return;
+            }
+
+            List<Trajectory> trajectories = mqttTrajectoryManager.serviceManager.PostInferenceTrajectoryResultsMessages[mqttTrajectoryManager.serviceManager.PostInferenceTrajectoryResultsMessages.Count - 1].Trajectories;
+
+            PostInferenceExecuteTrajectoryMessage postInferenceExecuteTrajectoryMessage = new PostInferenceExecuteTrajectoryMessage
+            (
+                instantiateObjects.InferenceGoalsManager.CurrentGoal.Name,
+                instantiateObjects.CurrentSelectedGoalComponet.Name,
+                mqttTrajectoryManager.serviceManager.ActiveRobotName
+            );
+
+            Debug.Log("PostInferenceExecuteTrajectoryButtonMethod: Sending Post Inference Execute Trajectory Message. Msg: " + JsonConvert.SerializeObject(postInferenceExecuteTrajectoryMessage.GetData()));
+            mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferencePostInferenceExecuteTargetTopic, postInferenceExecuteTrajectoryMessage.GetData());
+            SetInferenceUIPostInferenceSuccesState(true, true, true, false, false);
+
+        }
+
+        public void PostInferenceRejectTrajectoryButtonMethod()
+        {
+            if (trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+            {
+                if (SetActiveRobotToggleObject.GetComponentInChildren<Toggle>().isOn)
+                {
+                    trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
+                }
+                else
+                {
+                    trajectoryVisualizer.DestroyActiveTrajectoryChildren();
+                    Debug.LogWarning("PostInferenceRejectTrajectoryButtonMethod: Active Robot is null, cannot set interactable state.");
+                }
+            }
+            SetInferenceUIPostInferenceSuccesState(true, true, true, false, false);
+            Debug.Log("PostInferenceRejectTrajectoryButtonMethod: Rejecting Current Trajectory.");
+        }
+        public void PostInferenceTrajectoryReviewSliderMethod(float value)
+        { 
+            if (mqttTrajectoryManager.serviceManager.InferenceResultsMessages.Count > 0)
+            {
+                if (mqttTrajectoryManager.serviceManager.PostInferenceTrajectoryResultsMessages[mqttTrajectoryManager.serviceManager.PostInferenceTrajectoryResultsMessages.Count-1].Trajectories.Count <= 0)
+                {
+                    Debug.LogWarning("InferenceReviewSliderReviewCompoundTrajectories: Using InferenceResultsMessages for Trajectories.");
+                    return;
+                }
+
+                List<Trajectory> trajectories = mqttTrajectoryManager.serviceManager.PostInferenceTrajectoryResultsMessages[mqttTrajectoryManager.serviceManager.PostInferenceTrajectoryResultsMessages.Count-1].Trajectories;
+                List<(int start, int end)> trajectoryRanges = new List<(int, int)>();
+                int configCount = 0;
+
+                foreach (Trajectory trajectory in trajectories)
+                {
+                    int count = trajectory.Points.Count;
+                    trajectoryRanges.Add((configCount, configCount + count - 1));
+                    configCount += count;
+                }
+
+                float SliderValue = value;
+                float SliderMin = 0f;
+                float SliderMax = 1f;
+                int targetGlobalIndex = Mathf.RoundToInt(
+                    HelpersExtensions.Remap(SliderValue, SliderMin, SliderMax, 0f, configCount - 1)
+                );
+
+                int selectedTrajectoryIndex = -1;
+                int localIndex = -1;
+
+                for (int i = 0; i < trajectoryRanges.Count; i++)
+                {
+                    var (start, end) = trajectoryRanges[i];
+                    if (targetGlobalIndex >= start && targetGlobalIndex <= end)
+                    {
+                        selectedTrajectoryIndex = i;
+                        localIndex = targetGlobalIndex - start;
+                        break;
+                    }
+                }
+
+                if (selectedTrajectoryIndex >= 0 && localIndex >= 0)
+                {
+                    Debug.Log($"Slider = {SliderValue:0.000} → Global Config #{targetGlobalIndex}");
+                    Debug.Log($"Belongs to Trajectory #{selectedTrajectoryIndex}, Local Config #{localIndex}");
+                    //TODO: CHECK THIS WITH UI MIMIC SLIDER IF THE PREVIOUS AND CURRENT INDEX ARE WORKING PROPERLY.
+                    trajectoryVisualizer.ColorRobotConfigfromSliderInputCompoundTrajectories(selectedTrajectoryIndex, localIndex, trajectories, instantiateObjects.InactiveRobotMaterial, instantiateObjects.ActiveRobotMaterial, ref trajectoryVisualizer.previousConfigIndex, ref trajectoryVisualizer.previousTrajectoryIndex);
+                }
+                else
+                {
+                    Debug.LogWarning("Could not map slider to trajectory index.");
+                }
+
+            }
+            else
+            {
+                Debug.Log("InferenceReviewSliderReviewCompoundTrajectories: Current Trajectory is null.");
+            }
+        }
+
         //TODO: Other methods
         public void RealtimeMimicMirrorToggleMethod(bool value)
         {
@@ -1840,7 +1968,6 @@ namespace CompasXR.UI
                 Debug.Log("ReachabilityToggleMethod: ActiveRobot is null.");
             }
         }
-
         public void ShowInferedGeometriesInSceeneWrapper(string inferedGoal, List<string> completedTargets, string suggestedTarget)
         {
             /*
@@ -1856,6 +1983,7 @@ namespace CompasXR.UI
                 Debug.LogWarning("ShowInferedGeometriesInSceene: Infered Goal, Completed Targets or Suggested Target is null.");
             }
         }
+
         //UI Control Methods //TODO: I think that all of the updated methods for Mimic are working, but needs to be tested.
         public void SetUIObjectsFromCurrentMode(ProjectZones.CurrentZoneMode mode)
         {
