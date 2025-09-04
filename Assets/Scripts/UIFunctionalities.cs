@@ -24,7 +24,6 @@ using RosSharp.RosBridgeClient;
 using System.Collections;
 using Vuforia;
 using RosSharp.RosBridgeClient.MessageTypes.Actionlib;
-using Unity.PlasticSCM.Editor.WebApi;
 using UnityEngine.Analytics;
 using System.ComponentModel;
 using System.Text.RegularExpressions;
