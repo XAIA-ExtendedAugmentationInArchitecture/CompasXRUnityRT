@@ -1182,7 +1182,7 @@ namespace CompasXR.Core
     //TODO: TODO: TODO: TODO: TESTING GEOMETRY UPDATES UPDATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 
     //TODO: Joe Actual: Update GoalStateObserver based on movement updates.
-        public void OnObservedObjectsChangedWrapper(object source, UpdateObservedGeometryEventArgs e)
+    public void OnObservedObjectsChangedWrapper(object source, UpdateObservedGeometryEventArgs e)
         {
             if (e.ObservedGeometryDict == null)
             {
@@ -1242,6 +1242,16 @@ namespace CompasXR.Core
                         Debug.Log($"OnObservedGeometryUpdated JOEEEEE: {key} frame is unchanged and will not update.");
                         return; // skip update
                     }
+                }
+
+                // Update the observation state if the state observe is active. //TODO: TEST THIS JOSEPH.
+                if (MimicGoalsManager.GoalStatusObserver.Active)
+                {
+                    MimicGoalsManager.GoalStatusObserver.ApplySingleObservedGeometryOverwrite(observedGeometry, GoalSatisfiedMaterial, GoalUnsatisfiedMaterial, OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
+                }
+                if (InferenceGoalsManager.GoalStatusObserver.Active)
+                {
+                    InferenceGoalsManager.GoalStatusObserver.ApplySingleObservedGeometryOverwrite(observedGeometry, GoalSatisfiedMaterial, GoalUnsatisfiedMaterial, OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
                 }
 
                 // Update the existing object’s transform

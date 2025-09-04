@@ -936,6 +936,7 @@ namespace CompasXR.UI
                     GOALINFERRED = false;
                     INITIALINFERENCEREQUEST = true;
                     instantiateObjects.PostInferenceResetSelectedGoalComponent();
+                    instantiateObjects.InferenceGoalsManager.GoalStatusObserver.Active = false;
                 }
 
                 CurrentZone = ZoneMenuItemsTest[CurrentZoneIndex];
@@ -1604,7 +1605,6 @@ namespace CompasXR.UI
                     {
                         instantiateObjects.MimicGoalsParentObject.SetActive(false);
                     }
-                    instantiateObjects.InferenceGoalsManager.GoalStatusObserver.Active = true;
                     instantiateObjects.MimicGoalsManager.GoalStatusObserver.Active = false;
 
                     break;
@@ -1742,7 +1742,7 @@ namespace CompasXR.UI
                 }
             }
         }
-        public void SetRealtimeMimicPointBasicTEMPORARY()
+        public void SetRealtimeMimicPointBasicTEMPORARY() //TODO: JOEEEEE CONTINUE HERE....
         {
             /*
             * Method is used to set the mimic point based on the human and robot zone objects.

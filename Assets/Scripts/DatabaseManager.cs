@@ -532,7 +532,6 @@ namespace CompasXR.Core
             //     // OnUserInfoUpdate(userInfo, key);
             // }
         }
-
         public void OnObservedGeometryChanged(object sender, Firebase.Database.ChildChangedEventArgs args)
         {
             /*
@@ -567,7 +566,6 @@ namespace CompasXR.Core
                 OnObservedGeometryUpdate(observedGeometriesDict, null, key);
             }
         }
-
         public Dictionary<string, Frame> GetObservedGeometryFramesAsDict()
         {
             Dictionary<string, Frame> currentGeometryFramesAsDict = new Dictionary<string, Frame>();

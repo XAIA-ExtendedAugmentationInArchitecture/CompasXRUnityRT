@@ -93123,7 +93123,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: b48543fcc54a1e644ba134bae5685284, type: 2}
+  - {fileID: 2100000, guid: 0937c96798456f645bb75ec25ee4b229, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -120921,7 +120921,11 @@ MonoBehaviour:
   PostInferenceTrajectoryReviewSliderObject: {fileID: 0}
   PostInferenceTrajectoryReviewSlider: {fileID: 0}
   InferenceActiveRobotNullMessage: {fileID: 0}
+  PostInferenceActiveRobotNullMessage: {fileID: 0}
+  PostInferenceCurrentGoalNull: {fileID: 0}
   InferenceResultReceivedWhileInOtherModeOnScreenMessage: {fileID: 0}
+  PostInferenceMessageErrorOnScreenMessage: {fileID: 0}
+  PostInferencePlannerRepliedWithNullTrajectory: {fileID: 0}
   InferenceUnableToInferGoalMessage: {fileID: 0}
   InferenceTrajectoryNullWarningMessageObject: {fileID: 0}
   ReachabilityToggleObject: {fileID: 0}
