@@ -1369,7 +1369,6 @@ namespace CompasXR.UI
             Debug.Log($"PostInferenceRequestTargetButtonMethod: Topic : {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferencePostInferenceRequestTarget}  Msg: {JsonConvert.SerializeObject(postInferenceTargetRequestMessage.GetData())}");
             mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferencePostInferenceRequestTarget, postInferenceTargetRequestMessage.GetData());
         }
-
         public void PostInferenceExecuteTrajectoryButtonMethod()
         {
             if (trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
@@ -1419,7 +1418,6 @@ namespace CompasXR.UI
             SetInferenceUIPostInferenceSuccesState(true, true, true, false, false);
 
         }
-
         public void PostInferenceRejectTrajectoryButtonMethod()
         {
             if (trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)

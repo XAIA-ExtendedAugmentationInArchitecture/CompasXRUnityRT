@@ -274,7 +274,11 @@ namespace CompasXR.RoboticTerritories.Data
 
         // TODO: THIS METHOD IS THE KEY TO OPTITRACK UPDAETS.
         public void ApplySingleObservedGeometryOverwrite(
-            ObservedGeometry observed, Material satisfiedMaterial, Material unsatisfiedMaterial, float positionTolerance = 0.03f, float rotationToleranceDeg = 3f)
+            ObservedGeometry observed,
+            Material satisfiedMaterial,
+            Material unsatisfiedMaterial,
+            float positionTolerance = 0.03f,
+            float rotationToleranceDeg = 3f)
         {
             if (observed == null || ComponentStates == null || ComponentStates.Count == 0)
             {
@@ -282,33 +286,49 @@ namespace CompasXR.RoboticTerritories.Data
                 return;
             }
 
-            // 1) Find if this observed is currently assigned to any component
+            // Cache & validate observed refs early
+            var observedGO = observed.GeometryObject;
+            if (observedGO == null)
+            {
+                Debug.LogWarning($"ApplySingleObservedGeometryOverwrite: observed '{observed.Name}' has null GeometryObject (likely race: update before instantiation).");
+                return;
+            }
+            var obsTransform = observedGO.transform;
+
+            // 1) Locate any component currently satisfied by THIS observed object (by GO, not instance)
             GoalObjectComponent previouslyAssigned = null;
             foreach (var comp in ComponentStates.Values)
             {
-                if (ReferenceEquals(comp.SatisfyingObservedGeometry, observed))
+                var sat = comp?.SatisfyingObservedGeometry;
+                if (sat != null && sat.GeometryObject == observedGO)   // <-- key change
                 {
                     previouslyAssigned = comp;
                     break;
                 }
             }
 
-            // 2) Find the BEST matching component (within tolerance) for this observed (no mutation yet)
+            // 2) Find the BEST in-tolerance component
             GoalObjectComponent bestComp = null;
             float bestScore = float.MaxValue;
 
             foreach (var comp in ComponentStates.Values)
             {
-                float posErr = (observed.GeometryObject.transform.position - comp.ComponentGameObject.transform.position).magnitude;
+                if (comp == null) continue;
+
+                var compGO = comp.ComponentGameObject;
+                if (compGO == null)
+                {
+                    Debug.LogWarning($"ApplySingleObservedGeometryOverwrite: Component '{comp.Name}' has null GameObject — skipping.");
+                    continue;
+                }
+
+                float posErr = (obsTransform.position - compGO.transform.position).magnitude;
                 if (posErr > positionTolerance) continue;
 
-                float rotErr = Quaternion.Angle(
-                    observed.GeometryObject.transform.rotation,
-                    comp.ComponentGameObject.transform.rotation);
+                float rotErr = Quaternion.Angle(obsTransform.rotation, compGO.transform.rotation);
                 if (rotErr > rotationToleranceDeg) continue;
 
-                // simple combined score; tweak weights as needed
-                float score = posErr + 0.02f * rotErr; // 0.02 scales degrees roughly vs meters
+                float score = posErr + 0.02f * rotErr;
                 if (score < bestScore)
                 {
                     bestScore = score;
@@ -316,8 +336,7 @@ namespace CompasXR.RoboticTerritories.Data
                 }
             }
 
-            // 3) Overwrite states for only the involved components
-            //    Case A: no component in tolerance -> unsatisfy previous (if any)
+            // 3) If no match now, unsatisfy whoever used to have this observed
             if (bestComp == null)
             {
                 if (previouslyAssigned != null)
@@ -326,33 +345,48 @@ namespace CompasXR.RoboticTerritories.Data
                     previouslyAssigned.SatisfyingObservedGeometry = null;
 
                     var rPrev = previouslyAssigned.ComponentGameObject?.GetComponentInChildren<Renderer>();
-                    if (rPrev != null) rPrev.material = unsatisfiedMaterial;
+                    if (rPrev != null && unsatisfiedMaterial != null) rPrev.material = unsatisfiedMaterial;
 
                     Debug.Log($"GoalStateObserver: '{observed.Name}' no longer satisfies '{previouslyAssigned.Name}'.");
                 }
                 return;
             }
 
-            //    Case B: we have a best match -> assign it; unsatisfy previous if different
+            // 4) Enforce single-owner: unsatisfy any OTHER component currently linked to this observed GO
+            foreach (var comp in ComponentStates.Values)
+            {
+                if (comp == null || ReferenceEquals(comp, bestComp)) continue;
+                var sat = comp.SatisfyingObservedGeometry;
+                if (sat != null && sat.GeometryObject == observedGO)
+                {
+                    comp.IsSatisfied = false;
+                    comp.SatisfyingObservedGeometry = null;
+                    var r = comp.ComponentGameObject?.GetComponentInChildren<Renderer>();
+                    if (r != null && unsatisfiedMaterial != null) r.material = unsatisfiedMaterial;
+                    Debug.Log($"GoalStateObserver: '{observed.Name}' unlinked from '{comp.Name}' (reassigning).");
+                }
+            }
+
+            // 5) If it moved from a different component, unsatisfy that previous one (already covered above,
+            //    but keep this for clarity and logs if previouslyAssigned was a different comp)
             if (previouslyAssigned != null && !ReferenceEquals(previouslyAssigned, bestComp))
             {
                 previouslyAssigned.IsSatisfied = false;
                 previouslyAssigned.SatisfyingObservedGeometry = null;
 
                 var rPrev = previouslyAssigned.ComponentGameObject?.GetComponentInChildren<Renderer>();
-                if (rPrev != null) rPrev.material = unsatisfiedMaterial;
+                if (rPrev != null && unsatisfiedMaterial != null) rPrev.material = unsatisfiedMaterial;
 
                 Debug.Log($"GoalStateObserver: '{observed.Name}' moved from '{previouslyAssigned.Name}' to '{bestComp.Name}'.");
             }
 
-            // Assign observed to best component (overwrite semantics)
+            // 6) Assign to the best match
             bestComp.IsSatisfied = true;
-            bestComp.SatisfyingObservedGeometry = observed;
+            bestComp.SatisfyingObservedGeometry = observed;  // store the NEW instance is fine; we match by GO later
 
             var rBest = bestComp.ComponentGameObject?.GetComponentInChildren<Renderer>();
-            if (rBest != null) rBest.material = satisfiedMaterial;
+            if (rBest != null && satisfiedMaterial != null) rBest.material = satisfiedMaterial;
 
-            // Optional: if previouslyAssigned == bestComp and it stayed in tolerance, this just reaffirms the link.
             Debug.Log($"GoalStateObserver: '{observed.Name}' satisfies '{bestComp.Name}' (score {bestScore:F4}).");
         }
         public void DebugLogComponentsStates()

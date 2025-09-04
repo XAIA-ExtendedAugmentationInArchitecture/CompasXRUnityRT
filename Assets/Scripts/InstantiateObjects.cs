@@ -1244,6 +1244,26 @@ namespace CompasXR.Core
                     }
                 }
 
+                // 1) Ensure the incoming observedGeometry points to the existing GameObject
+                if (cur.GeometryObject == null)
+                {
+                    Debug.LogWarning($"OnObservedGeometryUpdated: cur.GeometryObject is null for key {key} — cannot apply satisfaction yet.");
+                    // You could reconstruct it here if you want:
+                    // cur.GeometryObject = cur.Box.CreateBoxObject();  // if that’s acceptable
+                    // or just bail:
+                    return;
+                }
+                observedGeometry.GeometryObject = cur.GeometryObject;
+
+
+                // Update the existing object’s transform
+                UpdateObservedGeometryLocation(cur, observedGeometry);
+
+                // Merge data-only fields into the existing instance
+                cur.Name = key;
+                cur.Box = observedGeometry.Box;
+                cur.Box.frame = observedGeometry.Box.frame;
+
                 // Update the observation state if the state observe is active. //TODO: TEST THIS JOSEPH.
                 if (MimicGoalsManager.GoalStatusObserver.Active)
                 {
@@ -1254,14 +1274,6 @@ namespace CompasXR.Core
                     InferenceGoalsManager.GoalStatusObserver.ApplySingleObservedGeometryOverwrite(observedGeometry, GoalSatisfiedMaterial, GoalUnsatisfiedMaterial, OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
                 }
 
-                // Update the existing object’s transform
-                UpdateObservedGeometryLocation(cur, observedGeometry);
-
-                // Merge data-only fields into the existing instance
-                cur.Name = key;
-                cur.Box = observedGeometry.Box;
-                cur.Box.frame = observedGeometry.Box.frame;
-
                 if (key == "AnchorCube")
                 {
                     //Updating the position of the goals parents based on the anchor cube position.
@@ -1270,17 +1282,17 @@ namespace CompasXR.Core
                     Debug.LogWarning($"OnObservedGeometryUpdated: AnchorCube position updated to {cur.Box.frame.point}");
                 }
         }
-            else
-            {
-                observedGeometry.Name = key;
-                currentGeometryDict[key] = observedGeometry;
+        else
+        {
+            observedGeometry.Name = key;
+            currentGeometryDict[key] = observedGeometry;
 
-                // First-time creation: make the GameObject now
-                var go = observedGeometry.Box.CreateBoxObject();
-                go.name = observedGeometry.Name;
-                go.transform.SetParent(TrackedGeometriesParentObject.transform, false);
-                observedGeometry.GeometryObject = go;
-            }
+            // First-time creation: make the GameObject now
+            var go = observedGeometry.Box.CreateBoxObject();
+            go.name = observedGeometry.Name;
+            go.transform.SetParent(TrackedGeometriesParentObject.transform, false);
+            observedGeometry.GeometryObject = go;
+        }
 
 
     }
