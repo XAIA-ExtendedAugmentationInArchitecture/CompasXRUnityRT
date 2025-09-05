@@ -272,7 +272,6 @@ namespace CompasXR.RoboticTerritories.Data
             ColorGoalComponentbySatisfaction(true, satisfiedMaterial, unsatisfiedMaterial);
         }
 
-        // TODO: THIS METHOD IS THE KEY TO OPTITRACK UPDAETS.
         public void ApplySingleObservedGeometryOverwrite(
             ObservedGeometry observed,
             Material satisfiedMaterial,

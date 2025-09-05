@@ -1180,6 +1180,8 @@ namespace CompasXR.UI
             GOALINFERRED = true;
 
             instantiateObjects.InferenceGoalsManager.GoalStatusObserver.Active = true;
+
+            instantiateObjects.InferenceGoalsManager.GoalStatusObserver.InitializeComponentStates(instantiateObjects.InferenceGoalsManager.CurrentGoal);
             instantiateObjects.InferenceGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, instantiateObjects.GoalSatisfiedMaterial, instantiateObjects.GoalUnsatisfiedMaterial, instantiateObjects.OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, instantiateObjects.OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
 
             instantiateObjects.PostInferenceSetFirstUnsatisfiedInferenceGoalAsCurrent(instantiateObjects.InferenceGoalsManager.GoalStatusObserver.ComponentStates, instantiateObjects.InferenceSelectedTargetMaterialUnbuilt, instantiateObjects.InferenceSelectedTargetMaterialBuilt);
