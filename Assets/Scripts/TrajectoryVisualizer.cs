@@ -114,7 +114,6 @@ namespace CompasXR.Robots
                 Debug.Log("SetActiveRobotFromDropdown: Robot Base Frame is null.");
             }
         }
-
         private void SetActiveRobot(GameObject BuiltInRobotsParent, string robotName, bool yRotation, GameObject ActiveRobotObjectsParent, ref GameObject ActiveRobot, ref GameObject ActiveTrajectoryParentObject, Material material, bool visibility)
         {
             /*

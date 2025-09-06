@@ -260,6 +260,10 @@ namespace CompasXR.UI
         public GameObject UserInitiatedMimicControlsSetPointsUIObjects;
         public GameObject MimicControlsParent;
 
+        //TODO : Draw Zone Lines Toggle
+        public GameObject DrawZonesAsLinesToggleObject;
+        public Toggle DrawZonesAsLinesToggle;
+
         public GameObject MimicSelectGoalsUI;
         public GameObject MimicNextGoalButtonObject;
         public GameObject MimicPreviousGoalsButtonObject;
@@ -399,6 +403,10 @@ namespace CompasXR.UI
             NoButton.GetComponent<Button>().onClick.AddListener(DestroySystemProposedMimicPointsButtonMethod);
             //TODO: Mimic remap testing : I think this can go away, but keep for now. ////////////////////////////////////////////////////////////////////////////////////////
 
+            DrawZonesAsLinesToggleObject = RoboticTerritoriesUpdatedCanvas.FindObject("DrawZoneLInes");
+            DrawZonesAsLinesToggle = DrawZonesAsLinesToggleObject.GetComponentInChildren<Toggle>();
+            DrawZonesAsLinesToggle.onValueChanged.AddListener(DrawLinesToggleMethod);
+
             //Set robotic items on start
             SetRoboticMenuItemsOnStart();
 
@@ -439,6 +447,14 @@ namespace CompasXR.UI
             "PreviousModeButton", PreviousMimicModeButtonMethod);
         }
 
+        public void DrawLinesToggleMethod(bool toggle)
+        {
+            /*
+            * Method is used to toggle the drawing of zone lines.
+            */
+            Debug.Log($"DrawLinesToggleMethod: Toggling Draw Zone Lines to {toggle}");
+            instantiateObjects.SetZoneOnlyCurrentZoneVisible(databaseManager.ProjectZones.CurrentZone);
+        }
         //TODO: Mimic UI Mode and Goal Selecton Controls
         public void NextMimicModeButtonMethod()
         {
@@ -458,7 +474,7 @@ namespace CompasXR.UI
                     instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();
 
                     //TODO: This was not 100% Correct. It kills the active Robot when it shouldn't.
-                    if(trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+                    if (trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
                     {
                         // trajectoryVisualizer.DestroyActiveTrajectoryChildren();
                         trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
@@ -1761,7 +1777,7 @@ namespace CompasXR.UI
                     Vector3 cameraPositionObjectPosition = arCamera.transform.position;
                     Quaternion cameraRotationObjectRotation = arCamera.transform.rotation;
 
-                    if (ObjectInstantiaion.IsPositionWithinObject(humanZoneObject, cameraPositionObjectPosition))
+                    if (ObjectInstantiaion.IsPositionWithinBox(humanZoneObject, cameraPositionObjectPosition))
                     {
                         if (trajectoryVisualizer.ActiveRobot == null)
                         {
@@ -1918,7 +1934,7 @@ namespace CompasXR.UI
                     Debug.Log("SetMimicPoint: Camera Position Object: " + cameraPositionObject + "Rotation: " + arCamera.transform.rotation);
 
 
-                    if (ObjectInstantiaion.IsPositionWithinObject(humanZoneObject, cameraPositionObject)) //TODO: Write method to create mimic points etc.
+                    if (ObjectInstantiaion.IsPositionWithinBox(humanZoneObject, cameraPositionObject)) //TODO: Write method to create mimic points etc.
                     {
                         Debug.Log("SetMimicPoint: Camera Position is within the Human Zone Object.");
                         //Set Lines active and Points active

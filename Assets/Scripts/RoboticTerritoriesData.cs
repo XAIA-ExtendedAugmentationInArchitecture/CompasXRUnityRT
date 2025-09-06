@@ -57,7 +57,7 @@ namespace CompasXR.RoboticTerritories.Data
         public GameObject ZoneObject { get; set; }
         public Material ZoneActiveMaterial { get; set; }
         public Material ZoneInactiveMaterial { get; set; }
-        public LineRenderer ZoneLineRenderer { get; set; }
+        public GameObject ZoneLineRenderer { get; set; }
 
         public static Zone FromData(string Name, Dictionary<string, object> jsonDataDict)
         {

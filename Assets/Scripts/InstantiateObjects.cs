@@ -479,40 +479,40 @@ namespace CompasXR.Core
             CreateLineBasedOnZone(zone);
             zoneObject.transform.SetParent(ParentObject.transform, false);
         }
-
         public void CreateLineBasedOnZone(Zone ZoneObject)
         {
             switch (ZoneObject.Name)
             {
                 case "human_zone":
-                    CreateZoneLine(ZoneObject, MimicHumanZoneLine.GetComponent<LineRenderer>());
+                    CreateZoneLine(ZoneObject, MimicHumanZoneLine);
                     break;
                 case "robot_zone":
-                    CreateZoneLine(ZoneObject, MimicRobotZoneLine.GetComponent<LineRenderer>());
+                    CreateZoneLine(ZoneObject, MimicRobotZoneLine);
                     break;
                 case "collaboration_zone":
-                    CreateZoneLine(ZoneObject, InferenceCollaborationZoneLine.GetComponent<LineRenderer>());
+                    CreateZoneLine(ZoneObject, InferenceCollaborationZoneLine);
                     break;
                 case "pick_zone":
-                    CreateZoneLine(ZoneObject, InferencePickZoneLine.GetComponent<LineRenderer>());
+                    CreateZoneLine(ZoneObject, InferencePickZoneLine);
                     break;
                 case "boundary_zone":
-                    CreateZoneLine(ZoneObject, BoundaryZoneLine.GetComponent<LineRenderer>());
+                    CreateZoneLine(ZoneObject, BoundaryZoneLine);
                     break;
                 default:
                     Debug.LogWarning("CreateTextObjectBasedOnZone: Invalid Zone Name");
                     break;
             }
         }
-        public void CreateZoneLine(Zone zoneObject, LineRenderer zoneLine)
+        public void CreateZoneLine(Zone zoneObject, GameObject zoneLineObject)
         {
             if (zoneObject.ZoneObject == null)
             {
                 Debug.LogWarning("CreateZoneLine: Zone Object is null.");
                 return;
             }
-            LineRenderer Line = DrawBottomFace(zoneObject.ZoneObject, zoneLine);
-            zoneObject.ZoneLineRenderer = Line;
+            LineRenderer zoneLineRenderer = zoneLineObject.GetComponent<LineRenderer>();
+            LineRenderer Line = DrawBottomFace(zoneObject.ZoneObject, zoneLineRenderer);
+            zoneObject.ZoneLineRenderer = zoneLineObject;
         }
         public LineRenderer DrawBottomFace(GameObject cube, LineRenderer lineRenderer)
         {
@@ -1149,14 +1149,14 @@ namespace CompasXR.Core
                     Debug.Log("SetZoneOnlyCurrentZoneVisible: No Zones to set visible");
                     break;
                 case ProjectZones.CurrentZoneMode.Inference:
-                    SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, false);
-                    SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, true);
-                    SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, false);
+                    SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, false, UIFunctionalities.DrawZonesAsLinesToggle.isOn);
+                    SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, true, UIFunctionalities.DrawZonesAsLinesToggle.isOn);
+                    SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, false,  UIFunctionalities.DrawZonesAsLinesToggle.isOn);
                     break;
                 case ProjectZones.CurrentZoneMode.Mimic:
-                    SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, false);
-                    SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, false);
-                    SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, true);
+                    SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, false, UIFunctionalities.DrawZonesAsLinesToggle.isOn);
+                    SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, false, UIFunctionalities.DrawZonesAsLinesToggle.isOn);
+                    SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, true, UIFunctionalities.DrawZonesAsLinesToggle.isOn);
                     break;
                 default:
                     Debug.LogWarning("SetZoneOnlyCurrentZoneVisible: Invalid Current Zone Mode");
@@ -1166,11 +1166,11 @@ namespace CompasXR.Core
         public void SetAllZonesVisible()
         {
             //Sets all zones visible.
-            SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, true);
-            SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, true);
-            SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, true);
+            SetZoneVisiblity(databaseManager.ProjectZones.BoundaryZone, true, UIFunctionalities.DrawZonesAsLinesToggle.isOn);
+            SetZoneVisiblity(databaseManager.ProjectZones.InferenceZones, true, UIFunctionalities.DrawZonesAsLinesToggle.isOn);
+            SetZoneVisiblity(databaseManager.ProjectZones.MimicZones, true, UIFunctionalities.DrawZonesAsLinesToggle.isOn);
         }
-        public void SetZoneVisiblity(Dictionary<string, Zone> ZoneDict, bool Visiblity)
+        public void SetZoneVisiblity(Dictionary<string, Zone> ZoneDict, bool Visiblity, bool LineRendererOnly)
         {
             /*
             * Method is used to set the visibility of the zones in the AR space
@@ -1182,7 +1182,16 @@ namespace CompasXR.Core
                 {
                     if (entry.Value != null)
                     {
-                        entry.Value.ZoneObject.SetActive(Visiblity);
+                        if (LineRendererOnly)
+                        {
+                            entry.Value.ZoneLineRenderer.SetActive(Visiblity);
+                            entry.Value.ZoneObject.SetActive(false);
+                        }
+                        if (!LineRendererOnly)
+                        {
+                            entry.Value.ZoneLineRenderer.SetActive(false);
+                            entry.Value.ZoneObject.SetActive(Visiblity);
+                        }
                     }
                 }
             }
@@ -3093,6 +3102,12 @@ namespace CompasXR.Core
                 Debug.LogError("IsPositionWithinObject: Target object is null.");
                 return false;
             }
+            if (!targetObject.activeInHierarchy)
+            {
+                Debug.LogWarning($"IsPositionWithinObject: {targetObject.name} is inactive in hierarchy; collider checks may be invalid.");
+                // You can choose to return false here explicitly:
+                // return false;
+            }
 
             Collider collider = targetObject.GetComponent<Collider>();
             if (collider != null)
@@ -3105,6 +3120,34 @@ namespace CompasXR.Core
                 Debug.LogError($"The target object {targetObject.name} does not have a collider.");
                 return false;
             }
+        }
+
+        public static bool IsPositionWithinBox(GameObject targetObject, Vector3 worldPoint)
+        {
+            if (targetObject == null)
+            {
+                Debug.LogError("IsPositionWithinBox: Target object is null.");
+                return false;
+            }
+
+            BoxCollider box = targetObject.GetComponent<BoxCollider>();
+            if (box == null)
+            {
+                Debug.LogError($"IsPositionWithinBox: {targetObject.name} has no BoxCollider.");
+                return false;
+            }
+
+            // Convert world point to local space of the collider
+            Vector3 localPoint = box.transform.InverseTransformPoint(worldPoint);
+
+            // Adjust for the collider's center
+            localPoint -= box.center;
+
+            // Check if inside half-extents
+            Vector3 halfSize = box.size * 0.5f;
+            return Mathf.Abs(localPoint.x) <= halfSize.x &&
+                Mathf.Abs(localPoint.y) <= halfSize.y &&
+                Mathf.Abs(localPoint.z) <= halfSize.z;
         }
         public static bool AllGameObjectsInListsPositionsAreWithinAnotherObject(List<GameObject> gameObjects, GameObject targetObject)
         {
