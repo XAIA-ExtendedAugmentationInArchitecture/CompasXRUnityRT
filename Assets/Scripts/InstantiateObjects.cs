@@ -91,6 +91,13 @@ namespace CompasXR.Core
         public Material PickZoneMaterial;
         public Material BoundaryMaterial;
 
+        //Zone Lines
+        public GameObject MimicHumanZoneLine;
+        public GameObject MimicRobotZoneLine;
+        public GameObject InferenceCollaborationZoneLine;
+        public GameObject InferencePickZoneLine;
+        public GameObject BoundaryZoneLine;
+        
         //TODO: Robotic Territories Materials //////////////////////////////////////////
         public Material ObservedGeometryMaterial;
         public Material AnchorCubeMaterial;
@@ -168,7 +175,6 @@ namespace CompasXR.Core
         public void Awake()
         {
             OnAwakeInitilization();
-
         }
         public void Update()
         {
@@ -470,12 +476,93 @@ namespace CompasXR.Core
             SetIndividualZoneMaterial(zone);
             zone.ZoneObject = zoneObject;
             CreateTextObjectBasedOnZone(zone);
+            CreateLineBasedOnZone(zone);
             zoneObject.transform.SetParent(ParentObject.transform, false);
+        }
+
+        public void CreateLineBasedOnZone(Zone ZoneObject)
+        {
+            switch (ZoneObject.Name)
+            {
+                case "human_zone":
+                    CreateZoneLine(ZoneObject, MimicHumanZoneLine.GetComponent<LineRenderer>());
+                    break;
+                case "robot_zone":
+                    CreateZoneLine(ZoneObject, MimicRobotZoneLine.GetComponent<LineRenderer>());
+                    break;
+                case "collaboration_zone":
+                    CreateZoneLine(ZoneObject, InferenceCollaborationZoneLine.GetComponent<LineRenderer>());
+                    break;
+                case "pick_zone":
+                    CreateZoneLine(ZoneObject, InferencePickZoneLine.GetComponent<LineRenderer>());
+                    break;
+                case "boundary_zone":
+                    CreateZoneLine(ZoneObject, BoundaryZoneLine.GetComponent<LineRenderer>());
+                    break;
+                default:
+                    Debug.LogWarning("CreateTextObjectBasedOnZone: Invalid Zone Name");
+                    break;
+            }
+        }
+        public void CreateZoneLine(Zone zoneObject, LineRenderer zoneLine)
+        {
+            if (zoneObject.ZoneObject == null)
+            {
+                Debug.LogWarning("CreateZoneLine: Zone Object is null.");
+                return;
+            }
+            LineRenderer Line = DrawBottomFace(zoneObject.ZoneObject, zoneLine);
+            zoneObject.ZoneLineRenderer = Line;
+        }
+        public LineRenderer DrawBottomFace(GameObject cube, LineRenderer lineRenderer)
+        {
+            if (cube == null || lineRenderer == null)
+            {
+                Debug.LogWarning("DrawBottomFace: cube or lineRenderer is null.");
+                return null;
+            }
+
+            var meshFilter = cube.GetComponent<MeshFilter>();
+            if (meshFilter == null || meshFilter.sharedMesh == null)
+            {
+                Debug.LogWarning("DrawBottomFace: GameObject has no MeshFilter or Mesh.");
+                return null;
+            }
+
+            var mesh = meshFilter.sharedMesh;
+            var bounds = mesh.bounds;
+
+            // Use bounds to get actual extents
+            Vector3 min = bounds.min;
+            Vector3 max = bounds.max;
+
+            // Bottom face corners (Y = min.y)
+            Vector3[] localBottomCorners = new Vector3[]
+            {
+                new Vector3(min.x, min.y, min.z),  // back-left
+                new Vector3(max.x, min.y, min.z),  // back-right
+                new Vector3(max.x, min.y, max.z),  // front-right
+                new Vector3(min.x, min.y, max.z),  // front-left
+                new Vector3(min.x, min.y, min.z),  // back-left again to close
+            };
+
+            // Convert local-space corners to world-space
+            Transform t = cube.transform;
+            Vector3[] worldCorners = new Vector3[localBottomCorners.Length];
+            for (int i = 0; i < localBottomCorners.Length; i++)
+            {
+                worldCorners[i] = t.TransformPoint(localBottomCorners[i]);
+            }
+
+            // Apply to line renderer
+            lineRenderer.positionCount = worldCorners.Length;
+            lineRenderer.SetPositions(worldCorners);
+            return lineRenderer;
         }
         public void SetIndividualZoneMaterial(Zone zone)
         {
             switch (zone.Name)
-            {   
+            {
                 // case "tele_mimic_zone":
                 //     zone.ZoneActiveMaterial = RobotZoneMaterial;
                 //     zone.ZoneInactiveMaterial = BoundaryMaterial;
@@ -493,8 +580,8 @@ namespace CompasXR.Core
                     zone.ZoneInactiveMaterial = BoundaryMaterial;
                     break;
                 case "pick_zone":
-                        zone.ZoneActiveMaterial = PickZoneMaterial;
-                        zone.ZoneInactiveMaterial = BoundaryMaterial;
+                    zone.ZoneActiveMaterial = PickZoneMaterial;
+                    zone.ZoneInactiveMaterial = BoundaryMaterial;
                     break;
                 case "boundary_zone":
                     zone.ZoneActiveMaterial = BoundaryMaterial;
@@ -503,7 +590,7 @@ namespace CompasXR.Core
                 default:
                     Debug.LogWarning($"SetIndividualZoneMaterial: Couldn't Set material for '{zone.Name}'");
                     break;
-            }        
+            }
         }
         protected virtual void OnInitialZonesPlaced()
         {
@@ -804,7 +891,16 @@ namespace CompasXR.Core
                 mappedRotation = mirrorRotation;
             }
 
+            //TODOO: THIS WORKSSSS.....
             GameObject robotPoint = CreateSphereAtPositionAndRotation(mappedRobotPosition, rotation, radius, robotColor, robotPointName);//, $"{robotPoints.Count}_MimicPoint");
+            Collider[] hits = GetAllCollidersAtPoint(mappedRobotPosition);
+
+            foreach (Collider c in hits)
+            {
+                Debug.Log($"Point is inside {c.gameObject.name}");
+            }
+            //TODOO: THIS WORKSSSS.....
+            
             robotPoint.transform.rotation = mappedRotation;
             robotPoint.transform.SetParent(robotParent.transform, true);
             if(addToPointsList)
@@ -815,6 +911,11 @@ namespace CompasXR.Core
             {
                 Debug.LogWarning("CreateSpheresForMimic: Robot Point is not added to the list.");
             }
+        }
+
+        Collider[] GetAllCollidersAtPoint(Vector3 point, float epsilon = 0.0001f)
+        {
+            return Physics.OverlapSphere(point, epsilon);
         }
         public Vector3 FindClosestReachablePoint(GameObject reachabilitySphere, Vector3 desiredPosition)
         {
@@ -1798,6 +1899,13 @@ namespace CompasXR.Core
             //Find AR and system management items
             cameraPositionObject = GameObject.Find("XR Origin").FindObject("Camera Offset").FindObject("Main Camera");
             arCamera = GameObject.Find("XR Origin").FindObject("Camera Offset").FindObject("Main Camera").GetComponent<Camera>();
+
+            //Find Zone Lines
+            MimicHumanZoneLine = ZonesARPrefabObjects.FindObject("ZoneLines").FindObject("HumanZoneLine");
+            MimicRobotZoneLine = ZonesARPrefabObjects.FindObject("ZoneLines").FindObject("RobotZoneLine");
+            InferenceCollaborationZoneLine = ZonesARPrefabObjects.FindObject("ZoneLines").FindObject("InferenceCollaborationZoneLine");
+            InferencePickZoneLine = ZonesARPrefabObjects.FindObject("ZoneLines").FindObject("InferencePickZoneLine");
+            BoundaryZoneLine = ZonesARPrefabObjects.FindObject("ZoneLines").FindObject("BoundaryZoneLine");
 
 
             //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////

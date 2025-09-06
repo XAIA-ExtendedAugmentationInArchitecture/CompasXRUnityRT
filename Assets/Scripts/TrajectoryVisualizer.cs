@@ -114,6 +114,7 @@ namespace CompasXR.Robots
                 Debug.Log("SetActiveRobotFromDropdown: Robot Base Frame is null.");
             }
         }
+
         private void SetActiveRobot(GameObject BuiltInRobotsParent, string robotName, bool yRotation, GameObject ActiveRobotObjectsParent, ref GameObject ActiveRobot, ref GameObject ActiveTrajectoryParentObject, Material material, bool visibility)
         {
             /*
@@ -203,7 +204,6 @@ namespace CompasXR.Robots
                 Debug.Log("SetReachabilityActive: Robot object is null.");
             }
         }
-
         //TODO: Reachibility Sphere needs to be thought about a bit more in terms of positioning.
         //TODO: ZONES IN GENERAL NEED SOME MORE THOUGHT.... MAYBE THERE SHOULD BE MORE REFERENCE TO WHAT THE CARTESIAN SPACE IS LIKE.
         public void AddReachabilitlyToHumanZone(GameObject robotObject, GameObject humanZoneObject, GameObject robotZoneObject, bool visibility)
@@ -318,7 +318,6 @@ namespace CompasXR.Robots
                 Debug.LogError("InstantateRobotFromInferenceResultMessage: Trajectory is empty, robotToConfigure is null, or joint_names is empty.");
             }
         }
-
         public void InstantateRobotFromInferenceResultMessage(InferenceResultMessage inferenceResultMessage, GameObject robotToConfigure, Dictionary<string, string> URDFLinks, GameObject parentObject, bool visibility)
         {
             /*
@@ -342,7 +341,6 @@ namespace CompasXR.Robots
                 Debug.LogError("InstantateRobotFromInferenceResultMessage: Trajectory is empty, robotToConfigure is null, or joint_names is empty.");
             }
         }
-
         public void InstantateRobotFromMimicMessage(MimicTrajectoryResultMessage mimicResult, GameObject robotToConfigure, Dictionary<string, string> URDFLinks, GameObject parentObject, bool visibility)
         {
             /*
@@ -810,6 +808,7 @@ namespace CompasXR.Robots
             if (uiFunctionalities.SetActiveRobotToggleObject.GetComponent<Toggle>().isOn)
             {
                 URDFManagement.SetRobotLocalPositionandRotationFromFrame(e.RobotBaseFrame, ActiveRobot);
+                
                 if (ActiveRobot != null)
                 {
                     //TODO: ADDED FOR TESTING...
