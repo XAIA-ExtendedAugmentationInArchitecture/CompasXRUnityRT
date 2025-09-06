@@ -303,6 +303,7 @@ namespace CompasXR.Robots
             //Set the inference containing exacutable trajectory to false by default
             serviceManager.InferenceContainsExacutableTrajectory = false;
             serviceManager.InferenceSuggestedTargetName = "None";
+            UIFunctionalities.OnScreenWaitForInferenceMessage.SetActive(false);
 
             if (databaseManager.ProjectZones.CurrentZone != ProjectZones.CurrentZoneMode.Inference)
             {

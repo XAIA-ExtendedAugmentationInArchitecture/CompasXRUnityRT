@@ -88,6 +88,7 @@ namespace CompasXR.UI
         public GameObject TransactionLockActiveWarningMessageObject;
         public GameObject ActiveRobotCouldNotBeFoundWarningMessage;
         public GameObject ActiveRobotUpdatedFromPlannerMessageObject;
+        public GameObject OnScreenWaitForInferenceMessage;
 
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
         public GameObject MimicRemapPointsToRobotReachabilityMessage;
@@ -387,6 +388,11 @@ namespace CompasXR.UI
             OnScreenErrorMessagePrefab = MessagesParent.FindObject("Prefabs").FindObject("OnScreenErrorMessagePrefab");
             OnScreenInfoMessagePrefab = MessagesParent.FindObject("Prefabs").FindObject("OnScreenInfoMessagePrefab");
             ActiveRobotUpdatedFromPlannerMessageObject = MessagesParent.FindObject("Prefabs").FindObject("ActiveRobotUpdatedFromPlannerMessage");
+            OnScreenWaitForInferenceMessage = MessagesParent.FindObject("Prefabs").FindObject("OnScreenWaitForInference");
+            if (OnScreenWaitForInferenceMessage == null)
+            {
+                Debug.LogWarning("UIFunctionalities: OnScreenWaitForInferenceMessage is null. Cannot show wait for inference message.");
+            }
 
             //TODO: Working updates
             RoboticTerritoriesUpdatedCanvas = CanvasObject.FindObject("RoboticTerritoriesUpdated");
@@ -1050,6 +1056,8 @@ namespace CompasXR.UI
                 );
                 mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceRequestTopic, inferenceRequestMessage.GetData());
                 Debug.Log($"RequestInferenceButtonMethod: Published Inference Request Message to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceRequestTopic} with data: {inferenceRequestMessage.GetData()}");
+                OnScreenWaitForInferenceMessage.SetActive(true);
+                SetInferenceRequestUIControlsVisibilityandInteractibility(true, false, false, false, false);
                 if (INITIALINFERENCEREQUEST)
                 {
                     INITIALINFERENCEREQUEST = false;
