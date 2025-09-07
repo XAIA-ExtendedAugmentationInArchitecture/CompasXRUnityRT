@@ -1823,13 +1823,11 @@ namespace CompasXR.UI
                         // float DRAWINGTHRESHOLD = 0.035f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
                         // float DRAWINGTHRESHOLD = 0.038f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
                         float DRAWINGTHRESHOLD = 0.02f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
-                        float ROTTHRESHOLD = 1.0f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
+                        float ROTTHRESHOLD = 3.0f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
                         // if (instantiateObjects.RealtimeMimicHumanPoints.Count >= 1 && instantiateObjects.RealtimeMimicRobotPoints.Count >= 1)
                         if(REALTIMEMIMICINDEXCOUNTER >= 1)
                         {
                             Vector3 lastRealtimeMimicPointPosition = instantiateObjects.RealtimeMimicHumanPoints[instantiateObjects.RealtimeMimicHumanPoints.Count - 1].transform.position;
-                            //TODO: This needs to be checked...
-                            // Quaternion lastRealtimeMimicPointRotation = instantiateObjects.RealtimeMimicHumanPoints[instantiateObjects.RealtimeMimicHumanPoints.Count - 1].transform.rotation;
                             if (lastRealtimeMimicPointPosition == null)
                             {
                                 Debug.LogError("CreateRealtimeMimicPointsBasicTEMPORARY: Last Realtime Mimic Point is null.");
@@ -1842,11 +1840,16 @@ namespace CompasXR.UI
 
                             //TODO: I think this needs to be rot and position.
                             Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Last Realtime Mimic Point Position: {lastRealtimeMimicPointPosition} Camera Position: {cameraPositionObjectPosition} Distance: {Vector3.Distance(cameraPositionObjectPosition, lastRealtimeMimicPointPosition)} Bool Value: {ObjectInstantiaion.Vector3sAreCloserThenThreshold(cameraPositionObjectPosition, lastRealtimeMimicPointPosition, DRAWINGTHRESHOLD)}");
-                            if (ObjectInstantiaion.Vector3sAreCloserThenThreshold(cameraPositionObjectPosition, lastRealtimeMimicPointPosition, DRAWINGTHRESHOLD))
+                            if (ObjectInstantiaion.RotationsAreCloserThanThreshold(cameraRotationObjectRotation, instantiateObjects.LASTSENTCAMERAROTATIONFORREALTIMEMIMIC, ROTTHRESHOLD) && ObjectInstantiaion.Vector3sAreCloserThenThreshold(cameraPositionObjectPosition, lastRealtimeMimicPointPosition, DRAWINGTHRESHOLD))
                             {
-                                Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Points are closer than threshold, not creating new points.");
+                                Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Rotations and Positions are closer than threshold, not creating new points.");
                                 return;
                             }
+                            // if (ObjectInstantiaion.Vector3sAreCloserThenThreshold(cameraPositionObjectPosition, lastRealtimeMimicPointPosition, DRAWINGTHRESHOLD))
+                            // {
+                            //     Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Points are closer than threshold, not creating new points.");
+                            //     return;
+                            // }
                             else
                             {
                                 Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Camera Position is within the Human Zone Object and Points are not closer than threshold point will be set for Index {REALTIMEMIMICINDEXCOUNTER}.");
@@ -1926,7 +1929,6 @@ namespace CompasXR.UI
                 Debug.LogError("CreateRealtimeMimicPointsBasicTEMPORARY: 'human_zone' key not found in MimicZones.");
             }
         }
-
         public void UpdateLastCompletedIndexForRealtimeMimicPoint(int lastCompletedIndex)
         {
             if (lastCompletedIndex >= 0)
@@ -1971,7 +1973,6 @@ namespace CompasXR.UI
                 Debug.LogWarning("UpdateLastCompletedIndexForRealtimeMimicPoint: Last Completed Index is less than 0.");
             }
         }
-
         public void SetUserInitiatedMimicPointButtonMethod()
         {
             /*

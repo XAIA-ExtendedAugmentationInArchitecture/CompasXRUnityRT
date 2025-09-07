@@ -171,6 +171,8 @@ namespace CompasXR.Core
 
         public float REALTIMEMIMICDRAWRINGTHRESHOLD;
 
+        public Quaternion LASTSENTCAMERAROTATIONFORREALTIMEMIMIC = Quaternion.identity;
+
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////// Monobehaviour Methods //////////////////////////////////////////
@@ -1547,6 +1549,9 @@ namespace CompasXR.Core
     GameObject realtimeMimicHumanLine, GameObject realtimeMimicRobotLine, int pointIndex, bool MimicMirrorToggle = false)
     {
         Vector3 position = cameraPositionObject.transform.position;
+        Quaternion cameraExactRotation = cameraPositionObject.transform.rotation;
+        LASTSENTCAMERAROTATIONFORREALTIMEMIMIC = cameraExactRotation; //TODO: TESTING
+
         Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: CAMERA Position FROM REALTIME MIMIC: {position}");
         Quaternion rotation = AddAdditionalRotationForEndEffector(cameraPositionObject); //TODO: Check this
         Color humanColor = new Color(1.0f, 1.0f, 0.0f, 1.0f);
@@ -1558,29 +1563,11 @@ namespace CompasXR.Core
         rotation, $"{pointIndex}_MimicPoint", $"{pointIndex}_MimicPoint", true, //TODO: ADDED THESE
         MimicMirrorToggle);
 
-
-
-            // CreateSpheresForMimic(humanZone, robotZone, ref humanPoints, ref robotPoints, 
-            // humanParent, robotParent, position, rotation, 
-            // radius, humanColor, robotColor, $"{humanPoints.Count}_MimicPoint", $"{robotPoints.Count}_MimicPoint", true, Mirror);
-
-            // // //TODO: Quick test for the closest reachable point:
-            // // CreateSpheresForMimic(humanZone, robotZone, ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints, 
-            // // MimicSystemProposedLineHuman, MimicSystemProposedLineRobot, MimicHumanSystemProposedPointsParent, MimicRobotSystemProposedPointsParent, 
-            // // closestReachablePoint, rotation, radius, Color.red, Color.grey, $"{humanPoints.Count}_MimicPointProposal", $"{robotPoints.Count}_MimicPointProposal", false, Mirror);
-            // //TODO: TESTING...
-            // CreateSystemProposalPoints(humanZone, robotZone, trajectoryVisualizer.humanZoneMimicReachibility, ref humanPoints, 
-            // ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints,
-            // MimicSystemProposedLineHuman, MimicHumanSystemProposedPointsParent, MimicSystemProposedLineRobot, 
-            // MimicRobotSystemProposedPointsParent, Mirror);
-
-            Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Point is being set within the Robot Reachability.");
+        Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Point is being set within the Robot Reachability.");
 
         if (realtimeMimicHumanPoints.Count > 1 && realtimeMimicRobotPoints.Count > 1)
         {
             Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Drawing Mimic Points Line");
-            // DrawLineFromGameObjectList(realtimeMimicHumanPoints, realtimeMimicHumanLine, humanColor, 0.01f);
-            // DrawLineFromGameObjectList(realtimeMimicRobotPoints, realtimeMimicRobotLine, robotColor, 0.01f);
             DrawLineFromIndextoEndofGameObjectList(UIFunctionalities.REALTIMEMIMICLASTCOMPLETEDINDEX, realtimeMimicHumanPoints, realtimeMimicHumanLine, humanColor, 0.01f);
             DrawLineFromIndextoEndofGameObjectList(UIFunctionalities.REALTIMEMIMICLASTCOMPLETEDINDEX, realtimeMimicRobotPoints, realtimeMimicRobotLine, robotColor, 0.01f);
         }
@@ -3391,7 +3378,6 @@ namespace CompasXR.Core
             return IsWithinPositionTolerance(gameObject1, gameObject2, posTolerance) &&
                 IsWithinRotationTolerance(gameObject1, gameObject2, rotToleranceDegrees);
         }
-
         public static bool RotationsAreCloserThanThreshold(Quaternion a, Quaternion b, float degreesThreshold)
         {
             return Quaternion.Angle(a, b) < degreesThreshold;
