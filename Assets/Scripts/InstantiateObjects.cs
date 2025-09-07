@@ -169,6 +169,8 @@ namespace CompasXR.Core
         public Material PreviousGoalMaterial;
         public string CurrentSelectedGoalName = "None";
 
+        public float REALTIMEMIMICDRAWRINGTHRESHOLD;
+
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
         /////////////////////////////// Monobehaviour Methods //////////////////////////////////////////
@@ -598,6 +600,8 @@ namespace CompasXR.Core
             * Method is used to raise the event when the initial objects are placed
             */
             InitialZonesPlaced(this, EventArgs.Empty);
+
+            REALTIMEMIMICDRAWRINGTHRESHOLD = SetupRealtimeMimicDrawLineThreshold();
         }
         protected virtual void OnInitialTrackedGeometryPlaced()
         {
@@ -1248,46 +1252,45 @@ namespace CompasXR.Core
                 Quaternion.identity, true, true, gameObject);
         }  
         public static Vector3 MirrorPositionAcrossBox(GameObject box, Vector3 worldPoint)
-    {
-        var col = box.GetComponent<BoxCollider>();
-        if (col == null) return worldPoint;
-
-        // 1) Bring into the *local* coordinates of the box
-        Vector3 local = box.transform.InverseTransformPoint(worldPoint);
-
-        // 2) Reflect across the box’s center plane (X axis in local space)
-        //    (if your “long” axis is different, use Y or Z instead)
-        local.x = 2f * col.center.x - local.x;
-
-        // 3) Send back out to world space
-        return box.transform.TransformPoint(local);
-    }
-
-    public static Quaternion MirrorQuaternion(Quaternion pointRotation, Vector3 normal)
         {
+            var col = box.GetComponent<BoxCollider>();
+            if (col == null) return worldPoint;
 
-            // Create a pure quaternion representing the plane normal
-            Quaternion n = new Quaternion(normal.x, normal.y, normal.z, 0);
+            // 1) Bring into the *local* coordinates of the box
+            Vector3 local = box.transform.InverseTransformPoint(worldPoint);
 
-            Quaternion R = Quaternion.AngleAxis(180, normal);
+            // 2) Reflect across the box’s center plane (X axis in local space)
+            //    (if your “long” axis is different, use Y or Z instead)
+            local.x = 2f * col.center.x - local.x;
 
-            // Compute mirrored quaternion
-            Quaternion mirrored = R * pointRotation * n;
-            return mirrored;
-
+            // 3) Send back out to world space
+            return box.transform.TransformPoint(local);
         }
-    public static Quaternion MirrorRotationAcrossCenter(Transform centerTransform, Quaternion pointARotation)
-    {
-        // Step 1: Compute relative rotation of pointA to center
-        Quaternion relativeRotationA = Quaternion.Inverse(centerTransform.rotation) * pointARotation;
+        public static Quaternion MirrorQuaternion(Quaternion pointRotation, Vector3 normal)
+            {
 
-        // Step 2: Invert the relative rotation and apply it back to the center
-        Quaternion mirroredRotationB = centerTransform.rotation * Quaternion.Inverse(relativeRotationA);
+                // Create a pure quaternion representing the plane normal
+                Quaternion n = new Quaternion(normal.x, normal.y, normal.z, 0);
 
-        Debug.Log($"MirrorRotationAcrossCenter: Original Rotation {pointARotation.eulerAngles} -> Mirrored Rotation {mirroredRotationB.eulerAngles}");
+                Quaternion R = Quaternion.AngleAxis(180, normal);
 
-        return mirroredRotationB;
-    }
+                // Compute mirrored quaternion
+                Quaternion mirrored = R * pointRotation * n;
+                return mirrored;
+
+            }
+        public static Quaternion MirrorRotationAcrossCenter(Transform centerTransform, Quaternion pointARotation)
+        {
+            // Step 1: Compute relative rotation of pointA to center
+            Quaternion relativeRotationA = Quaternion.Inverse(centerTransform.rotation) * pointARotation;
+
+            // Step 2: Invert the relative rotation and apply it back to the center
+            Quaternion mirroredRotationB = centerTransform.rotation * Quaternion.Inverse(relativeRotationA);
+
+            Debug.Log($"MirrorRotationAcrossCenter: Original Rotation {pointARotation.eulerAngles} -> Mirrored Rotation {mirroredRotationB.eulerAngles}");
+
+            return mirroredRotationB;
+        }
 
     //TODO: TODO: TODO: TODO: TESTING GEOMETRY UPDATES UPDATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 
@@ -1766,6 +1769,84 @@ namespace CompasXR.Core
             {
                 Debug.Log("ResetSelectedGoalComponent: No current selected goal component to reset.");
             }
+        }
+
+        //TODO: Drawing Threshold Needs to be implemented Properly ////////////////////////////////////////////////////////////////////////////////////////
+        public float SetupRealtimeMimicDrawLineThreshold()
+        {
+            /*
+            * Method is used to setup the realtime mimic draw line threshold.
+            */
+            float DEFAULTREALTIMEMIMICDRAWRINGTHRESHOLD = 0.02f;
+            if (databaseManager == null || databaseManager.ProjectZones == null)
+            {
+                Debug.LogWarning("SetupRealtimeMimicDrawLineThreshold: Database Manager or Project Zones is null.");
+                return DEFAULTREALTIMEMIMICDRAWRINGTHRESHOLD;
+            }
+            if (databaseManager.ProjectZones.MimicZones == null)
+            {
+                Debug.LogWarning("SetupRealtimeMimicDrawLineThreshold: Human Zone or Robot Zone is null.");
+                return DEFAULTREALTIMEMIMICDRAWRINGTHRESHOLD;
+            }
+
+            var mimicZones = databaseManager.ProjectZones.MimicZones;
+            GameObject humanZoneObject = null;
+            GameObject robotZoneObject = null;
+            if (mimicZones.TryGetValue("human_zone", out Zone humanZone))
+            {
+                if (mimicZones.TryGetValue("robot_zone", out Zone robotZone))
+                {
+                    humanZoneObject = humanZone.ZoneObject;
+                    robotZoneObject = robotZone.ZoneObject;
+                    if (humanZoneObject == null || robotZoneObject == null)
+                    {
+                        Debug.LogWarning("SetupRealtimeMimicDrawLineThreshold: Human Zone Object or Robot Zone Object is null.");
+                        return DEFAULTREALTIMEMIMICDRAWRINGTHRESHOLD;
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning("SetupRealtimeMimicDrawLineThreshold: Robot Zone not found in Mimic Zones.");
+                    return DEFAULTREALTIMEMIMICDRAWRINGTHRESHOLD;
+                }
+            }
+            else
+            {
+                Debug.LogWarning("SetupRealtimeMimicDrawLineThreshold: Human Zone not found in Mimic Zones.");
+                return DEFAULTREALTIMEMIMICDRAWRINGTHRESHOLD;
+            }
+
+            float adaptiveThreshold = CreateDrawingThresholdFloats(robotZoneObject, humanZoneObject, DEFAULTREALTIMEMIMICDRAWRINGTHRESHOLD);
+            Debug.Log($"SetupRealtimeMimicDrawLineThreshold: Adaptive Threshold set to {DEFAULTREALTIMEMIMICDRAWRINGTHRESHOLD:F5} for robot zone & {adaptiveThreshold:F5} for human zone");
+            return adaptiveThreshold;
+        }
+        public static float CreateDrawingThresholdFloats(GameObject boxA, GameObject boxB, float baseThreshold)
+        {
+            if (boxA == null || boxB == null)
+            {
+                Debug.LogError("CreateDrawingThresholdFloats: One or both GameObjects are null.");
+                return baseThreshold;
+            }
+
+            Vector3 scaleA = boxA.transform.lossyScale;
+            Vector3 scaleB = boxB.transform.lossyScale;
+
+            float avgA = (scaleA.x + scaleA.y + scaleA.z) / 3f;
+            float avgB = (scaleB.x + scaleB.y + scaleB.z) / 3f;
+
+            if (avgA == 0f)
+            {
+                Debug.LogWarning("CreateDrawingThresholdFloats: BoxA has zero average scale.");
+                return baseThreshold;
+            }
+
+            float scaleFactor = avgB / avgA;
+            float adaptiveThreshold = baseThreshold * scaleFactor;
+
+            Debug.Log($"CreateDrawingThresholdFloats: lossyScaleA = {scaleA}, avgA = {avgA:F8} | lossyScaleB = {scaleB}, avgB = {avgB:F8}");
+            Debug.Log($"CreateDrawingThresholdFloats: scaleFactor = {scaleFactor:F8}, adaptiveThreshold = {adaptiveThreshold:F8}");
+
+            return adaptiveThreshold;
         }
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
