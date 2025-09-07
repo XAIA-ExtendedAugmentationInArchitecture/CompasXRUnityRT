@@ -187,31 +187,24 @@ namespace CompasXR.Robots
                 //TODO: Implement Realtime Mimic Result Message Handler (Needs to find the object and delete it if it existis in the scene)
                 Debug.Log("MQTT: RealtimeMimicResult Message Handeling");
                 RealtimeMimicResultMessage realtimeMimicResultMessage = RealtimeMimicResultMessage.Parse(message);
-                // RealtimeMimicResultReceivedMessageHandler(realtimeMimicResultMessage);
-                Debug.Log($"MQTT: RealtimeMimicResult Message Handeling: Received {JsonConvert.SerializeObject(realtimeMimicResultMessage)}");
+                if (realtimeMimicResultMessage.PointIndex == null)
+                {
+                    Debug.LogError("MQTT: RealtimeMimicResult Message Handeling: Point Index is null in the Realtime Mimic Result Message. No action taken.");
+                }
+                else if (realtimeMimicResultMessage.Configuration == null)
+                {
+                    Debug.LogWarning("MQTT: RealtimeMimicResult Message Handeling: Configuration is null in the Realtime Mimic Result Message. THe Point will be deleted, but the Action will not be completed.");
+                }
+                else
+                {
+                    // UIFunctionalities.UpdateRealtimeMimicPointFromMessage(pointIndex, trajectoryVisualizer.RealtimeMimicPoints, trajectoryVisualizer.RealtimeMimicLines);
+                    UIFunctionalities.UpdateLastCompletedIndexForRealtimeMimicPoint(realtimeMimicResultMessage.PointIndex);
+                }
             }
             else if (topic == roboticTerritoriesTopics.subscribers.inferenceResultTopic)
             {
                 //TODO: Implement Inference Result Message Handler (Needs to find the object and delete it if it existis in the scene)
                 Debug.Log("MQTT: InferenceResult Message Handeling");
-
-                // string filePath = 
-                //     @"C:\Users\jk6372\Desktop\00_princeton_projects\00_robotic_territories\00_git\compas_xr_robotic_territories\dev\performance_operations\testing\20250830_json_testing_trajectory_dumps\inference_resultMessage.json";
-
-                // try
-                // {
-                //     // Parse the raw string into a JSON object, then serialize back with indentation
-                //     var parsed = JsonConvert.DeserializeObject(message);
-                //     string prettyJson = JsonConvert.SerializeObject(parsed, Formatting.Indented);
-
-                //     File.WriteAllText(filePath, prettyJson);
-                //     Debug.Log($"MQTT: InferenceResult pretty JSON dumped to {filePath}");
-                // }
-                // catch (System.Exception e)
-                // {
-                //     Debug.LogError($"MQTT: Failed to dump JSON: {e.Message}");
-                // }
-
                 InferenceResultMessage inferenceResultMessage = InferenceResultMessage.Parse(message);
                 InferenceResultReceivedMessageHandler(inferenceResultMessage);
                 Debug.Log($"MQTT: InferenceResult Message Handeling: Received {JsonConvert.SerializeObject(inferenceResultMessage)}");

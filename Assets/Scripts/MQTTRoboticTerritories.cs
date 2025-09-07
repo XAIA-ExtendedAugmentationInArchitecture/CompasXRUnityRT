@@ -543,16 +543,16 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         // public List<Frame> HumanFrames { get; private set; }
         // public List<Frame> RobotFrames { get; private set; }
         public string RobotName { get; private set; }
-        public string Message { get; private set; }
+        public int PointIndex { get; private set; }
         public bool InitialRequest { get; private set; }
-        public RealtimeMimicRequestMessage(Frame requestedRobotFrame, string robotName, string message, Header header = null, bool initialRequest = false)
+        public RealtimeMimicRequestMessage(Frame requestedRobotFrame, string robotName, int pointIndex, Header header = null, bool initialRequest = false)
         {
             Header = header ?? new Header();
             RequestedRobotFrame = requestedRobotFrame;
             // HumanFrames = humanFrames;
             // RobotFrames = robotFrames;
             RobotName = robotName;
-            Message = message;
+            PointIndex = pointIndex;
             InitialRequest = initialRequest;
         }
         public Dictionary<string, object> GetData()
@@ -567,7 +567,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 // { "human_frames", MessageHandelingExtensions._getDataFromFramesList(HumanFrames) },
                 // { "robot_frames", MessageHandelingExtensions._getDataFromFramesList(RobotFrames) },
                 { "robot_name", RobotName },
-                { "message", Message },
+                { "point_index", PointIndex },
                 { "initial_request", InitialRequest }
             };
         }
@@ -589,9 +589,10 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             // List<Frame> robotFrames = Frame._parseFramesData(robotFramesData);
 
             var robotName = jsonObject["robot_name"].ToString();
-            var message = jsonObject["message"].ToString();
+            // var message = jsonObject["message"].ToString();
+            var pointIndex = Convert.ToInt32(jsonObject["point_index"]);
             var initialRequest = Convert.ToBoolean(jsonObject["initial_request"]);
-            return new RealtimeMimicRequestMessage(requestedFrame, robotName, message, header, initialRequest);
+            return new RealtimeMimicRequestMessage(requestedFrame, robotName, pointIndex, header, initialRequest);
         }
     }
 
@@ -610,11 +611,14 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         // public List<AttachedCollisionMesh> AttachedCollisionMeshes { get; private set; }
         public string RobotName { get; private set; }
         public string ReturnMessage { get; private set; }
-        public RealtimeMimicResultMessage(string robotName, string returnMessage, Header header = null) //List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header=null)
+        public int PointIndex { get; private set; }
+
+        public Configuration Configuration { get; private set; }
+        public RealtimeMimicResultMessage(string robotName, int pointIndex, string returnMessage, Configuration configuration = null, Header header = null) //List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header=null)
         {
             Header = header ?? new Header();
-            // Trajectories = trajectories;
-            // RobotBaseFrame = robotBaseFrame;
+            PointIndex = pointIndex;
+            Configuration = configuration;
             RobotName = robotName;
             ReturnMessage = returnMessage;
         }
@@ -626,9 +630,9 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             return new Dictionary<string, object>
             {
                 { "header", Header.GetData() },
-                // { "trajectories", MessageHandelingExtensions._getTrajectoriesDataFromList(Trajectories) },
-                // { "robot_base_frame", RobotBaseFrame.GetData() },
                 { "robot_name", RobotName },
+                { "point_index", PointIndex },
+                { "configuration", Configuration != null ? Configuration.GetData() : null },
                 { "return_message", ReturnMessage }
             };
         }
@@ -643,31 +647,41 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
 
             var robotName = jsonObject["robot_name"].ToString();
             var message = jsonObject["return_message"].ToString();
-            return new RealtimeMimicResultMessage(robotName, message, header);
+            var pointIndex = Convert.ToInt32(jsonObject["point_index"]);
 
-            // var trajectoriesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["trajectories"].ToString());
-            // List<Trajectory> trajectories = new List<Trajectory>();
-            // foreach (Dictionary<string, object> trajectoryData in trajectoriesData)
-            // {
-            //     if (trajectoryData.TryGetValue("data", out var trajectoryDataValue))
-            //     {
-            //         var trajectoryJson = JsonConvert.SerializeObject(trajectoryDataValue);
-            //         var trajectoryDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(trajectoryJson);
-            //         trajectories.Add(Trajectory.FromData(trajectoryDict));
-            //     }
-            //     else
-            //     {
-            //         Debug.LogWarning("ExacuteMimicTrajectoryRequestMessage: Parse: Trajectory data not found in the message.");
-            //     }
-            // }
-            // Frame robotBaseFrame = MessageHandelingExtensions._getBaseFrameFromMessage(jsonObject);
-            // if(robotBaseFrame == null)
-            // {
-            //     Debug.LogWarning("ExacuteMimicTrajectoryRequestMessage: Parse: Robot base frame not found in the message.");
-            // }
-            //     else
-            //     {
-            //     Debug.Log($"ExacuteMimicTrajectoryRequestMessage: Robot Base Frame Parsed Successfully: {JsonConvert.SerializeObject(robotBaseFrame)}");
+            Dictionary<string, object> configuration = null;
+            if (jsonObject.ContainsKey("configuration"))
+            {
+                Debug.Log("RealtimeMimicResultMessageParse: Found 'configuration' in trajectory data.");
+                Debug.Log("RealtimeMimicResultMessageParse: configuratoin data: " + JsonConvert.SerializeObject(jsonObject["configuration"]));
+                var configurationDict = DictionaryHelpers.ConvertObjectToDictionary(jsonObject["configuration"]);
+                if (configurationDict == null)
+                {
+                    //TODO: This should return NULL message. But for now checking for errors.
+                    Debug.LogWarning("RealtimeMimicResultMessageParse: 'configuration' field is empty.");
+                    return new RealtimeMimicResultMessage(robotName, pointIndex, message, null, header);
+                }
+                var configurationDataDict = DictionaryHelpers.GetAsDictionary(configurationDict, "data");
+                if (configurationDataDict != null)
+                {
+                    configuration = configurationDataDict;
+                }
+                else
+                {
+                    //TODO: This should return NULL message. But for now checking for errors.
+                    Debug.LogWarning("RealtimeMimicResultMessageParse: 'data' field is missing in the 'configuration' field.");
+                    return new RealtimeMimicResultMessage(robotName, pointIndex, message, null, header);
+                }
+            }
+            if (configuration == null)
+            {
+                //TODO: This needs to return a message with a null configuration. But for not checking for errors.
+                Debug.LogWarning("RealtimeMimicResultMessageParse: 'configuration' field is missing in the message for pt.");
+                return new RealtimeMimicResultMessage(robotName, pointIndex, message, null, header);
+            }
+            Configuration ptConfiguration = Configuration.FromData(configuration);
+
+            return new RealtimeMimicResultMessage(robotName, pointIndex, message, ptConfiguration, header);
         }
     }
 

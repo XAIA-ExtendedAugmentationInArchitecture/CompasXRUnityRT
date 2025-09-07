@@ -208,8 +208,11 @@ namespace CompasXR.Core
                 {
                     if (RealtimeMimicHumanPoints.Count > 1 && RealtimeMimicRobotPoints.Count > 1)
                     {
-                        UpdateLinePositionsByGameObjectPositionsList(RealtimeMimicHumanPoints, RealtimeMimicHumanLine);
-                        UpdateLinePositionsByGameObjectPositionsList(RealtimeMimicRobotPoints, RealtimeMimicRobotLine);
+                        // UpdateLinePositionsByGameObjectPositionsList(RealtimeMimicHumanPoints, RealtimeMimicHumanLine);
+                        // UpdateLinePositionsByGameObjectPositionsList(RealtimeMimicRobotPoints, RealtimeMimicRobotLine);
+                        UpdateLinePositionsByGameObjectPositionsListFromIndexToEnd(RealtimeMimicHumanPoints, RealtimeMimicHumanLine, UIFunctionalities.REALTIMEMIMICLASTCOMPLETEDINDEX);
+                        UpdateLinePositionsByGameObjectPositionsListFromIndexToEnd(RealtimeMimicRobotPoints, RealtimeMimicRobotLine , UIFunctionalities.REALTIMEMIMICLASTCOMPLETEDINDEX);
+
                         Debug.Log("UpdateLinePositionsByGameObjectPositionsList: Updating Realtime Mimic Lines");
                     }
                     else
@@ -1048,6 +1051,60 @@ namespace CompasXR.Core
                 }
             }
         }
+        public void DrawLineFromIndextoEndofGameObjectList(
+            int index,
+            List<GameObject> pointsList,
+            GameObject lineObject,
+            Color color,
+            float lineWidth)
+        {
+            // Guard: list valid and has at least 2 points after index
+            if (pointsList == null || pointsList.Count < 2)
+            {
+                Debug.LogWarning("DrawLineFromIndextoEndofGameObjectList: Not enough points to draw (need at least 2).");
+                return;
+            }
+
+            if (index < 0 || index >= pointsList.Count - 1)
+            {
+                Debug.LogWarning("DrawLineFromIndextoEndofGameObjectList: Index out of range or not enough tail points.");
+                return;
+            }
+
+            var lineRenderer = lineObject ? lineObject.GetComponentInChildren<LineRenderer>() : null;
+            if (!lineRenderer)
+            {
+                Debug.LogWarning("DrawLineFromIndextoEndofGameObjectList: LineRenderer is null.");
+                return;
+            }
+
+            lineRenderer.useWorldSpace = true;
+            lineRenderer.startColor = color;
+            lineRenderer.endColor = color;
+            lineRenderer.startWidth = lineWidth;
+            lineRenderer.endWidth = lineWidth;
+
+            int tailCount = pointsList.Count - index;
+            lineRenderer.positionCount = tailCount;
+
+            // Fill positions with offset
+            for (int i = index, k = 0; i < pointsList.Count; i++, k++)
+            {
+                var go = pointsList[i];
+                if (!go)
+                {
+                    // If you expect nulls, either early-return or copy previous
+                    // Here we just copy previous if k>0; otherwise, skip drawing
+                    lineRenderer.SetPosition(k, k > 0 ? lineRenderer.GetPosition(k - 1) : Vector3.zero);
+                    continue;
+                }
+
+                var pos = go.transform.position;
+                lineRenderer.SetPosition(k, pos);
+                // Optional debug:
+                // Debug.Log($"DrawLineFromIndex: i={i}, k={k}, pos={pos}");
+            }
+        }
         public void UpdateLinePositionsByGameObjectPositionsList(List<GameObject> posGameObjectList, GameObject lineObject)
         {
             /*
@@ -1073,6 +1130,53 @@ namespace CompasXR.Core
                 }
                 Debug.LogWarning("UpdateLinePositionsByGameObjectPositionsList: List length is 0.");
             }
+        }
+
+        public void UpdateLinePositionsByGameObjectPositionsListFromIndexToEnd(
+            List<GameObject> posGameObjectList,
+            GameObject lineObject,
+            int startIndex)
+        {
+            // Guards
+            if (posGameObjectList == null || lineObject == null)
+            {
+                Debug.LogWarning("UpdateLinePositionsByGameObjectPositionsList: Null args.");
+                return;
+            }
+
+            var lineRenderer = lineObject.GetComponent<LineRenderer>() ?? lineObject.GetComponentInChildren<LineRenderer>();
+            if (!lineRenderer)
+            {
+                Debug.LogWarning("UpdateLinePositionsByGameObjectPositionsList: LineRenderer not found.");
+                return;
+            }
+
+            // Clamp start index to [-1 .. Count-1], then start from (startIndex+1)
+            int count = posGameObjectList.Count;
+            if (count == 0)
+            {
+                lineRenderer.positionCount = 0;
+                return;
+            }
+            startIndex = Mathf.Clamp(startIndex, -1, count - 1);
+
+            // Build compact positions (skip nulls)
+            var positions = new List<Vector3>(Mathf.Max(0, count - (startIndex + 1)));
+            for (int i = startIndex + 1; i < count; i++)
+            {
+                var go = posGameObjectList[i];
+                if (go) positions.Add(go.transform.position);
+            }
+
+            if (positions.Count < 2)
+            {
+                lineRenderer.positionCount = 0;
+                return;
+            }
+
+            lineRenderer.useWorldSpace = true;
+            lineRenderer.positionCount = positions.Count;
+            lineRenderer.SetPositions(positions.ToArray());
         }
         public void DestroyUserInstatiatedMimicZoneObjects()
         {
@@ -1440,7 +1544,7 @@ namespace CompasXR.Core
     //TODO: //TODO: //TODO: //TODO: TEMPORARY ROBOTIC TERRITORIES TESTING REALTIME MIMIC
     public void CreateRealtimeMimicPointsBasicTEMPORARY(GameObject humanZoneObject, GameObject robotZoneObject, ref List<GameObject> realtimeMimicHumanPoints,
     ref List<GameObject> realtimeMimicRobotPoints, GameObject realtimeMimicHumanPointsParent, GameObject realtimeMimicRobotPointsParent,
-    GameObject realtimeMimicHumanLine, GameObject realtimeMimicRobotLine, bool MimicMirrorToggle = false)
+    GameObject realtimeMimicHumanLine, GameObject realtimeMimicRobotLine, int pointIndex, bool MimicMirrorToggle = false)
     {
         Vector3 position = cameraPositionObject.transform.position;
         Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: CAMERA Position FROM REALTIME MIMIC: {position}");
@@ -1451,31 +1555,34 @@ namespace CompasXR.Core
 
         CreateRealtimeMimicPointTEMPORARY(humanZoneObject, robotZoneObject, ref realtimeMimicHumanPoints,
         ref realtimeMimicRobotPoints, realtimeMimicHumanPointsParent, realtimeMimicRobotPointsParent, position,
-        rotation, $"{realtimeMimicHumanPoints.Count}_MimicPoint", $"{realtimeMimicRobotPoints.Count}_MimicPoint", true, //TODO: ADDED THESE
+        rotation, $"{pointIndex}_MimicPoint", $"{pointIndex}_MimicPoint", true, //TODO: ADDED THESE
         MimicMirrorToggle);
 
 
-        // CreateSpheresForMimic(humanZone, robotZone, ref humanPoints, ref robotPoints, 
-        // humanParent, robotParent, position, rotation, 
-        // radius, humanColor, robotColor, $"{humanPoints.Count}_MimicPoint", $"{robotPoints.Count}_MimicPoint", true, Mirror);
 
-        // // //TODO: Quick test for the closest reachable point:
-        // // CreateSpheresForMimic(humanZone, robotZone, ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints, 
-        // // MimicSystemProposedLineHuman, MimicSystemProposedLineRobot, MimicHumanSystemProposedPointsParent, MimicRobotSystemProposedPointsParent, 
-        // // closestReachablePoint, rotation, radius, Color.red, Color.grey, $"{humanPoints.Count}_MimicPointProposal", $"{robotPoints.Count}_MimicPointProposal", false, Mirror);
-        // //TODO: TESTING...
-        // CreateSystemProposalPoints(humanZone, robotZone, trajectoryVisualizer.humanZoneMimicReachibility, ref humanPoints, 
-        // ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints,
-        // MimicSystemProposedLineHuman, MimicHumanSystemProposedPointsParent, MimicSystemProposedLineRobot, 
-        // MimicRobotSystemProposedPointsParent, Mirror);
+            // CreateSpheresForMimic(humanZone, robotZone, ref humanPoints, ref robotPoints, 
+            // humanParent, robotParent, position, rotation, 
+            // radius, humanColor, robotColor, $"{humanPoints.Count}_MimicPoint", $"{robotPoints.Count}_MimicPoint", true, Mirror);
 
-        Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Point is being set within the Robot Reachability.");
+            // // //TODO: Quick test for the closest reachable point:
+            // // CreateSpheresForMimic(humanZone, robotZone, ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints, 
+            // // MimicSystemProposedLineHuman, MimicSystemProposedLineRobot, MimicHumanSystemProposedPointsParent, MimicRobotSystemProposedPointsParent, 
+            // // closestReachablePoint, rotation, radius, Color.red, Color.grey, $"{humanPoints.Count}_MimicPointProposal", $"{robotPoints.Count}_MimicPointProposal", false, Mirror);
+            // //TODO: TESTING...
+            // CreateSystemProposalPoints(humanZone, robotZone, trajectoryVisualizer.humanZoneMimicReachibility, ref humanPoints, 
+            // ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints,
+            // MimicSystemProposedLineHuman, MimicHumanSystemProposedPointsParent, MimicSystemProposedLineRobot, 
+            // MimicRobotSystemProposedPointsParent, Mirror);
+
+            Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Point is being set within the Robot Reachability.");
 
         if (realtimeMimicHumanPoints.Count > 1 && realtimeMimicRobotPoints.Count > 1)
         {
             Debug.Log("CreateRealtimeMimicPointsBasicTEMPORARY: Drawing Mimic Points Line");
-            DrawLineFromGameObjectList(realtimeMimicHumanPoints, realtimeMimicHumanLine, humanColor, 0.01f);
-            DrawLineFromGameObjectList(realtimeMimicRobotPoints, realtimeMimicRobotLine, robotColor, 0.01f);
+            // DrawLineFromGameObjectList(realtimeMimicHumanPoints, realtimeMimicHumanLine, humanColor, 0.01f);
+            // DrawLineFromGameObjectList(realtimeMimicRobotPoints, realtimeMimicRobotLine, robotColor, 0.01f);
+            DrawLineFromIndextoEndofGameObjectList(UIFunctionalities.REALTIMEMIMICLASTCOMPLETEDINDEX, realtimeMimicHumanPoints, realtimeMimicHumanLine, humanColor, 0.01f);
+            DrawLineFromIndextoEndofGameObjectList(UIFunctionalities.REALTIMEMIMICLASTCOMPLETEDINDEX, realtimeMimicRobotPoints, realtimeMimicRobotLine, robotColor, 0.01f);
         }
         else
         {
