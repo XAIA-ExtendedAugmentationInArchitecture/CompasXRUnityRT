@@ -1822,7 +1822,8 @@ namespace CompasXR.UI
                         //TODO: ADD METHOD TO RETURN IF THRESHOLD IS NOT MET.
                         // float DRAWINGTHRESHOLD = 0.035f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
                         // float DRAWINGTHRESHOLD = 0.038f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
-                        float DRAWINGTHRESHOLD = 0.02f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
+                        // float DRAWINGTHRESHOLD = 0.02f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
+                        float DRAWINGTHRESHOLD = instantiateObjects.REALTIMEMIMICDRAWRINGTHRESHOLD; //TODO: TESTING....
                         float ROTTHRESHOLD = 3.0f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
                         // if (instantiateObjects.RealtimeMimicHumanPoints.Count >= 1 && instantiateObjects.RealtimeMimicRobotPoints.Count >= 1)
                         if(REALTIMEMIMICINDEXCOUNTER >= 1)
