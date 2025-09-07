@@ -16,6 +16,7 @@ using CompasXR.Robots.Data;
 using Vuforia;
 using RosSharp.RosBridgeClient.MessageTypes.ObjectRecognition;
 using System.Linq;
+// using UnityEngine.UIElements;
 
 
 namespace CompasXR.Core
@@ -134,6 +135,7 @@ namespace CompasXR.Core
         //Zones AR Prefabs
         public GameObject ZonesARPrefabObjects;
         public GameObject AllGeometiresParentObjects;
+        public GameObject MirroredGeometriesParentObject;
         public GameObject TrackedGeometriesParentObject;
 
         public GameObject InferenceGoalsParentObject;
@@ -921,7 +923,6 @@ namespace CompasXR.Core
                 Debug.LogWarning("CreateSpheresForMimic: Robot Point is not added to the list.");
             }
         }
-
         Collider[] GetAllCollidersAtPoint(Vector3 point, float epsilon = 0.0001f)
         {
             return Physics.OverlapSphere(point, epsilon);
@@ -1133,7 +1134,6 @@ namespace CompasXR.Core
                 Debug.LogWarning("UpdateLinePositionsByGameObjectPositionsList: List length is 0.");
             }
         }
-
         public void UpdateLinePositionsByGameObjectPositionsListFromIndexToEnd(
             List<GameObject> posGameObjectList,
             GameObject lineObject,
@@ -1372,19 +1372,34 @@ namespace CompasXR.Core
             // 3) Send back out to world space
             return box.transform.TransformPoint(local);
         }
+        public static Vector3 MirrorPositionAcrossBoxZ(GameObject box, Vector3 worldPoint)
+        {
+            var col = box.GetComponent<BoxCollider>();
+            if (col == null) return worldPoint;
+
+            // 1) Bring into the *local* coordinates of the box
+            Vector3 local = box.transform.InverseTransformPoint(worldPoint);
+
+            // 2) Reflect across the box’s center plane (X axis in local space)
+            //    (if your “long” axis is different, use Y or Z instead)
+            local.z = 2f * col.center.z - local.z;
+
+            // 3) Send back out to world space
+            return box.transform.TransformPoint(local);
+        }
         public static Quaternion MirrorQuaternion(Quaternion pointRotation, Vector3 normal)
-            {
+        {
 
-                // Create a pure quaternion representing the plane normal
-                Quaternion n = new Quaternion(normal.x, normal.y, normal.z, 0);
+            // Create a pure quaternion representing the plane normal
+            Quaternion n = new Quaternion(normal.x, normal.y, normal.z, 0);
 
-                Quaternion R = Quaternion.AngleAxis(180, normal);
+            Quaternion R = Quaternion.AngleAxis(180, normal);
 
-                // Compute mirrored quaternion
-                Quaternion mirrored = R * pointRotation * n;
-                return mirrored;
+            // Compute mirrored quaternion
+            Quaternion mirrored = R * pointRotation * n;
+            return mirrored;
 
-            }
+        }
         public static Quaternion MirrorRotationAcrossCenter(Transform centerTransform, Quaternion pointARotation)
         {
             // Step 1: Compute relative rotation of pointA to center
@@ -1398,10 +1413,78 @@ namespace CompasXR.Core
             return mirroredRotationB;
         }
 
-    //TODO: TODO: TODO: TODO: TESTING GEOMETRY UPDATES UPDATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+        //TODO: TODO: TODO: TODO: TESTING GEOMETRY UPDATES UPDATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
+
+        public void CreateDuplicatGeometriesForMimic(ref GameObject GeometriesParentObject, ref GameObject MirroredGeometriesParentObject) //, Zone HumanZone, Zone RobotZone, GameObject ObservedGeoemtriesParent, GameObject MimicGeometriesParent, ref Dictionary<string, ObservedGeometry> sourceObservedGeometriesDict, ref Dictionary<string, ObservedGeometry> targetObservedGeometriesDict)
+        {
+            /*
+            * Method is used to create duplicate geometries for the mimic goals in the AR space
+            */
+            // if (sourceObservedGeometriesDict == null || sourceObservedGeometriesDict.Count == 0)
+            // {
+            //     Debug.LogWarning("CreateDuplicatGeometriesForMimic: Source Observed Geometries Dict is null or empty.");
+            //     return;
+            // }
+            // if (targetObservedGeometriesDict == null)
+            // {
+            //     Debug.LogWarning("CreateDuplicatGeometriesForMimic: Target Observed Geometries Dict is null.");
+            //     return;
+            // }
+            // if (MimicGeometriesParent == null)
+            // {
+            //     Debug.LogWarning("CreateDuplicatGeometriesForMimic: Target Parent is null.");
+            //     return;
+            // }
+
+            if (GeometriesParentObject == null)
+            {
+                Debug.LogWarning("CreateDuplicatGeometriesForMimic: Geometries Parent Object is null.");
+                return;
+            }
+
+            var mimicZones = databaseManager.ProjectZones.MimicZones;
+            GameObject humanZoneObject = null;
+            GameObject robotZoneObject = null;
+            if (mimicZones.TryGetValue("human_zone", out Zone humanZone))
+            {
+                if (mimicZones.TryGetValue("robot_zone", out Zone robotZone))
+                {
+                    humanZoneObject = humanZone.ZoneObject;
+                    robotZoneObject = robotZone.ZoneObject;
+                }
+            }
+
+            Vector3 AllGeometiresParentObjectsPosition = GeometriesParentObject.transform.position;
+            Vector3 positionToPutGeometries = Vector3.zero;
+            Vector3 objectlocalScale = Vector3.one;
+
+            if (UIFunctionalities.UserInitiatedMimicMirrorToggle.isOn)
+            {
+                objectlocalScale = new Vector3(-1, 1, 1);
+                Vector3 mirroredWorldPosition = MirrorPositionAcrossBox(robotZoneObject, AllGeometiresParentObjectsPosition);
+                Vector3 mappedPosition = MapPointBetweenBoxes(robotZoneObject, humanZoneObject, mirroredWorldPosition);
+                positionToPutGeometries = mappedPosition;
+            }
+            else
+            {
+                objectlocalScale = new Vector3(1, 1, 1);
+                positionToPutGeometries = MapPointBetweenBoxes(robotZoneObject, humanZoneObject, AllGeometiresParentObjectsPosition);
+            }
+
+            MirroredGeometriesParentObject = Instantiate(GeometriesParentObject, GeometriesParentObject.transform.position, GeometriesParentObject.transform.rotation);
+            MirroredGeometriesParentObject.transform.position = positionToPutGeometries;
+            MirroredGeometriesParentObject.transform.localScale = objectlocalScale;
+            MirroredGeometriesParentObject.name = "MirroredGeometriesParentObject";
+
+            if (humanZoneObject == null || robotZoneObject == null)
+            {
+                Debug.LogWarning("CreateDuplicatGeometriesForMimic: Human or Robot Zone Object is null.");
+                return;
+            }
+        }
 
     //TODO: Joe Actual: Update GoalStateObserver based on movement updates.
-    public void OnObservedObjectsChangedWrapper(object source, UpdateObservedGeometryEventArgs e)
+        public void OnObservedObjectsChangedWrapper(object source, UpdateObservedGeometryEventArgs e)
         {
             if (e.ObservedGeometryDict == null)
             {

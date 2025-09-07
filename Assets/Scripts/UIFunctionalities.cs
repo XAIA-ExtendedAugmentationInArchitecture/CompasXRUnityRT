@@ -460,7 +460,6 @@ namespace CompasXR.UI
             ref MimicPreviousModeButtonObject,
             "PreviousModeButton", PreviousMimicModeButtonMethod);
         }
-
         public void DrawLinesToggleMethod(bool toggle)
         {
             /*
@@ -1647,6 +1646,8 @@ namespace CompasXR.UI
                     instantiateObjects.MimicGoalsManager.GoalStatusObserver.Active = true;
                     instantiateObjects.MimicGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, instantiateObjects.GoalSatisfiedMaterial, instantiateObjects.GoalUnsatisfiedMaterial, instantiateObjects.OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, instantiateObjects.OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
 
+                    instantiateObjects.CreateDuplicatGeometriesForMimic(ref instantiateObjects.AllGeometiresParentObjects, ref instantiateObjects.MirroredGeometriesParentObject);
+
                     if (trajectoryVisualizer.ActiveRobot != null)
                     {
                         if (trajectoryVisualizer.humanZoneMimicReachibility == null)
@@ -1773,7 +1774,7 @@ namespace CompasXR.UI
                 }
             }
         }
-        public void SetRealtimeMimicPointBasicTEMPORARY() //TODO: JOEEEEE CONTINUE HERE....
+        public void SetRealtimeMimicPointBasicTEMPORARY()
         {
             /*
             * Method is used to set the mimic point based on the human and robot zone objects.
