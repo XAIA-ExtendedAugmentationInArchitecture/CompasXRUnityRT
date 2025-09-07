@@ -11755,7 +11755,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &239579488
 RectTransform:
   m_ObjectHideFlags: 0
@@ -80282,7 +80282,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1546183616
 RectTransform:
   m_ObjectHideFlags: 0
@@ -114346,7 +114346,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c4d8832d07fa36429d690d119e751f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  brokerAddress: 172.20.10.5
+  brokerAddress: localhost
   brokerPort: 1883
   isEncrypted: 0
   certificateName: 
