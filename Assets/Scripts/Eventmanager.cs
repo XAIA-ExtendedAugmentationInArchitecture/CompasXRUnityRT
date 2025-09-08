@@ -41,7 +41,7 @@ namespace CompasXR.Core
             //Initilization functionalities for the application.
             Caching.ClearCache();
             FirebaseDatabase.DefaultInstance.SetPersistenceEnabled(false);
-            dbReferenceSettings = FirebaseDatabase.DefaultInstance.GetReference("ApplicationSettings");
+            dbReferenceSettings = FirebaseDatabase.DefaultInstance.GetReference("ApplicationSettings2");
 
             //Add script components to objects in the scene
             databaseManager = databaseManagerObject.AddComponent<DatabaseManager>();
@@ -66,7 +66,6 @@ namespace CompasXR.Core
             instantiateObjects.InitialZonesPlaced += instantiationCoordinator.OnInitialZonesPlaced;
             instantiateObjects.InitialTrackedGeometryPlaced += instantiationCoordinator.OnInitialTrackedGeometryPlaced;
             instantiationCoordinator.Ready += databaseManager.AddListenersRoboticTerritories;
-
 
             databaseManager.ModeZonesUpdate += instantiateObjects.OnModeZonesUpdate;
             databaseManager.FetchedObservedGeometries += instantiateObjects.OnObservedGeometriesFetched;
