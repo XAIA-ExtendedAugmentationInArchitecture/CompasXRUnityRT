@@ -187,6 +187,13 @@ namespace CompasXR.Robots
                 //TODO: Implement Realtime Mimic Result Message Handler (Needs to find the object and delete it if it existis in the scene)
                 Debug.Log("MQTT: RealtimeMimicResult Message Handeling");
                 RealtimeMimicResultMessage realtimeMimicResultMessage = RealtimeMimicResultMessage.Parse(message);
+                if(realtimeMimicResultMessage.CorrectBackend == false)
+                {
+                    Debug.LogWarning("MQTT: RealtimeMimicHandler: No Trajectories in the Mimic Result Message.");
+                    string warningMessage = "WARNING: The robotic controler is set to the incorrect backend. Please restart it to mimic in realtime.";
+                    UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.RealtimeMimicIncorrectBackendOnScreenMessage, "RealtimeMimicIncorrectBackendOnScreenMessage", UIFunctionalities.MessagesParent, warningMessage, "RealtimeMimicIncorrectBackend: Realtime Mimic Cannot be used because the backend is incorrect.");
+                    return;
+                }
                 if (realtimeMimicResultMessage.PointIndex == null)
                 {
                     Debug.LogError("MQTT: RealtimeMimicResult Message Handeling: Point Index is null in the Realtime Mimic Result Message. No action taken.");

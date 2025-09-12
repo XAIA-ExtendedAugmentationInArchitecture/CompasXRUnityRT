@@ -612,14 +612,16 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public string RobotName { get; private set; }
         public string ReturnMessage { get; private set; }
         public int PointIndex { get; private set; }
+        public bool CorrectBackend { get; private set; }
 
         public Configuration Configuration { get; private set; }
-        public RealtimeMimicResultMessage(string robotName, int pointIndex, string returnMessage, Configuration configuration = null, Header header = null) //List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header=null)
+        public RealtimeMimicResultMessage(string robotName, int pointIndex, string returnMessage, bool correctBackent, Configuration configuration = null, Header header = null) //List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header=null)
         {
             Header = header ?? new Header();
             PointIndex = pointIndex;
             Configuration = configuration;
             RobotName = robotName;
+            CorrectBackend = correctBackent;
             ReturnMessage = returnMessage;
         }
         public Dictionary<string, object> GetData()
@@ -633,6 +635,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 { "robot_name", RobotName },
                 { "point_index", PointIndex },
                 { "configuration", Configuration != null ? Configuration.GetData() : null },
+                { "correct_backend", CorrectBackend },
                 { "return_message", ReturnMessage }
             };
         }
@@ -647,6 +650,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
 
             var robotName = jsonObject["robot_name"].ToString();
             var message = jsonObject["return_message"].ToString();
+            var correctBackend = Convert.ToBoolean(jsonObject["correct_backend"]);
             var pointIndex = Convert.ToInt32(jsonObject["point_index"]);
 
             Dictionary<string, object> configuration = null;
@@ -659,7 +663,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 {
                     //TODO: This should return NULL message. But for now checking for errors.
                     Debug.LogWarning("RealtimeMimicResultMessageParse: 'configuration' field is empty.");
-                    return new RealtimeMimicResultMessage(robotName, pointIndex, message, null, header);
+                    return new RealtimeMimicResultMessage(robotName, pointIndex, message, correctBackend, null, header);
                 }
                 var configurationDataDict = DictionaryHelpers.GetAsDictionary(configurationDict, "data");
                 if (configurationDataDict != null)
@@ -670,18 +674,18 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 {
                     //TODO: This should return NULL message. But for now checking for errors.
                     Debug.LogWarning("RealtimeMimicResultMessageParse: 'data' field is missing in the 'configuration' field.");
-                    return new RealtimeMimicResultMessage(robotName, pointIndex, message, null, header);
+                    return new RealtimeMimicResultMessage(robotName, pointIndex, message, correctBackend, null, header);
                 }
             }
             if (configuration == null)
             {
                 //TODO: This needs to return a message with a null configuration. But for not checking for errors.
                 Debug.LogWarning("RealtimeMimicResultMessageParse: 'configuration' field is missing in the message for pt.");
-                return new RealtimeMimicResultMessage(robotName, pointIndex, message, null, header);
+                return new RealtimeMimicResultMessage(robotName, pointIndex, message, correctBackend, null, header);
             }
             Configuration ptConfiguration = Configuration.FromData(configuration);
 
-            return new RealtimeMimicResultMessage(robotName, pointIndex, message, ptConfiguration, header);
+            return new RealtimeMimicResultMessage(robotName, pointIndex, message, correctBackend, ptConfiguration, header);
         }
     }
 

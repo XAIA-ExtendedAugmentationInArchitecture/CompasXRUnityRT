@@ -96,6 +96,8 @@ namespace CompasXR.UI
         public GameObject ConfigDoesNotMatchURDFStructureWarningMessageObject;
         public GameObject TrajectoryNullWarningMessageObject;
 
+        public GameObject RealtimeMimicIncorrectBackendOnScreenMessage;
+
         //Visualizer Menu Objects
         private GameObject VisualzierBackground;
         private GameObject PreviewActorToggleObject;
@@ -323,6 +325,8 @@ namespace CompasXR.UI
 
         public int mimicCurrentSelectedGoalIndex = 0;
         public string CurrentSelectedGoalName = "Goal00";
+
+        public bool USERINSTIANTEDTRAJECTORYEXECUTED = false;
 
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
 
@@ -1979,6 +1983,17 @@ namespace CompasXR.UI
             Debug.Log("SetMimicPoint: Setting Mimic Point based on Human and Robot Zone Objects.");
             Debug.Log("SetMimicPoint: Mimic Zone Objects: " + databaseManager.ProjectZones.MimicZones + "Type of Mimic Zones: " + databaseManager.ProjectZones.MimicZones.GetType());
 
+            if (USERINSTIANTEDTRAJECTORYEXECUTED)
+            {
+                Debug.LogWarning("SetMimicPoint: User has already executed a trajectory, cannot set more points.");
+                instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();
+                USERINSTIANTEDTRAJECTORYEXECUTED = false;
+                if(trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+                {
+                    trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
+                }
+            }
+
             var mimicZones = databaseManager.ProjectZones.MimicZones;
 
             if (mimicZones.TryGetValue("human_zone", out Zone humanZone))
@@ -2026,6 +2041,18 @@ namespace CompasXR.UI
             /*
             * Method is used to undo the last set mimic point.
             */
+            if (USERINSTIANTEDTRAJECTORYEXECUTED)
+            {
+                Debug.LogWarning("SetMimicPoint: User has already executed a trajectory, cannot set more points.");
+                instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();
+                USERINSTIANTEDTRAJECTORYEXECUTED = false;
+                if (trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+                {
+                    trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
+                }
+                return;
+            }
+
             Debug.Log("UndoMimicPoint: Undoing Last Mimic Point.");
             if(instantiateObjects.MimicHumanPoints.Count > 0 && instantiateObjects.MimicRobotPoints.Count > 0)
             {
@@ -2251,6 +2278,19 @@ namespace CompasXR.UI
         {
             Debug.Log($"MimicRequestTrajectoryButtonMethod: Requesting Trajectory for {instantiateObjects.MimicHumanPoints.Count} points.");
 
+
+            if (USERINSTIANTEDTRAJECTORYEXECUTED)
+            {
+                Debug.LogWarning("SetMimicPoint: User has already executed a trajectory, cannot set more points.");
+                instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();
+                USERINSTIANTEDTRAJECTORYEXECUTED = false;
+                if (trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+                {
+                    trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
+                }
+                return;
+            }
+
             if (instantiateObjects.MimicHumanPoints.Count < 2)
             {
                 Debug.Log("MimicRequestTrajectoryButton: There is not enough mimic points to request a trajectory");
@@ -2453,6 +2493,8 @@ namespace CompasXR.UI
                     mqttTrajectoryManager.serviceManager.LastMimicTrajectoryResultMessage.RobotBaseFrame
                 );
                 mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicExecuteTrajectoryRequestTopic, exacuteMimicRequestMessage.GetData());
+                SetUserInitiatedMimicControlsActivity(true, true, true, false, false);
+                USERINSTIANTEDTRAJECTORYEXECUTED = true;
             }
         }
         public void UserInitiatedMimicMirrorToggleMethod(bool value)

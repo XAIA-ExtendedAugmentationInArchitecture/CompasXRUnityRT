@@ -123543,6 +123543,7 @@ MonoBehaviour:
   CurrentMimicModeIndex: 0
   mimicCurrentSelectedGoalIndex: 0
   CurrentSelectedGoalName: Goal00
+  USERINSTIANTEDTRAJECTORYEXECUTED: 0
 --- !u!222 &3178311101136892731
 CanvasRenderer:
   m_ObjectHideFlags: 0
