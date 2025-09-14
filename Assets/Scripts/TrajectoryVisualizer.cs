@@ -658,7 +658,6 @@ namespace CompasXR.Robots
                 Debug.Log("DestroyActiveTrajectoryandShowRobot: ActiveRobot is null.");
             }
         }
-
         public void SetRobotConfigfromDictWrapper(Dictionary<string, float> config, string configName, GameObject robotToConfigure, Dictionary<string, string> urdfLinkNames)
         {
             /*
