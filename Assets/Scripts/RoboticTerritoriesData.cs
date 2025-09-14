@@ -161,6 +161,30 @@ namespace CompasXR.RoboticTerritories.Data
                 Debug.LogWarning("GoalManager: GoalStateObserver is null. Cannot initialize component states.");
             }
         }
+
+        public void ColorEntireGoal(GoalObject goal, Material material, bool visibility)
+        {
+            if (goal == null || material == null)
+            {
+                Debug.LogWarning("GoalManager: ColorEntireGoal: goal or material is null.");
+                return;
+            }
+
+            foreach (var component in goal.GoalObjectComponentsDict.Values)
+            {
+                Renderer renderer = component.ComponentGameObject.GetComponentInChildren<Renderer>();
+                if (renderer != null)
+                {
+                    renderer.material = material;
+                }
+                else
+                {
+                    Debug.LogWarning($"GoalManager: ColorEntireGoal: No Renderer found on component '{component.Name}'");
+                }
+            }
+
+            goal.GoalGameObject.SetActive(visibility);
+        }
     }
     public class GoalObjectComponent
         {
@@ -425,6 +449,10 @@ namespace CompasXR.RoboticTerritories.Data
         public List<string> GetCompletedComponentsNames()
         {
             return ComponentStates.Values.Where(c => c.IsSatisfied).Select(c => c.Name).ToList();
+        }
+        public List<string> GetSatisfyingGeometryNames()
+        {
+            return ComponentStates.Values.Where(c => c.IsSatisfied && c.SatisfyingObservedGeometry != null).Select(c => c.SatisfyingObservedGeometry.Name).ToList();
         }
         public List<string> GetIncompleteComponentsNames()
         {

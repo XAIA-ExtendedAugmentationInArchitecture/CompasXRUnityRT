@@ -1079,9 +1079,10 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public string TargetName { get; set; }
         public Dictionary<string, Frame> CurrentGeometryFrames { get; private set; }
         public List<string> CompletedGoals { get; private set; }
+        public List<string> CompletedObjectNames { get; private set; }
         public string RobotName { get; private set; }
 
-        public PostInferenceTargetRequestMessage(List<string> completedGoals, string inferenceGoalName, string targetName, string robotName, Dictionary<string, Frame> currentGeometryFrames, Header header = null)
+        public PostInferenceTargetRequestMessage(List<string> completedGoals, List<string> completedObjectNames, string inferenceGoalName, string targetName, string robotName, Dictionary<string, Frame> currentGeometryFrames, Header header = null)
         {
             Header = header ?? new Header();
             CompletedGoals = completedGoals;
@@ -1089,6 +1090,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             TargetName = targetName;
             CurrentGeometryFrames = currentGeometryFrames;
             RobotName = robotName;
+            CompletedObjectNames = completedObjectNames;
         }
         public static List<JointTrajectoryPoint> _GetJointTrajectoryPoints(List<Trajectory> trajectories)
         {
@@ -1115,7 +1117,8 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 { "target_name", TargetName },
                 { "geometry_frames",  MessageHandelingExtensions._getDataFromFramesDictionary(CurrentGeometryFrames) },
                 { "robot_name", RobotName },
-                { "completed_goals", CompletedGoals }
+                { "completed_goals", CompletedGoals },
+                { "completed_object_names", CompletedObjectNames }
             };
         }
 
@@ -1131,6 +1134,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
 
             var robotName = jsonObject["robot_name"].ToString();
             var completedGoals = DictionaryHelpers.GetStringListFromDict(jsonObject, "completed_goals");
+            var completedObjectNames = DictionaryHelpers.GetStringListFromDict(jsonObject, "completed_object_names");
             Debug.Log($"PostInferenceTargetRequestMessage : Completed goals: {JsonConvert.SerializeObject(completedGoals)}"); // ["G0","G1"]
             Debug.Log($"PostInferenceTargetRequestMessage : Completed goals type: {completedGoals.GetType()}");
 
@@ -1180,7 +1184,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                     }
                 }
             }
-            return new PostInferenceTargetRequestMessage(completedGoals, inferenceGoalName, targetName, robotName, geometryFrames, header);
+            return new PostInferenceTargetRequestMessage(completedGoals, completedObjectNames, inferenceGoalName, targetName, robotName, geometryFrames, header);
         }
     }
 

@@ -641,6 +641,12 @@ namespace CompasXR.Robots
                 if (!ActiveRobot.transform.GetChild(0).gameObject.activeSelf)
                 {
                     ActiveRobot.transform.GetChild(0).gameObject.SetActive(true);
+
+                    if (databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
+                    {
+                        bool reachVisibiility = uiFunctionalities.ReachabilityToggleObject.GetComponent<Toggle>().isOn;
+                        AddReachabilitlyToHumanZone(ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName), databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, reachVisibiility);
+                    }
                 }
                 else
                 {

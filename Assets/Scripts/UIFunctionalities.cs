@@ -968,8 +968,13 @@ namespace CompasXR.UI
                 {
                     GOALINFERRED = false;
                     INITIALINFERENCEREQUEST = true;
+                    ResetInferenceGameObjectsInScene();
                     instantiateObjects.PostInferenceResetSelectedGoalComponent();
                     instantiateObjects.InferenceGoalsManager.GoalStatusObserver.Active = false;
+                }
+                if (trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+                {
+                    trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
                 }
 
                 CurrentZone = ZoneMenuItemsTest[CurrentZoneIndex];
@@ -1039,6 +1044,21 @@ namespace CompasXR.UI
             RealtimeMimicTestingToggle.onValueChanged.AddListener(TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY);
 
 
+        }
+        public void ResetInferenceGameObjectsInScene()
+        {
+            /*
+            * Method is used to reset the inference game objects.
+            */
+            Debug.Log("ResetInferenceGameObjects: Resetting Inference Game Objects.");
+            if (OnScreenWaitForInferenceMessage.activeSelf)
+            {
+                OnScreenWaitForInferenceMessage.SetActive(false);
+            }
+            if (instantiateObjects.InferenceGoalsManager.CurrentGoal != null)
+            {
+                instantiateObjects.InferenceGoalsManager.ColorEntireGoal(instantiateObjects.InferenceGoalsManager.CurrentGoal, instantiateObjects.GoalUnsatisfiedMaterial, false);
+            }
         }
 
         //TODO: This is inference button methods and testing
@@ -1222,7 +1242,7 @@ namespace CompasXR.UI
 
             instantiateObjects.PostInferenceSetFirstUnsatisfiedInferenceGoalAsCurrent(instantiateObjects.InferenceGoalsManager.GoalStatusObserver.ComponentStates, instantiateObjects.InferenceSelectedTargetMaterialUnbuilt, instantiateObjects.InferenceSelectedTargetMaterialBuilt);
             instantiateObjects.InferenceGoalsManager.GoalStatusObserver.DebugLogAllComponentStatesAsDictionary();
-            SetInferenceUIPostInferenceSuccesState(true, true, true, false, false);
+            SetInferenceUIPostInferenceSuccesState(true, true, false, false, false);
         }
 
         //TODO: Post Inference Button Methods
@@ -1392,11 +1412,15 @@ namespace CompasXR.UI
             }
 
             List<string> satisfiedGoals = instantiateObjects.InferenceGoalsManager.GoalStatusObserver.GetCompletedComponentsNames();
+            List<string> completedObjectNames = instantiateObjects.InferenceGoalsManager.GoalStatusObserver.GetSatisfyingGeometryNames();
             Dictionary<string, Frame> currentGeometryFramesAsDict = databaseManager.GetObservedGeometryFramesAsDict();
+
+            Debug.Log($"JOEEEEEEE: Completed Object Names: {JsonConvert.SerializeObject(completedObjectNames)}");
 
             PostInferenceTargetRequestMessage postInferenceTargetRequestMessage = new PostInferenceTargetRequestMessage
             (
                 satisfiedGoals,
+                completedObjectNames,
                 instantiateObjects.InferenceGoalsManager.CurrentGoal.Name,
                 instantiateObjects.CurrentSelectedGoalComponet.Name,
                 mqttTrajectoryManager.serviceManager.ActiveRobotName,
@@ -1616,7 +1640,14 @@ namespace CompasXR.UI
                     }
                     instantiateObjects.InferenceGoalsManager.GoalStatusObserver.Active = false;
                     instantiateObjects.MimicGoalsManager.GoalStatusObserver.Active = false;
-
+                    if(trajectoryVisualizer.ActiveTrajectoryParentObject!= null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+                    {
+                        trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
+                    }
+                    if(trajectoryVisualizer.humanZoneMimicReachibility != null)
+                    {
+                        Destroy(trajectoryVisualizer.humanZoneMimicReachibility);
+                    }
                     break;
                 case ProjectZones.CurrentZoneMode.Inference:
                     instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();

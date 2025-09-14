@@ -313,7 +313,7 @@ namespace CompasXR.Robots
             if (databaseManager.ProjectZones.CurrentZone != ProjectZones.CurrentZoneMode.Inference)
             {
                 Debug.LogWarning("MQTT: InferenceResultMessageHandler: Current Zone is not Inference. No action taken.");
-                string message = "WARNING: You received an inference result but are not in Inference mode.";
+                string message = "WARNING: You received an inference result but are not in Inference mode.This will be ignored";
                 UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.InferenceResultReceivedWhileInOtherModeOnScreenMessage, "InferenceModeDeselected", UIFunctionalities.MessagesParent, message, "InferenceResultReceivedMessageHandler: Inference result received while not in inference mode.");
                 serviceManager.InferenceResultsMessages.Add(inferenceResultMessage); //TODO: This is a strategy from compas XR class, but needs to be cleaned up
                 return;

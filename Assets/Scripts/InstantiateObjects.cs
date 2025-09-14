@@ -1398,10 +1398,28 @@ namespace CompasXR.Core
             return mirroredRotationB;
         }
 
+        // public void CleanInferenceScene()
+        // {
+        //     /*
+        //     * Method is used to clean the inference scene in the AR space
+        //     */
+        //     if (InferenceGoalsManager != null)
+        //     {
+        //         if(InferenceGoalsManager.GoalStatusObserver.Active)
+        //         {
+        //             InferenceGoalsManager.GoalStatusObserver.ResetAllGoalsStates(GoalUnsatisfiedMaterial);
+        //         }
+        //     }
+        //     else
+        //     {
+        //         Debug.LogWarning("CleanInferenceScene: Inference Goals Manager is null");
+        //     }
+        // }
+
     //TODO: TODO: TODO: TODO: TESTING GEOMETRY UPDATES UPDATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 
-    //TODO: Joe Actual: Update GoalStateObserver based on movement updates.
-    public void OnObservedObjectsChangedWrapper(object source, UpdateObservedGeometryEventArgs e)
+        //TODO: Joe Actual: Update GoalStateObserver based on movement updates.
+        public void OnObservedObjectsChangedWrapper(object source, UpdateObservedGeometryEventArgs e)
         {
             if (e.ObservedGeometryDict == null)
             {
@@ -1498,6 +1516,14 @@ namespace CompasXR.Core
                     //Updating the position of the goals parents based on the anchor cube position.
                     ObjectInstantiaion.UpdateExistingObjectFromRightHandFrameData(MimicGoalsParentObject, cur.Box.frame.point, cur.Box.frame.xaxis, cur.Box.frame.yaxis, false, false);
                     ObjectInstantiaion.UpdateExistingObjectFromRightHandFrameData(InferenceGoalsParentObject, cur.Box.frame.point, cur.Box.frame.xaxis, cur.Box.frame.yaxis, false, false);
+                    if (MimicGoalsManager.GoalStatusObserver.Active)
+                    {
+                        MimicGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, GoalSatisfiedMaterial, GoalUnsatisfiedMaterial, OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
+                    }
+                    if (InferenceGoalsManager.GoalStatusObserver.Active)
+                    {
+                        InferenceGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, GoalSatisfiedMaterial, GoalUnsatisfiedMaterial, OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
+                    }   
                     Debug.LogWarning($"OnObservedGeometryUpdated: AnchorCube position updated to {cur.Box.frame.point}");
                 }
         }
