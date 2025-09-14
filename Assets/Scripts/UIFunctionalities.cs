@@ -3274,10 +3274,10 @@ namespace CompasXR.UI
             * and set up the UI elements to acknowledge the request.
             */
             Debug.LogWarning("MQTT: MQTT Connection Failed.");
-            if(CommunicationToggleObject.GetComponent<Toggle>().isOn)
-            {
-                CommunicationToggleObject.GetComponent<Toggle>().isOn = false;
-            }
+            // if(CommunicationToggleObject.GetComponent<Toggle>().isOn)
+            // {
+            //     CommunicationToggleObject.GetComponent<Toggle>().isOn = false;
+            // }
             string message = $"WARNING: MQTT Failed to connect to broker: {mqttTrajectoryManager.brokerAddress} on port: {mqttTrajectoryManager.brokerPort}. Please check your internet and try again.";
             UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref MQTTFailedToConnectMessageObject, "MQTTConnectionFailedMessage", MessagesParent, message, "SignalMQTTConnectionFailed: MQTT Connection Failed.");
         }

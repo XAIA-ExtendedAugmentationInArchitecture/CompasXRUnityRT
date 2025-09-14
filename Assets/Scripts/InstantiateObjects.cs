@@ -141,8 +141,8 @@ namespace CompasXR.Core
         public GameObject MimicGoalsParentObject;
         public GoalManager MimicGoalsManager { get; private set; }
 
-        public float OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE = 0.03f; //5 cm
-        public float OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE = 3.0f; //5 degrees
+        public float OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE = 0.05f; //5 cm
+        public float OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE = 5.0f; //5 degrees
 
         //TODO: REALTIME MIMIC OBJECT TESTING
         public GameObject RealtimeMimicObjects;

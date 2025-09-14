@@ -14,6 +14,7 @@ using CompasXR.Robots.MqttData;
 using CompasXR.Robots.MqttData.RoboticTerritories;
 using CompasXR.RoboticTerritories.Data;
 using System.IO;
+using CompasXR.Core.Extentions;
 
 namespace CompasXR.Robots
 {
@@ -32,7 +33,7 @@ namespace CompasXR.Robots
         [Header("MQTT Settings")]
         [Tooltip("Set the topic to publish")]
         public string controllerName = "MQTT Trajectory Controller";
-        private string m_msg;    
+        private string m_msg;
         public string msg
         {
             get { return m_msg; }
@@ -55,12 +56,16 @@ namespace CompasXR.Robots
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////
 
         public RoboticTerritoriesTopics roboticTerritoriesTopics;
+        public GameObject mqttConnectionMessagePannel;
+        public GameObject mqttConnectionFailedTextObjects;
 
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////
 
         //////////////////////////////////////////// Monobehaviour Methods ////////////////////////////////////////////
         protected override void Start()
         {
+            mqttConnectionMessagePannel = GameObject.Find("MQTTConnectingScreen");
+            mqttConnectionFailedTextObjects = mqttConnectionMessagePannel.FindObject("FailedTextObjects");
             base.Start();
             // OnStartorRestartInitilization();
             OnStartorRestartInitilizationRoboticTerritories();
@@ -98,7 +103,7 @@ namespace CompasXR.Robots
         }
 
         //////////////////////////////////////////// Connection Managers ////////////////////////////////////////
-    
+
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////
         public void OnStartorRestartInitilizationRoboticTerritories(bool Restart = false)
         {
@@ -187,7 +192,7 @@ namespace CompasXR.Robots
                 //TODO: Implement Realtime Mimic Result Message Handler (Needs to find the object and delete it if it existis in the scene)
                 Debug.Log("MQTT: RealtimeMimicResult Message Handeling");
                 RealtimeMimicResultMessage realtimeMimicResultMessage = RealtimeMimicResultMessage.Parse(message);
-                if(realtimeMimicResultMessage.CorrectBackend == false)
+                if (realtimeMimicResultMessage.CorrectBackend == false)
                 {
                     Debug.LogWarning("MQTT: RealtimeMimicHandler: No Trajectories in the Mimic Result Message.");
                     string warningMessage = "WARNING: The robotic controler is set to the incorrect backend. Please restart it to mimic in realtime.";
@@ -231,13 +236,13 @@ namespace CompasXR.Robots
         {
             Debug.Log("MQTT: MimicResultReceivedMessageHandler: Mimic Result Message Received");
             Debug.Log($"MQTT: MimicResultReceivedMessageHandler: Mimic Result Message Received with {mimicResultMessage.Trajectories.Count} trajectories and {mimicResultMessage.CombinedTrajectoryPoints.Count} points");
-        
-            if(databaseManager.ProjectZones.CurrentZone != ProjectZones.CurrentZoneMode.Mimic)
+
+            if (databaseManager.ProjectZones.CurrentZone != ProjectZones.CurrentZoneMode.Mimic)
             {
                 Debug.LogWarning("MQTT: MimicResultReceivedMessageHandler: Current Zone is not Mimic. No action taken.");
                 return;
             }
-            else if(mimicResultMessage.Trajectories.Count <= 0)
+            else if (mimicResultMessage.Trajectories.Count <= 0)
             {
                 Debug.LogWarning("MQTT: MimicResultReceivedMessageHandler: No Trajectories in the Mimic Result Message.");
                 string message = "WARNING: The robotic controler replied with a null Trajectory. Please edit points or rerequest.";
@@ -245,7 +250,7 @@ namespace CompasXR.Robots
                 UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.TrajectoryNullWarningMessageObject, "TrajectoryNullWarningMessage", UIFunctionalities.MessagesParent, message, "MimicTrajectoryResultReceivedMessageHandler: Received trajectory is null");
                 return;
             }
-            else if(mimicResultMessage.CombinedTrajectoryPoints.Count <= 0)
+            else if (mimicResultMessage.CombinedTrajectoryPoints.Count <= 0)
             {
                 Debug.LogWarning("MQTT: MimicResultReceivedMessageHandler: Combined Trajectory points are empty in the Mimic Result Message.");
                 string message = "WARNING: The robotic controler replied with a null Trajectory. Please edit points or rerequest.";
@@ -253,10 +258,10 @@ namespace CompasXR.Robots
                 UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.TrajectoryNullWarningMessageObject, "TrajectoryNullWarningMessage", UIFunctionalities.MessagesParent, message, "MimicTrajectoryResultReceivedMessageHandler: Received trajectory is null");
                 return;
             }
-            else if(mimicResultMessage.RobotName != serviceManager.ActiveRobotName)  //TODO: THIS IS FROM COMPAS XR, BUT NEEDS TO BE THOUGHT ABOUT FOR ROBOT TERRITORIES
+            else if (mimicResultMessage.RobotName != serviceManager.ActiveRobotName)  //TODO: THIS IS FROM COMPAS XR, BUT NEEDS TO BE THOUGHT ABOUT FOR ROBOT TERRITORIES
             {
                 //Update Last Mimic Trajectory Result Message in the Service Manager
-                if(UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value != 0)
+                if (UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value != 0)
                 {
                     UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value = 0;
                 }
@@ -280,7 +285,7 @@ namespace CompasXR.Robots
             else
             {
                 //Update Last Mimic Trajectory Result Message in the Service Manager
-                if(UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value != 0)
+                if (UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value != 0)
                 {
                     UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value = 0;
                 }
@@ -387,7 +392,7 @@ namespace CompasXR.Robots
 
                 Debug.Log("MQTT: InferenceResultReceivedMessageHandler : Robot Name in the message is the same as the active robot name.");
             }
-            
+
         }
         public void PostInferenceTargetTrajectoryResultReceivedMessageHandler(PostInferenceTrajectoryResultMessage postInferenceTrajectoryResultMessage) //TODO: Remember CurrentGoal is updated in instantiateObjects
         {
@@ -473,6 +478,7 @@ namespace CompasXR.Robots
             /*
             * Method is used to signal that the MQTT connection has been established.
             */
+            HandleConnectionSucceededUIPanel();
             base.OnConnected();
             Debug.Log($"MQTT: Connected to broker: {brokerAddress} on Port: {brokerPort}.");
             // if (UIFunctionalities.CommunicationToggleObject.GetComponent<Toggle>().isOn)
@@ -500,7 +506,7 @@ namespace CompasXR.Robots
             */
             base.OnConnectionLost();
             string message = "WARNING: MQTT connection has been lost. Please check your internet connection and restart the application.";
-            UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref  UIFunctionalities.MQTTConnectionLostMessageObject, "MQTTConnectionLostMessage", UIFunctionalities.MessagesParent, message, "OnConnectionLost: MQTT Connection Lost");
+            UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.MQTTConnectionLostMessageObject, "MQTTConnectionLostMessage", UIFunctionalities.MessagesParent, message, "OnConnectionLost: MQTT Connection Lost");
             Debug.Log("MQTT: CONNECTION LOST");
         }
         public async void DisconnectandReconnectAsyncRoutine()
@@ -560,8 +566,8 @@ namespace CompasXR.Robots
                 Debug.LogWarning("MQTT: Topic to unsubscribe is empty or client is null.");
             }
         }
-        public void PublishToTopic(string publishingTopic,  Dictionary<string, object> message)
-        {   
+        public void PublishToTopic(string publishingTopic, Dictionary<string, object> message)
+        {
             /*
             * Method is used to publish a message to a custom topic.
             */
@@ -595,7 +601,7 @@ namespace CompasXR.Robots
             UnsubscribeFromTopic(compasXRTopics.subscribers.getTrajectoryResultTopic);
             UnsubscribeFromTopic(compasXRTopics.subscribers.approveTrajectoryTopic);
             UnsubscribeFromTopic(compasXRTopics.subscribers.approvalCounterRequestTopic);
-        }  
+        }
 
         //////////////////////////////////////////// Message Managers ////////////////////////////////////////////
         private void CompasXRIncomingMessageHandler(string topic, string message)
@@ -614,7 +620,7 @@ namespace CompasXR.Robots
                 Debug.Log("MQTT: GetTrajectoryResult Message Handeling");
                 GetTrajectoryResult getTrajectoryResultmessage = GetTrajectoryResult.Parse(message);
                 Debug.Log("MQTT: Pick and place bool: " + getTrajectoryResultmessage.PickAndPlace.ToString());
-                GetTrajectoryResultReceivedMessageHandler(getTrajectoryResultmessage); 
+                GetTrajectoryResultReceivedMessageHandler(getTrajectoryResultmessage);
             }
             else if (topic == compasXRTopics.subscribers.approveTrajectoryTopic)
             {
@@ -645,7 +651,7 @@ namespace CompasXR.Robots
             */
             serviceManager.LastGetTrajectoryRequestMessage = getTrajectoryRequestmessage;
             serviceManager.GetTrajectoryRequestTimeOutCancelationToken = new CancellationTokenSource();
-            _= TrajectoryRequestTimeOut(getTrajectoryRequestmessage.ElementID, 240f, serviceManager.GetTrajectoryRequestTimeOutCancelationToken.Token);
+            _ = TrajectoryRequestTimeOut(getTrajectoryRequestmessage.ElementID, 240f, serviceManager.GetTrajectoryRequestTimeOutCancelationToken.Token);
 
             if (getTrajectoryRequestmessage.Header.DeviceID != SystemInfo.deviceUniqueIdentifier)
             {
@@ -660,9 +666,9 @@ namespace CompasXR.Robots
         private void GetTrajectoryResultReceivedMessageHandler(GetTrajectoryResult getTrajectoryResultmessage)
         {
             //Check if the message is dirty and should be ignored
-            if(serviceManager.IsDirtyTrajectory)
+            if (serviceManager.IsDirtyTrajectory)
             {
-                if(serviceManager.IsDirtyGetTrajectoryRequestHeader.ResponseID == getTrajectoryResultmessage.Header.ResponseID &&
+                if (serviceManager.IsDirtyGetTrajectoryRequestHeader.ResponseID == getTrajectoryResultmessage.Header.ResponseID &&
                 serviceManager.IsDirtyGetTrajectoryRequestHeader.SequenceID + 1 == getTrajectoryResultmessage.Header.SequenceID)
                 {
                     Debug.Log("MQTT: GetTrajectoryResult: This Message is dirty & Should be Ignored.");
@@ -670,22 +676,22 @@ namespace CompasXR.Robots
                 }
             }
 
-            if(serviceManager.GetTrajectoryRequestTimeOutCancelationToken != null)
+            if (serviceManager.GetTrajectoryRequestTimeOutCancelationToken != null)
             {
                 Debug.Log("GetTrajectoryResultReceivedMessageHandler: The request time out should be cancled, because the result was received.");
                 serviceManager.GetTrajectoryRequestTimeOutCancelationToken.Cancel();
             }
 
             serviceManager.LastGetTrajectoryResultMessage = getTrajectoryResultmessage;
-            if(serviceManager.LastGetTrajectoryRequestMessage != null)
+            if (serviceManager.LastGetTrajectoryRequestMessage != null)
             {
                 //First Check if the message is the same as the last request message and if the trajectory count is greater then zero
-                if(getTrajectoryResultmessage.Header.ResponseID != serviceManager.LastGetTrajectoryRequestMessage.Header.ResponseID 
+                if (getTrajectoryResultmessage.Header.ResponseID != serviceManager.LastGetTrajectoryRequestMessage.Header.ResponseID
                 || getTrajectoryResultmessage.Header.SequenceID != serviceManager.LastGetTrajectoryRequestMessage.Header.SequenceID + 1
                 || getTrajectoryResultmessage.ElementID != serviceManager.LastGetTrajectoryRequestMessage.ElementID)
                 {
-                    if(serviceManager.PrimaryUser)
-                    {                    
+                    if (serviceManager.PrimaryUser)
+                    {
                         Debug.LogWarning("MQTT: GetTrajectoryResult (PrimaryUser): ResponseID, SequenceID, or ElementID do not match the last GetTrajectoryRequestMessage. No action taken.");
 
                         string message = "WARNING: Trajectory Response did not match expectations. Returning to Request Service.";
@@ -699,7 +705,7 @@ namespace CompasXR.Robots
                     else
                     {
                         serviceManager.TrajectoryRequestTransactionLock = false;
-                        if(UIFunctionalities.RobotToggleObject.GetComponent<Toggle>().isOn)
+                        if (UIFunctionalities.RobotToggleObject.GetComponent<Toggle>().isOn)
                         {
                             UIFunctionalities.SetRoboticUIElementsFromKey(UIFunctionalities.CurrentStep);
                         }
@@ -709,24 +715,24 @@ namespace CompasXR.Robots
                     }
                 }
                 else
-                {    
-                    
+                {
+
                     //Check if the count is greater then Zero and start the time out dependant on if I am primary user or not.
-                    if(getTrajectoryResultmessage.Trajectory.Count > 0)
+                    if (getTrajectoryResultmessage.Trajectory.Count > 0)
                     {
                         serviceManager.ApprovalTimeOutCancelationToken = new CancellationTokenSource();
                         float duration = 120; //DURATION FOR PRIMARY USER WAITING FOR APPROVALS.... NEEDS TO BE ADJUSTED W/ FABRICATION TIME.
-                        if(!serviceManager.PrimaryUser)
+                        if (!serviceManager.PrimaryUser)
                         {
                             duration = 240; //DURATION FOR NON PRIMARY USER WAITING FOR CONSENSUS.... NEEDS TO BE ADJUSTED W/ FABRICATION TIME.
                         }
-                        _= TrajectoryApprovalTimeout(getTrajectoryResultmessage.ElementID, duration, serviceManager.ApprovalTimeOutCancelationToken.Token);
+                        _ = TrajectoryApprovalTimeout(getTrajectoryResultmessage.ElementID, duration, serviceManager.ApprovalTimeOutCancelationToken.Token);
                     }
                     else
                     {
                         Debug.Log("MQTT: GetTrajectoryResult: Trajectory count is zero. No time out started.");
                     }
-                    
+
                     //If I am not the primary user checks
                     if (!serviceManager.PrimaryUser)
                     {
@@ -734,7 +740,7 @@ namespace CompasXR.Robots
                         {
                             serviceManager.TrajectoryRequestTransactionLock = false;
 
-                
+
                             UIFunctionalities.SignalTrajectoryReviewRequest(
                                 getTrajectoryResultmessage.ElementID,
                                 getTrajectoryResultmessage.RobotName,
@@ -754,7 +760,7 @@ namespace CompasXR.Robots
                         else
                         {
                             serviceManager.TrajectoryRequestTransactionLock = false;
-                            if(UIFunctionalities.RobotToggleObject.GetComponent<Toggle>().isOn)
+                            if (UIFunctionalities.RobotToggleObject.GetComponent<Toggle>().isOn)
                             {
                                 UIFunctionalities.SetRoboticUIElementsFromKey(UIFunctionalities.CurrentStep);
                             }
@@ -762,9 +768,9 @@ namespace CompasXR.Robots
                             Debug.Log("GetTrajectoryResult (!PrimaryUser): Trajectory count is zero. I am free to request.");
                         }
                     }
-                    
+
                     else
-                    {           
+                    {
                         //I am the primary user
                         if (getTrajectoryResultmessage.Trajectory.Count > 0)
                         {
@@ -773,7 +779,7 @@ namespace CompasXR.Robots
                             serviceManager.CurrentTrajectory = getTrajectoryResultmessage.Trajectory;
                             serviceManager.currentService = ServiceManager.CurrentService.ApproveTrajectory;
 
-                            if(getTrajectoryResultmessage.RobotName != serviceManager.ActiveRobotName)
+                            if (getTrajectoryResultmessage.RobotName != serviceManager.ActiveRobotName)
                             {
                                 UIFunctionalities.SignalActiveRobotUpdateFromPlanner(
                                     getTrajectoryResultmessage.ElementID,
@@ -785,7 +791,7 @@ namespace CompasXR.Robots
                                         trajectoryVisualizer.ActiveRobot,
                                         trajectoryVisualizer.ActiveTrajectoryParentObject,
                                         true));
-                                
+
                                 Debug.Log("MQTT: GetTrajectoryResult (PrimaryUser): Robot Name in the message is not the same as the active robot name signaling on screen control.");
 
                             }
@@ -832,13 +838,13 @@ namespace CompasXR.Robots
                     serviceManager.PrimaryUser = false;
                 }
 
-                if(serviceManager.ApprovalTimeOutCancelationToken != null)
+                if (serviceManager.ApprovalTimeOutCancelationToken != null)
                 {
                     Debug.Log("ApproveTrajectoryMessageReceivedHandler: Time Out Cancled from Rejection Message.");
                     serviceManager.ApprovalTimeOutCancelationToken.Cancel();
                 }
-                
-                if(trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+
+                if (trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
                 {
                     trajectoryVisualizer.DestroyActiveTrajectoryChildren();
                 }
@@ -847,11 +853,11 @@ namespace CompasXR.Robots
                     Debug.LogWarning("ApproveTrajectoryMessageReceivedHandler: ActiveTrajectoryParentObject is null or has no children.");
                 }
 
-                if(trajectoryVisualizer.ActiveRobot != null && !trajectoryVisualizer.ActiveRobot.activeSelf)
+                if (trajectoryVisualizer.ActiveRobot != null && !trajectoryVisualizer.ActiveRobot.activeSelf)
                 {
                     trajectoryVisualizer.ActiveRobot.SetActive(true);
                 }
-                
+
                 serviceManager.ApprovalCount.Reset();
                 serviceManager.UserCount.Reset();
                 serviceManager.CurrentTrajectory = null;
@@ -890,7 +896,7 @@ namespace CompasXR.Robots
                     serviceManager.PrimaryUser = false;
                 }
 
-                if(serviceManager.ApprovalTimeOutCancelationToken != null)
+                if (serviceManager.ApprovalTimeOutCancelationToken != null)
                 {
                     Debug.Log("ApproveTrajectoryMessageReceivedHandler: Time Out Cancled from Consensus Message.");
                     serviceManager.ApprovalTimeOutCancelationToken.Cancel();
@@ -901,12 +907,12 @@ namespace CompasXR.Robots
                 serviceManager.CurrentTrajectory = null;
                 serviceManager.currentService = ServiceManager.CurrentService.None;
                 UIFunctionalities.TrajectoryServicesUIControler(true, false, false, false, false, false);
-            }            
+            }
             //ApproveTrajectoryMessage ApprovalStatus Cancelation message received
             else if (trajectoryApprovalMessage.ApprovalStatus == 3)
             {
                 Debug.Log($"MQTT: ApproveTrajectory Cancelation message received for trajectory {trajectoryApprovalMessage.TrajectoryID}");
-                if(serviceManager.ApprovalTimeOutCancelationToken != null)
+                if (serviceManager.ApprovalTimeOutCancelationToken != null)
                 {
                     Debug.Log("ApproveTrajectoryMessageReceivedHandler: Canceling Trajectory Approval from Cancelation Message.");
                     serviceManager.ApprovalTimeOutCancelationToken.Cancel();
@@ -917,11 +923,11 @@ namespace CompasXR.Robots
                     serviceManager.UserCount.Reset();
                     serviceManager.CurrentTrajectory = null;
                     serviceManager.currentService = ServiceManager.CurrentService.None;
-                    if(trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+                    if (trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
                     {
                         trajectoryVisualizer.DestroyActiveTrajectoryChildren();
                     }
-                    if(trajectoryVisualizer.ActiveRobot != null && !trajectoryVisualizer.ActiveRobot.activeSelf)
+                    if (trajectoryVisualizer.ActiveRobot != null && !trajectoryVisualizer.ActiveRobot.activeSelf)
                     {
                         trajectoryVisualizer.ActiveRobot.SetActive(true);
                     }
@@ -929,7 +935,7 @@ namespace CompasXR.Robots
                     if (trajectoryApprovalMessage.Header.DeviceID != SystemInfo.deviceUniqueIdentifier)
                     {
                         string message = "WARNING : The trajectory approval has been canceled by another user. Returning to Request Trajectory Service.";
-                        UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref  UIFunctionalities.TrajectoryCancledMessage, "TrajectoryCancledMessage", UIFunctionalities.MessagesParent, message, "ApproveTrajectoryMessageReceivedHandler: Trajectory Cancled by another user.");
+                        UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.TrajectoryCancledMessage, "TrajectoryCancledMessage", UIFunctionalities.MessagesParent, message, "ApproveTrajectoryMessageReceivedHandler: Trajectory Cancled by another user.");
                     }
                     UIFunctionalities.TrajectoryServicesUIControler(true, true, false, false, false, false);
                 }
@@ -1008,7 +1014,7 @@ namespace CompasXR.Robots
                         serviceManager.UserCount.Reset();
 
                         string message = "WARNING : Trajectory Approval has timed out. Returning to Request Trajectory Service.";
-                        UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref  UIFunctionalities.TrajectoryCancledMessage, "TrajectoryCancledMessage", UIFunctionalities.MessagesParent, message, "TrajectoryApprovalTimeout: Trajectory Approval Cancled by Timeout.");
+                        UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.TrajectoryCancledMessage, "TrajectoryCancledMessage", UIFunctionalities.MessagesParent, message, "TrajectoryApprovalTimeout: Trajectory Approval Cancled by Timeout.");
                         UIFunctionalities.TrajectoryServicesUIControler(true, true, false, false, false, false);
                     }
                 }
@@ -1045,7 +1051,7 @@ namespace CompasXR.Robots
                     serviceManager.UserCount.Reset();
 
                     string message = "WARNING : Current Trajectory Request has timed out. Returning to Request Trajectory Service.";
-                    UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref  UIFunctionalities.TrajectoryRequestTimeoutMessage, "TrajectoryRequestTimeoutMessage", UIFunctionalities.MessagesParent, message, "TrajectoryRequestTimeoutMessage: Trajectory Request Cancled by Timeout.");
+                    UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.TrajectoryRequestTimeoutMessage, "TrajectoryRequestTimeoutMessage", UIFunctionalities.MessagesParent, message, "TrajectoryRequestTimeoutMessage: Trajectory Request Cancled by Timeout.");
                     UIFunctionalities.TrajectoryServicesUIControler(true, true, false, false, false, false);
                 }
                 else
@@ -1070,6 +1076,8 @@ namespace CompasXR.Robots
             /*
             * Method is used to add event listners for the MQTT connection options.
             */
+            ConnectionFailed += HandleConnectionFailedUIPanel;
+            // ConnectionSucceeded += HandleConnectionSucceededUIPanel;
             ConnectionSucceeded += SubscribeToCompasXRTopics;
             ConnectionFailed += UIFunctionalities.SignalMQTTConnectionFailed;
         }
@@ -1078,8 +1086,27 @@ namespace CompasXR.Robots
             /*
             * Method is used to remove event listners for the MQTT connection options.
             */
+            // ConnectionSucceeded -= HandleConnectionSucceededUIPanel;
+            ConnectionFailed -= HandleConnectionFailedUIPanel;
             ConnectionSucceeded -= SubscribeToCompasXRTopics;
             ConnectionFailed -= UIFunctionalities.SignalMQTTConnectionFailed;
+        }
+
+        public void HandleConnectionSucceededUIPanel()
+        {
+            /*
+            * Method is used to handle the MQTT connection succeeded event for the UI panel.
+            */
+            Debug.Log("MQTT: Connection to broker succeeded - HandleConnectionSucceededUIPanel");
+            mqttConnectionMessagePannel.SetActive(false);
+        }
+        public void HandleConnectionFailedUIPanel()
+        {
+            /*
+            * Method is used to handle the MQTT connection failed event for the UI panel.
+            */
+            Debug.LogError("MQTT: Connection to broker failed - HandleConnectionFailedUIPanel");
+            mqttConnectionFailedTextObjects.SetActive(true);
         }
 
     }

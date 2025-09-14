@@ -6,6 +6,7 @@ using uPLibrary.Networking.M2Mqtt;
 using uPLibrary.Networking.M2Mqtt.Messages;
 using Newtonsoft.Json;
 using TMPro;
+using CompasXR.Core.Extentions;
 
 namespace CompasXR.Database.FirebaseManagment
 {
@@ -28,6 +29,8 @@ namespace CompasXR.Database.FirebaseManagment
         public string nameController = "Controller 1";
         private FirebaseConfigSettings saveFirebaseConfigSettingsScript;
         public GameObject greenScreenPanel;
+        public GameObject mqttConnectionMessagePannel;
+        public GameObject mqttConnectionFailedTextObjects;
         private float flashDuration = 1.0f;
         private string m_msg;
         public string msg
@@ -58,9 +61,12 @@ namespace CompasXR.Database.FirebaseManagment
         private List<string> eventMessages = new List<string>();
         private string currentTopic = "";
 
-    //////////////////////////// Monobehaviour Methods //////////////////////////////
+        //////////////////////////// Monobehaviour Methods //////////////////////////////
         protected override void Start()
         {
+            mqttConnectionMessagePannel = GameObject.Find("MQTTConnectingScreen");
+            mqttConnectionFailedTextObjects = mqttConnectionMessagePannel.FindObject("FailedTextObjects");
+
             base.Start();
             GameObject firebaseManager = GameObject.Find("Firebase_Manager");
             if (firebaseManager != null)
@@ -72,7 +78,8 @@ namespace CompasXR.Database.FirebaseManagment
                 Debug.LogError("MqttFirebaseConfigManager: Firebase Manager GameObject not found in the scene.");
             }
             Connect();
-        }  
+            AddConnectionEventListnersStartup();
+        }
         protected override void Update()
         {
             base.Update();
@@ -99,13 +106,13 @@ namespace CompasXR.Database.FirebaseManagment
                     FlashGreenScreen();
                 }
             }
-        else
+            else
             {
                 Debug.LogError("OnConnectButtonClicked: MQTT client is not connected.");
             }
         }
 
-    //////////////////////////// MQTT Connection Methods ////////////////////////////
+        //////////////////////////// MQTT Connection Methods ////////////////////////////
         private void SubscribeToTopic()
         {
             /*
@@ -133,7 +140,7 @@ namespace CompasXR.Database.FirebaseManagment
                 client.Unsubscribe(new string[] { topicToUnsubscribe });
                 Debug.Log("UnsubscribeCurrentTopic: Unsubscribed from topic: " + topicToUnsubscribe);
             }
-            
+
         }
         private void FlashGreenScreen()
         {
@@ -181,6 +188,42 @@ namespace CompasXR.Database.FirebaseManagment
             */
             if (eventMessages.Count > 50) eventMessages.Clear();
             eventMessages.Add(eventMsg);
+        }
+
+        public void AddConnectionEventListnersStartup()
+        {
+            /*
+            * AddConnectionEventListnersStartup : Method is used to add event listeners for MQTT connection events.
+            */
+            ConnectionSucceeded += HandleConnectionSucceeded;
+            ConnectionFailed += HandleConnectionFailed;
+        }
+
+        public void RemoveConnectionEventListnersShutdown()
+        {
+            /*
+            * RemoveConnectionEventListnersShutdown : Method is used to remove event listeners for MQTT connection events.
+            */
+            ConnectionSucceeded -= HandleConnectionSucceeded;
+            ConnectionFailed -= HandleConnectionFailed;
+        }
+
+        private void HandleConnectionSucceeded()
+        {
+            /*
+            * HandleConnectionSucceeded : Method is used to handle the MQTT connection succeeded event.
+            */
+            Debug.Log("HandleConnectionSucceeded: MQTT connection succeeded.");
+            mqttConnectionMessagePannel.SetActive(false);
+        }
+
+        private void HandleConnectionFailed()
+        {
+            /*
+            * HandleConnectionFailed : Method is used to handle the MQTT connection failed event.
+            */
+            Debug.LogError("HandleConnectionFailed: MQTT connection failed.");
+            mqttConnectionFailedTextObjects.SetActive(true);
         }
     }
 }
