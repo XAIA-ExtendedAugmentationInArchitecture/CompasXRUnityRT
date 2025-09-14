@@ -435,6 +435,7 @@ namespace CompasXR.Robots
                         attachedCollisionMeshObject = Instantiate(attachedCollisionMeshObject, linkToAttachTo.transform.position, linkToAttachTo.transform.rotation);
                         attachedCollisionMeshObject.name = $"{acm.CollisionMesh.Id}";
                         attachedCollisionMeshObject.transform.SetParent(linkToAttachTo.transform, true);
+                        Debug.Log($"AttachCollisionMeshToTrajectoryConfigs: Attached {attachedCollisionMeshObject.name} to {linkToAttachTo.name} in trajectory config {i}.");
                     }
                     else
                     {
