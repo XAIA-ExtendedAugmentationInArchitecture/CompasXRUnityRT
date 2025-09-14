@@ -1077,7 +1077,6 @@ namespace CompasXR.Robots
             * Method is used to add event listners for the MQTT connection options.
             */
             ConnectionFailed += HandleConnectionFailedUIPanel;
-            // ConnectionSucceeded += HandleConnectionSucceededUIPanel;
             ConnectionSucceeded += SubscribeToCompasXRTopics;
             ConnectionFailed += UIFunctionalities.SignalMQTTConnectionFailed;
         }
@@ -1086,7 +1085,6 @@ namespace CompasXR.Robots
             /*
             * Method is used to remove event listners for the MQTT connection options.
             */
-            // ConnectionSucceeded -= HandleConnectionSucceededUIPanel;
             ConnectionFailed -= HandleConnectionFailedUIPanel;
             ConnectionSucceeded -= SubscribeToCompasXRTopics;
             ConnectionFailed -= UIFunctionalities.SignalMQTTConnectionFailed;
