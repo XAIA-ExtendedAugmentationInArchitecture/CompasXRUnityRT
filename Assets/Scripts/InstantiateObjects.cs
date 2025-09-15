@@ -1206,6 +1206,7 @@ namespace CompasXR.Core
             }
         }
 
+        //TODO: Move to CLASS MADE FOR THIS........
         public void CreateDuplicatGeometriesForMimic(ref GameObject GeometriesParentObject, ref GameObject MirroredGeometriesParentObject) //, Zone HumanZone, Zone RobotZone, GameObject ObservedGeoemtriesParent, GameObject MimicGeometriesParent, ref Dictionary<string, ObservedGeometry> sourceObservedGeometriesDict, ref Dictionary<string, ObservedGeometry> targetObservedGeometriesDict)
         {
             /*
@@ -1253,7 +1254,7 @@ namespace CompasXR.Core
             );
 
             MirroredGeometriesParentObject.transform.position = positionToPutGeometries;
-            MirroredGeometriesParentObject.transform.SetParent(GeometriesParentObject.transform.parent, true);
+            MirroredGeometriesParentObject.transform.SetParent(GeometriesParentObject.transform, true);
             MirroredGeometriesParentObject.name = "MirroredGeometriesParentObject";
 
             Vector3 mirrorX = UIFunctionalities.UserInitiatedMimicMirrorToggle.isOn
@@ -1309,14 +1310,8 @@ namespace CompasXR.Core
                 size2.z / size1.z
             );
         }
-        private static Vector3 GetWorldSizeOriginal(GameObject obj)
-        {
-            Renderer rend = obj.GetComponent<Renderer>();
-            if (rend != null)
-                return rend.bounds.size;
-            else
-                return Vector3.Scale(obj.transform.localScale, Vector3.one); // fallback
-        }
+        //TODO: Move to CLASS MADE FOR THIS........        
+
         public void DestroyRealtimeMimicZoneObjects()
         {
             /*

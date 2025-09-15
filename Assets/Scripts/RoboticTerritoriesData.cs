@@ -508,8 +508,51 @@ namespace CompasXR.RoboticTerritories.Data
         bool Active
         { get; set; }
 
-                
+        public MimicMirroredGeometryManager(ref GameObject GeometriesParentObject, ref GameObject MirroredGeometriesParentObject)
+        {
+            this.MirroredGeometriesParentObject = MirroredGeometriesParentObject;
+            // MimicObservedGeometriesDict = new Dictionary<string, ObservedGeometry>();
+            // MimicGoalComponentsDict = new Dictionary<string, GoalObjectComponent>();
+            // CurrentMimicGoal = null;
+            // Active = false;
+        }
 
+        public void UpdateCurrentGoal(string goalName)
+        {
+            //TODO: Mimic Parent Find Goal by name and update
+        }
+
+        public void UpdateObservedGeometry(string observedGeometryName, ObservedGeometry observedGeometryActual)
+        {
+            //TODO: Mimic Parent Find Observed Geometry by name and update
+            
+        }
+
+        public void UpdateCompomponentState(string componentName, bool isSatisfied, ObservedGeometry satisfyingObservedGeometryActual)
+        {
+            //TODO: Mimic Parent Find Component by name and update
+
+            //TODO: Find the satisfying observed geometry in the observed geometries dict and assign it to the component
+
+        }
+
+        public void DestroyMirroredGeometriesParentObject()
+        {
+            if (MirroredGeometriesParentObject != null)
+            {
+                GameObject.Destroy(MirroredGeometriesParentObject);
+                MirroredGeometriesParentObject = null;
+            }
+        }
+
+        public void Clear()
+        {
+            MimicObservedGeometriesDict.Clear();
+            MimicGoalComponentsDict.Clear();
+            CurrentMimicGoal = null;
+            MirroredGeometriesParentObject = null;
+            Active = false;
+        }
 
 
     }
