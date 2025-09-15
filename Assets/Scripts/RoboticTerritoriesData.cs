@@ -496,6 +496,23 @@ namespace CompasXR.RoboticTerritories.Data
         }
     }
 
+    [System.Serializable]
+    public class MimicMirroredGeometryManager
+    {
+        public GameObject MirroredGeometriesParentObject { get; set; }
+
+        public GoalObject CurrentMimicGoal { get; set; }
+        public Dictionary<string, ObservedGeometry> MimicObservedGeometriesDict { get; set; }
+        public Dictionary<string, GoalObjectComponent> MimicGoalComponentsDict { get; set; }
+
+        bool Active
+        { get; set; }
+
+                
+
+
+
+    }
 
     [System.Serializable]
     public class Box

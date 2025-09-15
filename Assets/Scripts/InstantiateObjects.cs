@@ -174,6 +174,7 @@ namespace CompasXR.Core
         public Quaternion LASTSENTCAMERAROTATIONFORREALTIMEMIMIC = Quaternion.identity;
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
+        public GameObject MirroredGeometriesParentObject;
 
         /////////////////////////////// Monobehaviour Methods //////////////////////////////////////////
         public void Awake()
@@ -1203,6 +1204,118 @@ namespace CompasXR.Core
             {
                 Debug.Log("DestroyMimicZoneObjects: Mimic Points are empty");
             }
+        }
+
+        public void CreateDuplicatGeometriesForMimic(ref GameObject GeometriesParentObject, ref GameObject MirroredGeometriesParentObject) //, Zone HumanZone, Zone RobotZone, GameObject ObservedGeoemtriesParent, GameObject MimicGeometriesParent, ref Dictionary<string, ObservedGeometry> sourceObservedGeometriesDict, ref Dictionary<string, ObservedGeometry> targetObservedGeometriesDict)
+        {
+            /*
+            * Method is used to create duplicate geometries for the mimic goals in the AR space
+            */
+            if (GeometriesParentObject == null)
+            {
+                Debug.LogWarning("CreateDuplicatGeometriesForMimic: Geometries Parent Object is null.");
+                return;
+            }
+
+            var mimicZones = databaseManager.ProjectZones.MimicZones;
+            GameObject humanZoneObject = null;
+            GameObject robotZoneObject = null;
+            if (mimicZones.TryGetValue("human_zone", out Zone humanZone))
+            {
+                if (mimicZones.TryGetValue("robot_zone", out Zone robotZone))
+                {
+                    humanZoneObject = humanZone.ZoneObject;
+                    robotZoneObject = robotZone.ZoneObject;
+                }
+            }
+
+            Vector3 AllGeometiresParentObjectsPosition = GeometriesParentObject.transform.position;
+            Vector3 positionToPutGeometries = Vector3.zero;
+            Vector3 objectlocalScale = Vector3.one;
+
+            if (UIFunctionalities.UserInitiatedMimicMirrorToggle.isOn)
+            {
+                objectlocalScale = new Vector3(-1, 1, 1);
+                Vector3 mirroredWorldPosition = MirrorPositionAcrossBox(robotZoneObject, AllGeometiresParentObjectsPosition);
+                Vector3 mappedPosition = MapPointBetweenBoxes(robotZoneObject, humanZoneObject, mirroredWorldPosition);
+                positionToPutGeometries = mappedPosition;
+            }
+            else
+            {
+                objectlocalScale = new Vector3(1, 1, 1);
+                positionToPutGeometries = MapPointBetweenBoxes(robotZoneObject, humanZoneObject, AllGeometiresParentObjectsPosition);
+            }
+
+            MirroredGeometriesParentObject = Instantiate(
+                GeometriesParentObject,
+                GeometriesParentObject.transform.position,
+                GeometriesParentObject.transform.rotation
+            );
+
+            MirroredGeometriesParentObject.transform.position = positionToPutGeometries;
+            MirroredGeometriesParentObject.transform.SetParent(GeometriesParentObject.transform.parent, true);
+            MirroredGeometriesParentObject.name = "MirroredGeometriesParentObject";
+
+            Vector3 mirrorX = UIFunctionalities.UserInitiatedMimicMirrorToggle.isOn
+                ? new Vector3(-1f, 1f, 1f)
+                : Vector3.one;
+            float s = GetUniformScale(robotZoneObject, humanZoneObject);
+            MirroredGeometriesParentObject.transform.localScale = Vector3.Scale(mirrorX, new Vector3(s, s, s));
+            Debug.Log($"CreateDuplicatGeometriesForMimic: Created Mirrored Geometries at {positionToPutGeometries} with scale {MirroredGeometriesParentObject.transform.localScale}");
+        }
+
+        public static float GetUniformScale(GameObject fromBox, GameObject toBox, float epsilon = 1e-6f)
+        {
+            Vector3 a = GetWorldSize(fromBox);
+            Vector3 b = GetWorldSize(toBox);
+
+            float sx = b.x / Mathf.Max(a.x, epsilon);
+            float sy = b.y / Mathf.Max(a.y, epsilon);
+            float sz = b.z / Mathf.Max(a.z, epsilon);
+
+            // geometric mean (simple & robust)
+            return Mathf.Pow(sx * sy * sz, 1f / 3f);
+        }
+
+        // Prefer renderer bounds for real world size; fallback to lossyScale.
+        public static Vector3 GetWorldSize(GameObject go)
+        {
+            var r = go ? go.GetComponent<Renderer>() : null;
+            return (r != null) ? r.bounds.size : (go ? go.transform.lossyScale : Vector3.one);
+        }
+        public static Vector3 DetermineScalarRelationship(GameObject Box1, GameObject Box2)
+        {
+            if (Box1 == null || Box2 == null)
+            {
+                Debug.LogError("Boxes cannot be null.");
+                return Vector3.one;
+            }
+
+            // Get world-space bounding box sizes
+            Vector3 size1 = GetWorldSize(Box1);
+            Vector3 size2 = GetWorldSize(Box2);
+
+            // Avoid divide-by-zero
+            if (size1 == Vector3.zero)
+            {
+                Debug.LogWarning("Box1 has zero size, returning Vector3.one.");
+                return Vector3.one;
+            }
+
+            // Scale factor = size2 / size1 (per axis)
+            return new Vector3(
+                size2.x / size1.x,
+                size2.y / size1.y,
+                size2.z / size1.z
+            );
+        }
+        private static Vector3 GetWorldSizeOriginal(GameObject obj)
+        {
+            Renderer rend = obj.GetComponent<Renderer>();
+            if (rend != null)
+                return rend.bounds.size;
+            else
+                return Vector3.Scale(obj.transform.localScale, Vector3.one); // fallback
         }
         public void DestroyRealtimeMimicZoneObjects()
         {

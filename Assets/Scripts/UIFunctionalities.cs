@@ -1707,6 +1707,7 @@ namespace CompasXR.UI
                     if (instantiateObjects.MimicGoalsParentObject != null)
                     {
                         instantiateObjects.MimicGoalsParentObject.SetActive(true);
+                        instantiateObjects.CreateDuplicatGeometriesForMimic(ref instantiateObjects.AllGeometiresParentObjects, ref instantiateObjects.MirroredGeometriesParentObject);
                     }
 
                     break;
