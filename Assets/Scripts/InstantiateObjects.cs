@@ -16,6 +16,7 @@ using CompasXR.Robots.Data;
 using Vuforia;
 using RosSharp.RosBridgeClient.MessageTypes.ObjectRecognition;
 using System.Linq;
+using CompasXR.Robots.Model;
 
 
 namespace CompasXR.Core
@@ -175,6 +176,7 @@ namespace CompasXR.Core
 
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         public GameObject MirroredGeometriesParentObject;
+        public MimicMirroredGeometryManager MimicMirroredGeometryManagerImplementation;
 
         /////////////////////////////// Monobehaviour Methods //////////////////////////////////////////
         public void Awake()
@@ -1232,18 +1234,15 @@ namespace CompasXR.Core
 
             Vector3 AllGeometiresParentObjectsPosition = GeometriesParentObject.transform.position;
             Vector3 positionToPutGeometries = Vector3.zero;
-            Vector3 objectlocalScale = Vector3.one;
 
             if (UIFunctionalities.UserInitiatedMimicMirrorToggle.isOn)
             {
-                objectlocalScale = new Vector3(-1, 1, 1);
                 Vector3 mirroredWorldPosition = MirrorPositionAcrossBox(robotZoneObject, AllGeometiresParentObjectsPosition);
                 Vector3 mappedPosition = MapPointBetweenBoxes(robotZoneObject, humanZoneObject, mirroredWorldPosition);
                 positionToPutGeometries = mappedPosition;
             }
             else
             {
-                objectlocalScale = new Vector3(1, 1, 1);
                 positionToPutGeometries = MapPointBetweenBoxes(robotZoneObject, humanZoneObject, AllGeometiresParentObjectsPosition);
             }
 
@@ -1263,8 +1262,15 @@ namespace CompasXR.Core
             float s = GetUniformScale(robotZoneObject, humanZoneObject);
             MirroredGeometriesParentObject.transform.localScale = Vector3.Scale(mirrorX, new Vector3(s, s, s));
             Debug.Log($"CreateDuplicatGeometriesForMimic: Created Mirrored Geometries at {positionToPutGeometries} with scale {MirroredGeometriesParentObject.transform.localScale}");
-        }
 
+            if (databaseManager.observedGeometriesDict == null || databaseManager.observedGeometriesDict.Count == 0)
+            {
+                Debug.LogWarning("CreateDuplicatGeometriesForMimic: Observed Geometries Dictionary is null or empty.");
+                return;
+            }
+            MimicMirroredGeometryManagerImplementation = new MimicMirroredGeometryManager(ref MirroredGeometriesParentObject, databaseManager.observedGeometriesDict, MimicGoalsManager.GoalStatusObserver.ComponentStates, MimicGoalsManager.CurrentGoal.Name);
+            Debug.Log($"MimicMirroredGeometryManagerImplementation: Created Mimic Mirrored Geometry Manager Implementation. {JsonConvert.SerializeObject(MimicMirroredGeometryManagerImplementation.MimicGoalComponentsDict.Keys)} observed Geometries Dict {JsonConvert.SerializeObject(MimicMirroredGeometryManagerImplementation.MimicObservedGeometriesDict.Keys)}");
+        }
         public static float GetUniformScale(GameObject fromBox, GameObject toBox, float epsilon = 1e-6f)
         {
             Vector3 a = GetWorldSize(fromBox);
@@ -1618,6 +1624,11 @@ namespace CompasXR.Core
                 {
                     InferenceGoalsManager.GoalStatusObserver.ApplySingleObservedGeometryOverwrite(observedGeometry, GoalSatisfiedMaterial, GoalUnsatisfiedMaterial, OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
                 }
+                if (MimicMirroredGeometryManagerImplementation != null)
+                {
+                    MimicMirroredGeometryManagerImplementation.UpdateObservedGeometry(cur.Name, cur);
+                }
+
 
                 if (key == "AnchorCube")
                 {
@@ -1631,7 +1642,7 @@ namespace CompasXR.Core
                     if (InferenceGoalsManager.GoalStatusObserver.Active)
                     {
                         InferenceGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, GoalSatisfiedMaterial, GoalUnsatisfiedMaterial, OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
-                    }   
+                    }
                     Debug.LogWarning($"OnObservedGeometryUpdated: AnchorCube position updated to {cur.Box.frame.point}");
                 }
         }

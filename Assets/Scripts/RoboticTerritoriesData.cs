@@ -7,6 +7,7 @@ using System;
 using CompasXR.Core;
 using Newtonsoft.Json;
 using UnityEngine.InputSystem;
+using CompasXR.Core.Extentions;
 
 namespace CompasXR.RoboticTerritories.Data
 {   
@@ -213,7 +214,6 @@ namespace CompasXR.RoboticTerritories.Data
                 return ComponentStates.Values.All(g => g.IsSatisfied);
             }
         }
-
         public GoalStateObserver(GoalObject goalObject = null)
         {
             ComponentStates = new Dictionary<string, GoalObjectComponent>();
@@ -224,7 +224,6 @@ namespace CompasXR.RoboticTerritories.Data
 
             Active = false;
         }
-
         public void InitializeComponentStates(GoalObject goal)
         {
             ComponentStates.Clear();
@@ -445,7 +444,6 @@ namespace CompasXR.RoboticTerritories.Data
                 return null;
             }
         }
-
         public List<string> GetCompletedComponentsNames()
         {
             return ComponentStates.Values.Where(c => c.IsSatisfied).Select(c => c.Name).ToList();
@@ -500,40 +498,254 @@ namespace CompasXR.RoboticTerritories.Data
     public class MimicMirroredGeometryManager
     {
         public GameObject MirroredGeometriesParentObject { get; set; }
-
-        public GoalObject CurrentMimicGoal { get; set; }
         public Dictionary<string, ObservedGeometry> MimicObservedGeometriesDict { get; set; }
         public Dictionary<string, GoalObjectComponent> MimicGoalComponentsDict { get; set; }
-
+        public string CurrentMimicGoalName { get; set; }
         bool Active
         { get; set; }
 
-        public MimicMirroredGeometryManager(ref GameObject GeometriesParentObject, ref GameObject MirroredGeometriesParentObject)
+        public MimicMirroredGeometryManager(ref GameObject MirroredGeometriesParentObject, Dictionary<string, ObservedGeometry> CurrentObservedGeometriesDict, Dictionary<string, GoalObjectComponent> CurrentGoalComponentsDict, string currentMimicGoalName)
         {
             this.MirroredGeometriesParentObject = MirroredGeometriesParentObject;
-            // MimicObservedGeometriesDict = new Dictionary<string, ObservedGeometry>();
-            // MimicGoalComponentsDict = new Dictionary<string, GoalObjectComponent>();
-            // CurrentMimicGoal = null;
-            // Active = false;
+            MimicObservedGeometriesDict = _CreateObservedGeometriesDict(MirroredGeometriesParentObject, CurrentObservedGeometriesDict);
+            CurrentMimicGoalName = currentMimicGoalName;
+            MimicGoalComponentsDict = _CreateGoalCompoenetsDict(MirroredGeometriesParentObject, CurrentGoalComponentsDict, currentMimicGoalName);
+        }
+
+        private Dictionary<string, ObservedGeometry> _CreateObservedGeometriesDict(GameObject MirroredGeometriesParentObject, Dictionary<string, ObservedGeometry> CurrentObservedGeometriesDict)
+        {
+            Dictionary<string, ObservedGeometry> observedGeometriesDict = new Dictionary<string, ObservedGeometry>();
+            GameObject trackedGeometriesObject = MirroredGeometriesParentObject.FindObject("TrackedGeometriesParent");
+            if (trackedGeometriesObject == null)
+            {
+                Debug.LogWarning($"TrackedGeometriesParentObject not found under {MirroredGeometriesParentObject.name}");
+                return observedGeometriesDict;
+            }
+            foreach (KeyValuePair<string, ObservedGeometry> kvp in CurrentObservedGeometriesDict)
+            {
+                ObservedGeometry observedGeometry = new ObservedGeometry();
+                GameObject child = trackedGeometriesObject.FindObject(kvp.Key);
+                if (child == null)
+                {
+                    Debug.LogWarning($"Observed geometry '{kvp.Key}' not found under {trackedGeometriesObject.name}");
+                    continue;
+                }
+                observedGeometry.Name = kvp.Key;
+                observedGeometry.Box = kvp.Value.Box;
+                observedGeometry.Box.BoxObject = child;
+                observedGeometry.MarkerType = kvp.Value.MarkerType;
+                observedGeometry.GeometryObject = child;
+                if (observedGeometry.GeometryObject != null)
+                {
+                    observedGeometriesDict.Add(observedGeometry.Name, observedGeometry);
+                }
+                else
+                {
+                    Debug.LogWarning($"Observed geometry '{kvp.Key}' not found under {MirroredGeometriesParentObject.name}");
+                }
+            }
+            return observedGeometriesDict;
+        }
+
+        public Dictionary<string, GoalObjectComponent> _CreateGoalCompoenetsDict(GameObject MirroredGeometriesParentObject, Dictionary<string, GoalObjectComponent> CurrentGoalComponentsDict, string CurrentMimicGoalName)
+        {
+            Dictionary<string, GoalObjectComponent> goalComponentsDict = new Dictionary<string, GoalObjectComponent>();
+            GameObject goalObject = MirroredGeometriesParentObject.FindObject("MimicGoals");
+            if (goalObject == null)
+            {
+                Debug.LogWarning($"GoalParentObject not found under {MirroredGeometriesParentObject.name}");
+                return goalComponentsDict;
+            }
+            GameObject currentGoalObject = goalObject.FindObject(CurrentMimicGoalName);
+            if (currentGoalObject == null)
+            {
+                Debug.LogWarning($"Current Mimic Goal '{CurrentMimicGoalName}' not found under {goalObject.name}");
+                return goalComponentsDict;
+            }
+            foreach (KeyValuePair<string, GoalObjectComponent> kvp in CurrentGoalComponentsDict)
+            {
+                GameObject child = currentGoalObject.FindObject(kvp.Key);
+                if (child == null)
+                {
+                    Debug.LogWarning($"Goal component '{kvp.Key}' not found under {goalObject.name}");
+                    continue;
+                }
+                GoalObjectComponent goalComponent = new GoalObjectComponent(kvp.Key, child);
+                goalComponent.IsSatisfied = kvp.Value.IsSatisfied;
+                if (goalComponent.SatisfyingObservedGeometry != null)
+                {
+                    goalComponent.SatisfyingObservedGeometry = MimicObservedGeometriesDict.ContainsKey(kvp.Value.SatisfyingObservedGeometry?.Name) ? MimicObservedGeometriesDict[kvp.Value.SatisfyingObservedGeometry.Name] : null;
+                }
+                else
+                {
+                    goalComponent.SatisfyingObservedGeometry = null;
+                    Debug.LogWarning($"Goal component '{kvp.Key}' has no satisfying observed geometry.");
+                }
+                if (goalComponent.ComponentGameObject != null)
+                {
+                    goalComponentsDict.Add(goalComponent.Name, goalComponent);
+                }
+                else
+                {
+                    Debug.LogWarning($"Goal component '{kvp.Key}' not found under {MirroredGeometriesParentObject.name}");
+                }
+            }
+            return goalComponentsDict;
         }
 
         public void UpdateCurrentGoal(string goalName)
         {
             //TODO: Mimic Parent Find Goal by name and update
+            GameObject CurrentMimicGoal = MirroredGeometriesParentObject.FindObject("MimicGoals").FindObject(CurrentMimicGoalName);
+            if (CurrentMimicGoal == null)
+            {
+                if (CurrentMimicGoal.activeSelf)
+                {
+                    //TODO: Logic for coloring them all back again.
+                    CurrentMimicGoal.SetActive(false);
+                }
+            }
+            GameObject NewMimicGoal = MirroredGeometriesParentObject.FindObject("MimicGoals").FindObject(goalName);
+            if (NewMimicGoal != null)
+            {
+                //TODO: Logic for coloring....
+                if (!NewMimicGoal.activeSelf)
+                {
+                    NewMimicGoal.SetActive(true);
+                }
+                CurrentMimicGoalName = goalName;
+            }
+            else
+            {
+                Debug.LogWarning($"Current Mimic Goal '{goalName}' not found under MimicGoals");
+            }
         }
 
         public void UpdateObservedGeometry(string observedGeometryName, ObservedGeometry observedGeometryActual)
         {
             //TODO: Mimic Parent Find Observed Geometry by name and update
-            
+            if (!MimicObservedGeometriesDict.ContainsKey(observedGeometryName))
+            {
+                Debug.LogWarning($"Observed Geometry '{observedGeometryName}' not found in MimicObservedGeometriesDict");
+                return;
+            }
+            ObservedGeometry observedGeometry = MimicObservedGeometriesDict[observedGeometryName];
+            if (observedGeometry == null)
+            {
+                Debug.LogWarning($"Observed Geometry '{observedGeometryName}' is null in MimicObservedGeometriesDict");
+                return;
+            }
+            GameObject observedGeometryObject = observedGeometry.GeometryObject;
+            if (observedGeometryObject == null)
+            {
+                Debug.LogWarning($"Observed Geometry GameObject for '{observedGeometryName}' is null");
+                return;
+            }
+            observedGeometry.Box.frame = observedGeometryActual.Box.frame;
+            observedGeometry.MarkerType = observedGeometryActual.MarkerType;
+            ObjectInstantiaion.UpdateExistingObjectFromRightHandFrameData(observedGeometryObject, observedGeometryActual.Box.frame.point, observedGeometryActual.Box.frame.xaxis, observedGeometryActual.Box.frame.yaxis, false, false);
         }
 
-        public void UpdateCompomponentState(string componentName, bool isSatisfied, ObservedGeometry satisfyingObservedGeometryActual)
+        public void UpdateGoalLocationPosition(GameObject mimicGoalsParentObject) //TODO: I am not sure if this will actual work.
         {
-            //TODO: Mimic Parent Find Component by name and update
+            if (MirroredGeometriesParentObject == null)
+            {
+                Debug.LogWarning("MirroredGeometriesParentObject is null");
+                return;
+            }
+            if (mimicGoalsParentObject == null)
+            {
+                Debug.LogWarning("mimicGoalsParentObject is null");
+                return;
+            }
+            MirroredGeometriesParentObject.transform.position = mimicGoalsParentObject.transform.position;
+            MirroredGeometriesParentObject.transform.rotation = mimicGoalsParentObject.transform.rotation;
+        }
+        public void UpdateCompomponentState(string componentName, GoalObjectComponent satisfyingGoalComponentActual)
+        {
+            // Check if the component exists in the dictionary
+            if (!MimicGoalComponentsDict.ContainsKey(componentName))
+            {
+                Debug.LogWarning($"Component '{componentName}' not found in MimicGoalComponentsDict");
+                return;
+            }
 
-            //TODO: Find the satisfying observed geometry in the observed geometries dict and assign it to the component
+            // Retrieve the component from the dictionary
+            GoalObjectComponent component = MimicGoalComponentsDict[componentName];
+            if (component == null)
+            {
+                Debug.LogWarning($"Component '{componentName}' is null in MimicGoalComponentsDict");
+                return;
+            }
 
+            // Retrieve the GameObject associated with the component
+            GameObject componentObject = component.ComponentGameObject;
+            if (componentObject == null)
+            {
+                Debug.LogWarning($"Component GameObject for '{componentName}' is null");
+                return;
+            }
+
+            // Update IsSatisfied state
+            component.IsSatisfied = satisfyingGoalComponentActual.IsSatisfied;
+
+            // Update SatisfyingObservedGeometry
+            ObservedGeometry satisfyingObservedGeometry = satisfyingGoalComponentActual.SatisfyingObservedGeometry;
+            if (satisfyingObservedGeometry != null)
+            {
+                string satisfyingGeometryName = satisfyingObservedGeometry.Name;
+
+                if (MimicObservedGeometriesDict.ContainsKey(satisfyingGeometryName))
+                {
+                    component.SatisfyingObservedGeometry = MimicObservedGeometriesDict[satisfyingGeometryName];
+                }
+                else
+                {
+                    component.SatisfyingObservedGeometry = null;
+                }
+            }
+            else
+            {
+                component.SatisfyingObservedGeometry = null;
+            }
+
+            // Get the renderer for the component object
+            Renderer renderer = componentObject.GetComponentInChildren<Renderer>();
+            if (renderer == null)
+            {
+                Debug.LogWarning($"Renderer not found on component '{componentName}'");
+                return;
+            }
+
+            // Get the renderer for the satisfying goal component
+            Renderer satisfyingGoalComponentRenderer = satisfyingGoalComponentActual.ComponentGameObject.GetComponentInChildren<Renderer>();
+            if (satisfyingGoalComponentRenderer == null)
+            {
+                Debug.LogWarning($"Renderer not found on satisfying component '{satisfyingGoalComponentActual.Name}'");
+                return;
+            }
+
+            // Update the material if satisfied
+            if (satisfyingGoalComponentActual.IsSatisfied)
+            {
+                renderer.material = satisfyingGoalComponentRenderer.material;
+            }
+        }
+
+        public void UpdateAllComponentStates(Dictionary<string, GoalObjectComponent> currentGoalComponentsDict)
+        {
+            foreach (KeyValuePair<string, GoalObjectComponent> kvp in currentGoalComponentsDict)
+            {
+                UpdateCompomponentState(kvp.Key, kvp.Value);
+            }
+        }
+
+        public void UpdateAllObservedGeometries(Dictionary<string, ObservedGeometry> currentObservedGeometriesDict)
+        {
+            foreach (KeyValuePair<string, ObservedGeometry> kvp in currentObservedGeometriesDict)
+            {
+                UpdateObservedGeometry(kvp.Key, kvp.Value);
+            }
         }
 
         public void DestroyMirroredGeometriesParentObject()
@@ -549,7 +761,7 @@ namespace CompasXR.RoboticTerritories.Data
         {
             MimicObservedGeometriesDict.Clear();
             MimicGoalComponentsDict.Clear();
-            CurrentMimicGoal = null;
+            CurrentMimicGoalName = null;
             MirroredGeometriesParentObject = null;
             Active = false;
         }
