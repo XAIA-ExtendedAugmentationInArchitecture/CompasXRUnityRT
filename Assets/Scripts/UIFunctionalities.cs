@@ -283,6 +283,13 @@ namespace CompasXR.UI
         public GameObject UserInitiatedMimicMirrorToggleObject;
         public Toggle UserInitiatedMimicMirrorToggle;
 
+        //TODO: Add toggle for IO
+        public GameObject UserInitiatedMimicIOToggleObject;
+        public Toggle UserInitiatedMimicIOToggle;
+        // private bool _ioCombinedState = false;
+
+        private bool _ioState = false;
+
         public GameObject UserInitiatedMimicControlsReviewAndExecuteTrajectoryUIObjects;
 
         //TODO: Testing Set Target Button.
@@ -311,6 +318,7 @@ namespace CompasXR.UI
         public int REALTIMEMIMICLASTCOMPLETEDINDEX = -1;
 
         public GameObject RealtimeMimicIOToggleGameObject;
+        public Toggle RealtimeMimicIOToggle;
         public GameObject RealtimeMimicMirrorToggleGameObject;
         public Toggle RealtimeMimicMirrorToggle;
 
@@ -438,8 +446,48 @@ namespace CompasXR.UI
             //Set Realtime Mimic Controls
             SetRealtimeMimicControlsOnStart();
 
+            // InitIOToggles();
+
             //Set Mimic Goal Selection UI
             SetMimicGoalSelectionUIOnStart();
+        }
+
+        // private void InitIOToggles()
+        // {
+        //     _ioCombinedState = (UserInitiatedMimicIOToggle?.isOn ?? false) || (RealtimeMimicIOToggle?.isOn ?? false);
+        //     // normalize both to the same combined state without re-triggering events
+        //     UserInitiatedMimicIOToggle?.SetIsOnWithoutNotify(_ioCombinedState);
+        //     RealtimeMimicIOToggle?.SetIsOnWithoutNotify(_ioCombinedState);
+        // }
+
+        public void OnUserIoChanged(bool value)    => ApplyIoState(value);
+        public void OnRealtimeIoChanged(bool value)=> ApplyIoState(value);
+        private void ApplyIoState(bool newState)
+        {
+            if (newState == _ioState)
+            {
+                // just resync visuals in case one got out of sync
+                SyncIoToggles();
+                return;
+            }
+
+            bool old = _ioState;
+            _ioState = newState;
+            SyncIoToggles();
+
+            Debug.Log($"IO state: {old} -> {_ioState}");
+
+            // Fire your MQTT once per edge.
+            if (_ioState)
+                ToggleIOForRealtimeMimicMethod(true);   // “execute whenever one is turned on”
+            else
+                ToggleIOForRealtimeMimicMethod(false);  // remove if you never want to send OFF
+        }
+
+        private void SyncIoToggles()
+        {
+            UserInitiatedMimicIOToggle?.SetIsOnWithoutNotify(_ioState);
+            RealtimeMimicIOToggle?.SetIsOnWithoutNotify(_ioState);
         }
         public void SetMimicModeSelectionItemsOnStart()
         {
@@ -464,7 +512,6 @@ namespace CompasXR.UI
             ref MimicPreviousModeButtonObject,
             "PreviousModeButton", PreviousMimicModeButtonMethod);
         }
-
         public void SetMimicModeSelectionControlsInteractability(bool interactable)
         {
             /*
@@ -473,7 +520,6 @@ namespace CompasXR.UI
             MimicNextModeButtonObject.GetComponent<Button>().interactable = interactable;
             MimicPreviousModeButtonObject.GetComponent<Button>().interactable = interactable;
         }
-
         public void DrawLinesToggleMethod(bool toggle)
         {
             /*
@@ -1016,8 +1062,10 @@ namespace CompasXR.UI
             FollowMeButtonHeldEventComponent = FollowMeButton.GetComponent<CompasXRButtonHeldEvent>();
 
             RealtimeMimicIOToggleGameObject = RealtimeMimicControlsParent.FindObject("IOToggle");
-            Toggle RealtimeMimicIOToggle = RealtimeMimicIOToggleGameObject.GetComponentInChildren<Toggle>();
-            RealtimeMimicIOToggle.onValueChanged.AddListener(ToggleIOForRealtimeMimicMethod);
+            RealtimeMimicIOToggle = RealtimeMimicIOToggleGameObject.GetComponentInChildren<Toggle>();
+            RealtimeMimicIOToggle?.SetIsOnWithoutNotify(_ioState);
+            RealtimeMimicIOToggle?.onValueChanged.AddListener(OnRealtimeIoChanged);
+            // RealtimeMimicIOToggle.onValueChanged.AddListener(RealtimeMimicIOToggleMethod);
 
             RealtimeMimicMirrorToggleGameObject = RealtimeMimicControlsParent.FindObject("Mirror");
             RealtimeMimicMirrorToggle = RealtimeMimicMirrorToggleGameObject.GetComponentInChildren<Toggle>();
@@ -1055,8 +1103,6 @@ namespace CompasXR.UI
             RealtimeMimicEditorTestToggleObject = RealtimeMimicControlsParent.FindObject("TestingToggle");
             Toggle RealtimeMimicTestingToggle = RealtimeMimicEditorTestToggleObject.GetComponentInChildren<Toggle>();
             RealtimeMimicTestingToggle.onValueChanged.AddListener(TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY);
-
-
         }
         public void ResetInferenceGameObjectsInScene()
         {
@@ -1073,7 +1119,14 @@ namespace CompasXR.UI
                 instantiateObjects.InferenceGoalsManager.ColorEntireGoal(instantiateObjects.InferenceGoalsManager.CurrentGoal, instantiateObjects.GoalUnsatisfiedMaterial, false);
             }
         }
-
+        // public void RealtimeMimicIOToggleMethod(bool value)
+        // {
+        //     /*
+        //     * Method is used to toggle the IO for the Realtime Mimic.
+        //     */
+        //     Debug.Log($"RealtimeMimicIOToggleMethod: Toggling IO for Realtime Mimic to {value}");
+        //     OnIOToggleChanged(value);
+        // }
         //TODO: This is inference button methods and testing
         public void RequestInferenceButtonMethod()
         {
@@ -1616,6 +1669,13 @@ namespace CompasXR.UI
             // UserInitiatedSetTargetButtonObject.AddComponent<CompasXRButtonHeldEvent>();
             // UserInitiatedSetTargetButtonHeldEventComponent = UserInitiatedSetTargetButtonObject.GetComponent<CompasXRButtonHeldEvent>();
             // UserInitiatedSetTargetButtonHeldEventComponent.vibrate = false;
+
+            //Set Mirror Toggle Object
+            UserInitiatedMimicIOToggleObject = UserInitiatedMimicControlsSetPointsUIObjects.FindObject("IOToggleUIM");
+            UserInitiatedMimicIOToggle = UserInitiatedMimicIOToggleObject.GetComponentInChildren<Toggle>();
+            UserInitiatedMimicIOToggle?.SetIsOnWithoutNotify(_ioState);
+            UserInitiatedMimicIOToggle?.onValueChanged.AddListener(OnUserIoChanged);
+            // UserInitiatedMimicIOToggle.onValueChanged.AddListener(UserInitiatedMimicIOToggleMethod);
 
             //Find Slider Objects
             UserInterface.FindSliderandSetOnValueChangeAction(
@@ -2208,6 +2268,7 @@ namespace CompasXR.UI
             UserInitiatedMimicControlsUndoPointButtonObject.GetComponentInChildren<Button>().interactable = setControlsInteractive;
             UserInitiatedMimicRequestTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = requestInteractable;
             UserInitiatedMimicMirrorToggleObject.GetComponentInChildren<Toggle>().interactable = setControlsInteractive;
+            UserInitiatedMimicIOToggle.interactable = setControlsInteractive;
 
             UserInitiatedMimicControlsReviewAndExecuteTrajectoryUIObjects.SetActive(reviewActive);
             UserInitiatedMimicExecuteTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = reviewInteractive;
@@ -2374,12 +2435,9 @@ namespace CompasXR.UI
                     Debug.LogError("MimicRequestTrajectoryButton: 'human_zone' key not found in MimicZones.");
                 }
             }
-            else if (ObjectInstantiaion.AllGameObjectsInsideSphere(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility))
-            {
-                Debug.Log("MimicRequestTrajectoryButton: All Points are within the Human Zone Reachibility.");
-            }
             else
             {
+                Debug.Log("MimicRequestTrajectoryButton: I ENTER HERE AND SHOULD PUBLISH");
                 List<Frame> humanFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicHumanPoints, instantiateObjects.ZonesARPrefabObjects);
                 List<Frame> robotFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicRobotPoints, instantiateObjects.ZonesARPrefabObjects);
 
@@ -2566,6 +2624,7 @@ namespace CompasXR.UI
                 RealtimeMimicMirrorToggle.isOn = value;
             _syncingMirrorToggles = false;
 
+            //TODO: This would be where the toggle needs to go.
 
             if (ReachabilityToggleObject.GetComponentInChildren<Toggle>().isOn)
             {
@@ -2581,6 +2640,49 @@ namespace CompasXR.UI
                 Debug.LogWarning("Reachability Toggle is not on.");
             }
         }
+
+        // public void UserInitiatedMimicIOToggleMethod(bool value) => OnIOToggleChanged();
+        // public void RealtimeMimicIOToggleMethod(bool value)    => OnIOToggleChanged();
+
+        // public void UserInitiatedMimicIOToggleMethod(bool value)
+        // {
+        //     /*
+        //     * Method is used to set the mimic mirror based on the toggle value.
+        //     */
+        //     Debug.Log($"UserInitiatedMimicIOToggleMethod: Setting Mimic IO Toggle to {value}");
+        //     OnIOToggleChanged(value);
+        // }
+
+        // private void OnIOToggleChanged()
+        // {
+        //     // Compute combined OR of both toggles
+        //     bool userOn = UserInitiatedMimicIOToggle?.isOn ?? false;
+        //     bool rtOn = RealtimeMimicIOToggle?.isOn ?? false;
+        //     bool combined = userOn || rtOn;
+
+        //     // Keep both visuals in sync WITHOUT firing events
+        //     if (UserInitiatedMimicIOToggle && UserInitiatedMimicIOToggle.isOn != combined)
+        //         UserInitiatedMimicIOToggle.SetIsOnWithoutNotify(combined);
+        //     if (RealtimeMimicIOToggle && RealtimeMimicIOToggle.isOn != combined)
+        //         RealtimeMimicIOToggle.SetIsOnWithoutNotify(combined);
+
+        //     // Only act when the combined state actually changes
+        //     if (combined != _ioCombinedState)
+        //     {
+        //         Debug.Log($"OnIOToggleChanged: combined changed from {_ioCombinedState} to {combined}");
+        //         _ioCombinedState = combined;
+
+        //         if (combined)
+        //         {
+        //             ToggleIOForRealtimeMimicMethod(true);   // "execute whenever one is turned on"
+        //         }
+        //         else
+        //         {
+        //             // Optional: send explicit OFF when both are OFF. Remove if you don't want OFF publishes.
+        //             ToggleIOForRealtimeMimicMethod(false);
+        //         }
+        //     }
+        // }
 
         //TODO: RoboticTerritories Testing ///////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()

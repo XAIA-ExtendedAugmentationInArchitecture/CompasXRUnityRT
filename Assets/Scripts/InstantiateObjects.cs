@@ -927,7 +927,7 @@ namespace CompasXR.Core
         {
             return Physics.OverlapSphere(point, epsilon);
         }
-        
+ 
         public static Vector3 FindClosestReachablePoint(GameObject sphereGO, Vector3 desiredWorldPos, float epsilon = 1e-4f)
         {
             if (!sphereGO) return Vector3.zero;
@@ -979,7 +979,6 @@ namespace CompasXR.Core
 
             return surfW - nW * epsilon;
         }
-
         public static Vector3 MapPointBetweenBoxes(GameObject sourceBox, GameObject targetBox, Vector3 pointPosition)
         {
             if (sourceBox == null || targetBox == null)
