@@ -927,32 +927,6 @@ namespace CompasXR.Core
         {
             return Physics.OverlapSphere(point, epsilon);
         }
-        // public Vector3 FindClosestReachablePoint(GameObject reachabilitySphere, Vector3 desiredPosition)
-        // {
-        //     /*
-        //     * Method is used to find the closest reachable point in the zone.
-        //     */
-        //     if (reachabilitySphere == null)
-        //     {
-        //         Debug.LogError("FindClosestReachablePoint: Zone GameObject is null.");
-        //         return Vector3.zero;
-        //     }
-
-        //     Vector3 center = ObjectTransformations.FindGameObjectCenter(reachabilitySphere);
-
-        //     // Use half of the scaled size if the sphere is scaled from a 1-unit diameter (default Unity sphere)
-        //     float radius = 0.5f * reachabilitySphere.transform.lossyScale.x;
-
-        //     Vector3 direction = desiredPosition - center;
-        //     float distance = direction.magnitude;
-
-        //     if (distance <= radius)
-        //     {
-        //         return desiredPosition;
-        //     }
-
-        //     return center + direction.normalized * radius;
-        // }
         
         public static Vector3 FindClosestReachablePoint(GameObject sphereGO, Vector3 desiredWorldPos, float epsilon = 1e-4f)
         {
@@ -1005,73 +979,7 @@ namespace CompasXR.Core
 
             return surfW - nW * epsilon;
         }
-        // public static Vector3 FindClosestReachablePoint(GameObject sphereGO, Vector3 desiredWorldPos, float epsilon = 1e-4f)
-        // {
-        //     if (!sphereGO)
-        //     {
-        //         Debug.LogError("FindClosestReachablePoint: sphereGO is null.");
-        //         return Vector3.zero;
-        //     }
 
-        //     // 1) Prefer a real SphereCollider if present (exact, including scaling and center offset).
-        //     var sc = sphereGO.GetComponent<SphereCollider>();
-        //     if (sc)
-        //     {
-        //         // Works even if GO is inactive: TransformPoint / lossyScale still valid.
-        //         Vector3 centerW = sc.transform.TransformPoint(sc.center);
-        //         float r = sc.radius * Mathf.Max(sc.transform.lossyScale.x,
-        //                                         sc.transform.lossyScale.y,
-        //                                         sc.transform.lossyScale.z);
-
-        //         Vector3 d = desiredWorldPos - centerW;
-        //         float dist = d.magnitude;
-
-        //         if (dist <= r - epsilon) return desiredWorldPos;        // already inside (with margin)
-        //         if (dist < 1e-12f) return centerW + Vector3.right * (r - epsilon); // degenerate case
-
-        //         return centerW + d / dist * (r - epsilon);              // project to sphere surface, nudge inward
-        //     }
-
-        //     // 2) No SphereCollider → assume a default Unity sphere mesh possibly non-uniformly scaled.
-        //     // In local space, the unscaled Unity sphere has radius 0.5 (unit diameter).
-        //     // Non-uniform scaling makes it an ellipsoid with radii rx, ry, rz.
-        //     Transform t = sphereGO.transform;
-        //     Vector3 pL = t.InverseTransformPoint(desiredWorldPos);
-
-        //     // Ellipsoid radii from local scale
-        //     float rx = 0.5f * Mathf.Abs(t.localScale.x);
-        //     float ry = 0.5f * Mathf.Abs(t.localScale.y);
-        //     float rz = 0.5f * Mathf.Abs(t.localScale.z);
-
-        //     // Handle degenerate radii
-        //     rx = Mathf.Max(rx, 1e-6f);
-        //     ry = Mathf.Max(ry, 1e-6f);
-        //     rz = Mathf.Max(rz, 1e-6f);
-
-        //     // Test inside-ness in ellipsoid local space: (x/rx)^2 + (y/ry)^2 + (z/rz)^2 <= 1
-        //     float nx = pL.x / rx, ny = pL.y / ry, nz = pL.z / rz;
-        //     float q = nx * nx + ny * ny + nz * nz;
-
-        //     if (q <= 1.0f - 1e-8f)
-        //     {
-        //         // already inside: return the desired pos (but optionally move epsilon inward along gradient)
-        //         return desiredWorldPos;
-        //     }
-
-        //     // Project to ellipsoid surface by normalizing the scaled vector:
-        //     // p_surface_local = pL / sqrt(q), then nudge slightly inward by epsilon along the normal.
-        //     float s = 1.0f / Mathf.Sqrt(q);
-        //     Vector3 surfL = pL * s;
-
-        //     // Inward normal at the surface is proportional to (x/rx^2, y/ry^2, z/rz^2)
-        //     Vector3 nL = new Vector3(surfL.x / (rx * rx), surfL.y / (ry * ry), surfL.z / (rz * rz)).normalized;
-
-        //     // Convert epsilon from world to local approx by dividing by a representative scale (use average radius)
-        //     float rAvg = (rx + ry + rz) / 3f;
-        //     Vector3 innerL = surfL - nL * (epsilon / Mathf.Max(rAvg, 1e-6f));
-
-        //     return t.TransformPoint(innerL);
-        // }
         public static Vector3 MapPointBetweenBoxes(GameObject sourceBox, GameObject targetBox, Vector3 pointPosition)
         {
             if (sourceBox == null || targetBox == null)
