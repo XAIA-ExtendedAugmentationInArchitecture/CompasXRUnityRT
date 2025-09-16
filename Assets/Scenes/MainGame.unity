@@ -13372,7 +13372,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &274466013
 RectTransform:
   m_ObjectHideFlags: 0
@@ -27469,7 +27469,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: -134.52327, y: 155.99994}
+  m_AnchoredPosition: {x: 2, y: 155.99994}
   m_SizeDelta: {x: 270.4003, y: 88.1889}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &556735169
@@ -123796,8 +123796,6 @@ MonoBehaviour:
   UserInitiatedMimicMirrorToggleObject: {fileID: 0}
   UserInitiatedMimicMirrorToggle: {fileID: 0}
   UserInitiatedMimicControlsReviewAndExecuteTrajectoryUIObjects: {fileID: 0}
-  UserInitiatedSetTargetButtonObject: {fileID: 0}
-  UserInitiatedSetTargetButtonHeldEventComponent: {fileID: 0}
   UserInitiatedMimicExecuteTrajectoryButtonObject: {fileID: 0}
   UserInitiatedMimicTrajectoryReviewSliderObject: {fileID: 0}
   UserInitiatedMimicTrajectoryReviewSlider: {fileID: 0}

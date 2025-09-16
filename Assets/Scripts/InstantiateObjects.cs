@@ -637,7 +637,7 @@ namespace CompasXR.Core
             Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
 
             if (trajectoryVisualizer.humanZoneMimicReachibility == null ||
-                ObjectInstantiaion.IsPositionWithinObject(trajectoryVisualizer.humanZoneMimicReachibility, position))
+                ObjectInstantiaion.IsPointInsideSphereEvenIfInactive(trajectoryVisualizer.humanZoneMimicReachibility.GetComponent<SphereCollider>(), position))
             {
                 CreateSpheresForMimic(humanZone, robotZone, ref humanPoints, ref robotPoints, humanParent, robotParent, position, rotation, radius, humanColor, robotColor, $"{humanPoints.Count}_MimicPoint", $"{robotPoints.Count}_MimicPoint", true, Mirror);
             }
@@ -710,7 +710,8 @@ namespace CompasXR.Core
                 Vector3 position = point.transform.position;
                 Quaternion rotation = point.transform.rotation;
 
-                if (!ObjectInstantiaion.IsPositionWithinObject(reachabilitySphere, position))
+                // if (!ObjectInstantiaion.IsPositionWithinObject(reachabilitySphere, position))
+                if (!ObjectInstantiaion.IsPointInsideSphereEvenIfInactive(reachabilitySphere.transform.GetComponent<SphereCollider>(), position))
                 {
                     position = FindClosestReachablePoint(reachabilitySphere, position);
                 }
@@ -926,32 +927,151 @@ namespace CompasXR.Core
         {
             return Physics.OverlapSphere(point, epsilon);
         }
-        public Vector3 FindClosestReachablePoint(GameObject reachabilitySphere, Vector3 desiredPosition)
+        // public Vector3 FindClosestReachablePoint(GameObject reachabilitySphere, Vector3 desiredPosition)
+        // {
+        //     /*
+        //     * Method is used to find the closest reachable point in the zone.
+        //     */
+        //     if (reachabilitySphere == null)
+        //     {
+        //         Debug.LogError("FindClosestReachablePoint: Zone GameObject is null.");
+        //         return Vector3.zero;
+        //     }
+
+        //     Vector3 center = ObjectTransformations.FindGameObjectCenter(reachabilitySphere);
+
+        //     // Use half of the scaled size if the sphere is scaled from a 1-unit diameter (default Unity sphere)
+        //     float radius = 0.5f * reachabilitySphere.transform.lossyScale.x;
+
+        //     Vector3 direction = desiredPosition - center;
+        //     float distance = direction.magnitude;
+
+        //     if (distance <= radius)
+        //     {
+        //         return desiredPosition;
+        //     }
+
+        //     return center + direction.normalized * radius;
+        // }
+        
+        public static Vector3 FindClosestReachablePoint(GameObject sphereGO, Vector3 desiredWorldPos, float epsilon = 1e-4f)
         {
-            /*
-            * Method is used to find the closest reachable point in the zone.
-            */
-            if (reachabilitySphere == null)
+            if (!sphereGO) return Vector3.zero;
+
+            // Exact: SphereCollider
+            var sc = sphereGO.GetComponent<SphereCollider>();
+            if (sc)
             {
-                Debug.LogError("FindClosestReachablePoint: Zone GameObject is null.");
-                return Vector3.zero;
+                Vector3 cW = sc.transform.TransformPoint(sc.center);
+                float rW = sc.radius * Mathf.Max(sc.transform.lossyScale.x,
+                                                sc.transform.lossyScale.y,
+                                                sc.transform.lossyScale.z);
+                Vector3 d = desiredWorldPos - cW;
+                float dist = d.magnitude;
+
+                if (dist <= rW - epsilon) return desiredWorldPos;
+                if (dist < 1e-12f)        return cW + Vector3.right * (rW - epsilon);
+                return cW + d / dist * (rW - epsilon);
             }
 
-            Vector3 center = ObjectTransformations.FindGameObjectCenter(reachabilitySphere);
+            // Generic: use mesh bounds in LOCAL space, then convert back to world
+            var mf = sphereGO.GetComponent<MeshFilter>();
+            if (!mf || !mf.sharedMesh) return desiredWorldPos;
 
-            // Use half of the scaled size if the sphere is scaled from a 1-unit diameter (default Unity sphere)
-            float radius = 0.5f * reachabilitySphere.transform.lossyScale.x;
+            var mesh = mf.sharedMesh;
+            Vector3 cL = mesh.bounds.center;
+            float  rL = mesh.bounds.extents.x;
 
-            Vector3 direction = desiredPosition - center;
-            float distance = direction.magnitude;
+            var t = sphereGO.transform;
+            Vector3 pL = t.InverseTransformPoint(desiredWorldPos);
+            Vector3 vL = pL - cL;
+            float   dL = vL.magnitude;
 
-            if (distance <= radius)
-            {
-                return desiredPosition;
-            }
+            if (dL <= rL - 1e-8f) return desiredWorldPos; // already inside
 
-            return center + direction.normalized * radius;
+            if (dL < 1e-12f) // degenerate: pick an arbitrary direction
+                return t.TransformPoint(cL + Vector3.right * (rL - 1e-4f));
+
+            // Project to sphere surface in LOCAL space, then nudge inward in WORLD space
+            Vector3 surfL = cL + vL / dL * rL;
+            Vector3 surfW = t.TransformPoint(surfL);
+
+            // World-space inward normal: inverse-transpose trick for correct non-uniform scales
+            Matrix4x4 M = t.localToWorldMatrix;
+            Matrix4x4 invT = M.inverse.transpose;
+            // Local normal for a sphere is just (vL). Use it (unit) and map to world:
+            Vector3 nL = (vL / dL);
+            Vector3 nW = invT.MultiplyVector(nL).normalized;
+
+            return surfW - nW * epsilon;
         }
+        // public static Vector3 FindClosestReachablePoint(GameObject sphereGO, Vector3 desiredWorldPos, float epsilon = 1e-4f)
+        // {
+        //     if (!sphereGO)
+        //     {
+        //         Debug.LogError("FindClosestReachablePoint: sphereGO is null.");
+        //         return Vector3.zero;
+        //     }
+
+        //     // 1) Prefer a real SphereCollider if present (exact, including scaling and center offset).
+        //     var sc = sphereGO.GetComponent<SphereCollider>();
+        //     if (sc)
+        //     {
+        //         // Works even if GO is inactive: TransformPoint / lossyScale still valid.
+        //         Vector3 centerW = sc.transform.TransformPoint(sc.center);
+        //         float r = sc.radius * Mathf.Max(sc.transform.lossyScale.x,
+        //                                         sc.transform.lossyScale.y,
+        //                                         sc.transform.lossyScale.z);
+
+        //         Vector3 d = desiredWorldPos - centerW;
+        //         float dist = d.magnitude;
+
+        //         if (dist <= r - epsilon) return desiredWorldPos;        // already inside (with margin)
+        //         if (dist < 1e-12f) return centerW + Vector3.right * (r - epsilon); // degenerate case
+
+        //         return centerW + d / dist * (r - epsilon);              // project to sphere surface, nudge inward
+        //     }
+
+        //     // 2) No SphereCollider → assume a default Unity sphere mesh possibly non-uniformly scaled.
+        //     // In local space, the unscaled Unity sphere has radius 0.5 (unit diameter).
+        //     // Non-uniform scaling makes it an ellipsoid with radii rx, ry, rz.
+        //     Transform t = sphereGO.transform;
+        //     Vector3 pL = t.InverseTransformPoint(desiredWorldPos);
+
+        //     // Ellipsoid radii from local scale
+        //     float rx = 0.5f * Mathf.Abs(t.localScale.x);
+        //     float ry = 0.5f * Mathf.Abs(t.localScale.y);
+        //     float rz = 0.5f * Mathf.Abs(t.localScale.z);
+
+        //     // Handle degenerate radii
+        //     rx = Mathf.Max(rx, 1e-6f);
+        //     ry = Mathf.Max(ry, 1e-6f);
+        //     rz = Mathf.Max(rz, 1e-6f);
+
+        //     // Test inside-ness in ellipsoid local space: (x/rx)^2 + (y/ry)^2 + (z/rz)^2 <= 1
+        //     float nx = pL.x / rx, ny = pL.y / ry, nz = pL.z / rz;
+        //     float q = nx * nx + ny * ny + nz * nz;
+
+        //     if (q <= 1.0f - 1e-8f)
+        //     {
+        //         // already inside: return the desired pos (but optionally move epsilon inward along gradient)
+        //         return desiredWorldPos;
+        //     }
+
+        //     // Project to ellipsoid surface by normalizing the scaled vector:
+        //     // p_surface_local = pL / sqrt(q), then nudge slightly inward by epsilon along the normal.
+        //     float s = 1.0f / Mathf.Sqrt(q);
+        //     Vector3 surfL = pL * s;
+
+        //     // Inward normal at the surface is proportional to (x/rx^2, y/ry^2, z/rz^2)
+        //     Vector3 nL = new Vector3(surfL.x / (rx * rx), surfL.y / (ry * ry), surfL.z / (rz * rz)).normalized;
+
+        //     // Convert epsilon from world to local approx by dividing by a representative scale (use average radius)
+        //     float rAvg = (rx + ry + rz) / 3f;
+        //     Vector3 innerL = surfL - nL * (epsilon / Mathf.Max(rAvg, 1e-6f));
+
+        //     return t.TransformPoint(innerL);
+        // }
         public static Vector3 MapPointBetweenBoxes(GameObject sourceBox, GameObject targetBox, Vector3 pointPosition)
         {
             if (sourceBox == null || targetBox == null)
@@ -983,7 +1103,7 @@ namespace CompasXR.Core
             Vector3 mappedWorldPosition = targetBox.transform.TransformPoint(targetLocalPosition);
 
             Debug.Log($"MapPointBetweenBoxes: Mapped {pointPosition} from {sourceBox.name} to {mappedWorldPosition} in {targetBox.name}");
-            
+
             return mappedWorldPosition;
         }
         public void DestroyLastMimicPoint(ref List<GameObject> MimicHumanPoints, ref List<GameObject> MimicRobotPoints, ref GameObject MimicHumanLine, ref GameObject MimicRobotLine)
@@ -3366,6 +3486,65 @@ namespace CompasXR.Core
                 }
             }
             return true; // All objects are within the target object
+        }
+
+        public static bool IsPointInsideSphereEvenIfInactive(SphereCollider sc, Vector3 worldPoint)
+        {
+            if (!sc) return false;
+
+            // TransformPoint works even if the GameObject is inactive
+            Vector3 center = sc.transform.TransformPoint(sc.center);
+
+            // LossyScale also works while inactive
+            float scale = Mathf.Max(sc.transform.lossyScale.x,
+                                    sc.transform.lossyScale.y,
+                                    sc.transform.lossyScale.z);
+            float radius = sc.radius * scale;
+
+            return (worldPoint - center).sqrMagnitude <= radius * radius;
+        }
+
+        public static bool AllGameObjectsInsideSphere(List<GameObject> gameObjects, GameObject targetObject)
+        {
+            if (gameObjects == null || gameObjects.Count == 0)
+            {
+                Debug.LogError("AllGameObjectsInsideSphere: The list of game objects is null or empty.");
+                return false;
+            }
+
+            if (targetObject == null)
+            {
+                Debug.LogError("AllGameObjectsInsideSphere: Target object is null.");
+                return false;
+            }
+
+            SphereCollider sc = targetObject.GetComponent<SphereCollider>();
+            if (sc == null)
+            {
+                Debug.LogError($"AllGameObjectsInsideSphere: {targetObject.name} has no SphereCollider.");
+                return false;
+            }
+
+            foreach (GameObject go in gameObjects)
+            {
+                if (go == null) return false;
+
+                if (!IsPointInsideSphereEvenIfInactive(sc, go.transform.position))
+                {
+                    return false; // one object is outside
+                }
+            }
+
+            return true; // all objects are inside
+        }
+
+        public static bool IsPointInsideSphereCollider(SphereCollider sc, Vector3 worldPoint)
+        {
+            if (!sc || !sc.enabled) return false;
+            Vector3 center = sc.transform.TransformPoint(sc.center);
+            float scale = Mathf.Max(sc.transform.lossyScale.x, sc.transform.lossyScale.y, sc.transform.lossyScale.z);
+            float r = sc.radius * scale;
+            return (worldPoint - center).sqrMagnitude <= r * r;
         }
         public static bool Vector3sAreCloserThenThreshold(Vector3 pointA, Vector3 pointB, float threshold)
         {
