@@ -1610,7 +1610,6 @@ namespace CompasXR.Core
         Color humanColor = new Color(1.0f, 1.0f, 0.0f, 1.0f);
         Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
 
-
         CreateRealtimeMimicPointTEMPORARY(humanZoneObject, robotZoneObject, ref realtimeMimicHumanPoints,
         ref realtimeMimicRobotPoints, realtimeMimicHumanPointsParent, realtimeMimicRobotPointsParent, position,
         rotation, $"{pointIndex}_MimicPoint", $"{pointIndex}_MimicPoint", true, //TODO: ADDED THESE
