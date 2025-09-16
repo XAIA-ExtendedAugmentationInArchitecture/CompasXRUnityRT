@@ -171,6 +171,7 @@ namespace CompasXR.Core
 
             if (QRCodeDataDict.Count > 0 && KeyParentObject != null)
             {
+                Debug.Log("PositioningUpdateMethodRoboticTerritories: Number of QR codes stored as a dict= " + QRCodeDataDict.Count);
                 pos = Vector3.zero;
 
                 foreach (string key in QRCodeDataDict.Keys)
@@ -191,6 +192,7 @@ namespace CompasXR.Core
 
                             lastQrName = qrObject.name;
                         }
+                        Debug.Log("PositioningBasedOnQRCode: Translating Objects based on QR code: " + key);
                         ObjectTransformations.TranslateGameObjectByImageTarget(KeyParentObject, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
                         ObjectTransformations.TranslateGameObjectByImageTarget(ActiveRobotObjects, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
                         ObjectTransformations.TranslateGameObjectByImageTarget(ZonesARPrefabObjects, qrObject, QRCodeDataDict[key].part.frame.point, QRCodeDataDict[key].part.frame.xaxis, QRCodeDataDict[key].part.frame.yaxis);
