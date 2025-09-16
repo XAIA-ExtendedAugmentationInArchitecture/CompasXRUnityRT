@@ -618,9 +618,7 @@ namespace CompasXR.Robots
                 }
             }
         }
-
         public void DestroyActiveTrajectoryandShowRobot()
-
         {
             /*
             DestroyActiveTrajectoryandShowRobot is responsible for destroying the active trajectory and showing the robot.
@@ -642,16 +640,31 @@ namespace CompasXR.Robots
                 if (!ActiveRobot.transform.GetChild(0).gameObject.activeSelf)
                 {
                     ActiveRobot.transform.GetChild(0).gameObject.SetActive(true);
-
-                    if (databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
-                    {
-                        bool reachVisibiility = uiFunctionalities.ReachabilityToggleObject.GetComponent<Toggle>().isOn;
-                        AddReachabilitlyToHumanZone(ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName), databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, reachVisibiility);
-                    }
                 }
                 else
                 {
                     Debug.Log("DestroyActiveTrajectoryandShowRobot: ActiveRobot child is already active.");
+                }
+
+                if (databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
+                {
+                    bool reachVisibiility = uiFunctionalities.ReachabilityToggleObject.GetComponent<Toggle>().isOn;
+                    if (reachVisibiility && humanZoneMimicReachibility != null)
+                    {
+                        humanZoneMimicReachibility.SetActive(true);
+                    }
+                    else if (reachVisibiility && humanZoneMimicReachibility != null)
+                    {
+                        AddReachabilitlyToHumanZone(ActiveRobot.FindObject(mqttTrajectoryManager.serviceManager.ActiveRobotName), databaseManager.ProjectZones.MimicZones["human_zone"].ZoneObject, databaseManager.ProjectZones.MimicZones["robot_zone"].ZoneObject, reachVisibiility);
+                    }
+                    else
+                    {
+                        Debug.Log("DestroyActiveTrajectoryandShowRobot: Reachability is not on, so not adding reachability to human zone.");
+                    }
+                }
+                else
+                {
+                    Debug.Log("DestroyActiveTrajectoryandShowRobot: Not in Mimic Zone, so not adding reachability to human zone.");
                 }
             }
             else

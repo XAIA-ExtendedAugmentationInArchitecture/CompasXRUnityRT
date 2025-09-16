@@ -8,6 +8,7 @@ using CompasXR.Core;
 using Newtonsoft.Json;
 using UnityEngine.InputSystem;
 using CompasXR.Core.Extentions;
+using Unity.VisualScripting;
 
 namespace CompasXR.RoboticTerritories.Data
 {   
@@ -296,6 +297,7 @@ namespace CompasXR.RoboticTerritories.Data
             ColorGoalComponentbySatisfaction(true, satisfiedMaterial, unsatisfiedMaterial);
         }
 
+        //TODO: This method can update the informatoin if it returns the changed components.
         public void ApplySingleObservedGeometryOverwrite(
             ObservedGeometry observed,
             Material satisfiedMaterial,
@@ -592,7 +594,6 @@ namespace CompasXR.RoboticTerritories.Data
             }
             return goalComponentsDict;
         }
-
         public void UpdateCurrentGoal(string goalName)
         {
             //TODO: Mimic Parent Find Goal by name and update
@@ -620,7 +621,6 @@ namespace CompasXR.RoboticTerritories.Data
                 Debug.LogWarning($"Current Mimic Goal '{goalName}' not found under MimicGoals");
             }
         }
-
         public void UpdateObservedGeometry(string observedGeometryName, ObservedGeometry observedGeometryActual)
         {
             //TODO: Mimic Parent Find Observed Geometry by name and update
@@ -645,7 +645,6 @@ namespace CompasXR.RoboticTerritories.Data
             observedGeometry.MarkerType = observedGeometryActual.MarkerType;
             ObjectInstantiaion.UpdateExistingObjectFromRightHandFrameData(observedGeometryObject, observedGeometryActual.Box.frame.point, observedGeometryActual.Box.frame.xaxis, observedGeometryActual.Box.frame.yaxis, false, false);
         }
-
         public void UpdateGoalLocationPosition(GameObject mimicGoalsParentObject) //TODO: I am not sure if this will actual work.
         {
             if (MirroredGeometriesParentObject == null)
@@ -731,7 +730,6 @@ namespace CompasXR.RoboticTerritories.Data
                 renderer.material = satisfyingGoalComponentRenderer.material;
             }
         }
-
         public void UpdateAllComponentStates(Dictionary<string, GoalObjectComponent> currentGoalComponentsDict)
         {
             foreach (KeyValuePair<string, GoalObjectComponent> kvp in currentGoalComponentsDict)
@@ -739,7 +737,6 @@ namespace CompasXR.RoboticTerritories.Data
                 UpdateCompomponentState(kvp.Key, kvp.Value);
             }
         }
-
         public void UpdateAllObservedGeometries(Dictionary<string, ObservedGeometry> currentObservedGeometriesDict)
         {
             foreach (KeyValuePair<string, ObservedGeometry> kvp in currentObservedGeometriesDict)
@@ -747,7 +744,6 @@ namespace CompasXR.RoboticTerritories.Data
                 UpdateObservedGeometry(kvp.Key, kvp.Value);
             }
         }
-
         public void DestroyMirroredGeometriesParentObject()
         {
             if (MirroredGeometriesParentObject != null)
@@ -756,16 +752,14 @@ namespace CompasXR.RoboticTerritories.Data
                 MirroredGeometriesParentObject = null;
             }
         }
-
         public void Clear()
         {
             MimicObservedGeometriesDict.Clear();
             MimicGoalComponentsDict.Clear();
             CurrentMimicGoalName = null;
-            MirroredGeometriesParentObject = null;
+            DestroyMirroredGeometriesParentObject();
             Active = false;
         }
-
 
     }
 

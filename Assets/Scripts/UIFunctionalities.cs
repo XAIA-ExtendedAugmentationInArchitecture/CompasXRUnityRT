@@ -1648,6 +1648,10 @@ namespace CompasXR.UI
                     {
                         Destroy(trajectoryVisualizer.humanZoneMimicReachibility);
                     }
+                    if(instantiateObjects.MimicMirroredGeometryManagerImplementation != null)
+                    {
+                        instantiateObjects.MimicMirroredGeometryManagerImplementation.Clear();  
+                    }
                     break;
                 case ProjectZones.CurrentZoneMode.Inference:
                     instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();
@@ -1672,7 +1676,10 @@ namespace CompasXR.UI
                         instantiateObjects.MimicGoalsParentObject.SetActive(false);
                     }
                     instantiateObjects.MimicGoalsManager.GoalStatusObserver.Active = false;
-
+                    if(instantiateObjects.MimicMirroredGeometryManagerImplementation != null)
+                    {
+                        instantiateObjects.MimicMirroredGeometryManagerImplementation.Clear();  
+                    }
                     break;
                 case ProjectZones.CurrentZoneMode.Mimic:
                     Debug.Log("ControlARZoneObjectsBasedOnCurrentMode: Controlling AR Zone Objects for Mimic Mode.");
@@ -2305,7 +2312,6 @@ namespace CompasXR.UI
                 }
             }
         }
-
         public void UserInitiatedMimicRequestTrajectoryButtonMethod()
         {
             Debug.Log($"MimicRequestTrajectoryButtonMethod: Requesting Trajectory for {instantiateObjects.MimicHumanPoints.Count} points.");
@@ -2502,7 +2508,6 @@ namespace CompasXR.UI
                 Debug.Log("MimicTrajectorySliderReviewMethod: Current Trajectory is null.");
             }
         }
-
         public void UserInitiatedMimicExecuteTrajectoryButtonMethod()
         {
             Debug.Log("MimicExecuteTrajectoryButton: Executing Mimic Trajectory.");
