@@ -1439,7 +1439,7 @@ namespace CompasXR.UI
             */
             Debug.Log("PostInferenceRequestTargetButtonMethod: Requesting Target for Current Goal.");
 
-            if(trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+            if (trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
             {
                 if (SetActiveRobotToggleObject.GetComponentInChildren<Toggle>().isOn)
                 {
@@ -1495,6 +1495,7 @@ namespace CompasXR.UI
 
             Debug.Log($"PostInferenceRequestTargetButtonMethod: Topic : {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferencePostInferenceRequestTarget}  Msg: {JsonConvert.SerializeObject(postInferenceTargetRequestMessage.GetData())}");
             mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferencePostInferenceRequestTarget, postInferenceTargetRequestMessage.GetData());
+            SetInferenceUIPostInferenceSuccesState(true, false, false, true, false);
         }
         public void PostInferenceExecuteTrajectoryButtonMethod()
         {
