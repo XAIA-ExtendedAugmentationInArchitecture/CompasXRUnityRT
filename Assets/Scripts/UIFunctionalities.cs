@@ -578,6 +578,13 @@ namespace CompasXR.UI
             goalStateObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, instantiateObjects.GoalSatisfiedMaterial, instantiateObjects.GoalUnsatisfiedMaterial, instantiateObjects.OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, instantiateObjects.OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
             goalStateObserver.DebugLogAllComponentStatesAsDictionary();
             newSelectedGoalGameObject.SetActive(true);
+
+            //TODO: THERE IS A BUG HERE. The MIrrored Geometry does not render properly. When switching goals.
+            if (instantiateObjects.MimicMirroredGeometryManagerImplementation != null)
+            {
+                instantiateObjects.MimicMirroredGeometryManagerImplementation.UpdateCurrentGoal(newSelectedGoal.Name);
+                instantiateObjects.MimicMirroredGeometryManagerImplementation.UpdateAllComponentStates(instantiateObjects.MimicGoalsManager.GoalStatusObserver.ComponentStates);
+            }
         }
         public void MimicSelectPreviousGoalButtonMethod() //TODO: Working on this now...
         {
@@ -1688,6 +1695,11 @@ namespace CompasXR.UI
                     instantiateObjects.InferenceGoalsManager.GoalStatusObserver.Active = false;
                     instantiateObjects.MimicGoalsManager.GoalStatusObserver.Active = true;
                     instantiateObjects.MimicGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, instantiateObjects.GoalSatisfiedMaterial, instantiateObjects.GoalUnsatisfiedMaterial, instantiateObjects.OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, instantiateObjects.OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
+                    if (instantiateObjects.MimicMirroredGeometryManagerImplementation != null)
+                    {
+                        instantiateObjects.MimicMirroredGeometryManagerImplementation.UpdateAllComponentStates(instantiateObjects.MimicGoalsManager.GoalStatusObserver.ComponentStates);
+                    }
+
 
                     if (trajectoryVisualizer.ActiveRobot != null)
                     {

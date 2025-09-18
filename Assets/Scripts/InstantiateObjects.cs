@@ -1512,24 +1512,6 @@ namespace CompasXR.Core
             return mirroredRotationB;
         }
 
-        // public void CleanInferenceScene()
-        // {
-        //     /*
-        //     * Method is used to clean the inference scene in the AR space
-        //     */
-        //     if (InferenceGoalsManager != null)
-        //     {
-        //         if(InferenceGoalsManager.GoalStatusObserver.Active)
-        //         {
-        //             InferenceGoalsManager.GoalStatusObserver.ResetAllGoalsStates(GoalUnsatisfiedMaterial);
-        //         }
-        //     }
-        //     else
-        //     {
-        //         Debug.LogWarning("CleanInferenceScene: Inference Goals Manager is null");
-        //     }
-        // }
-
     //TODO: TODO: TODO: TODO: TESTING GEOMETRY UPDATES UPDATEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
 
         //TODO: Joe Actual: Update GoalStateObserver based on movement updates.
@@ -1618,15 +1600,34 @@ namespace CompasXR.Core
                 // Update the observation state if the state observe is active. //TODO: TEST THIS JOSEPH.
                 if (MimicGoalsManager.GoalStatusObserver.Active)
                 {
-                    MimicGoalsManager.GoalStatusObserver.ApplySingleObservedGeometryOverwrite(observedGeometry, GoalSatisfiedMaterial, GoalUnsatisfiedMaterial, OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
+                    Dictionary<string, GoalObjectComponent> changedGoals = MimicGoalsManager.GoalStatusObserver.ApplySingleObservedGeometryOverwrite(observedGeometry, GoalSatisfiedMaterial, GoalUnsatisfiedMaterial, OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
+                    if (MimicMirroredGeometryManagerImplementation != null)
+                    {
+                        MimicMirroredGeometryManagerImplementation.UpdateObservedGeometry(cur.Name, cur);
+
+                        if (changedGoals != null && changedGoals.Count > 0)
+                        {
+                            foreach (KeyValuePair<string, GoalObjectComponent> entry in changedGoals)
+                            {
+                                if (entry.Value == null)
+                                {
+                                    Debug.LogWarning($"OnObservedGeometryUpdated: Changed goal component is null for key {entry.Key}");
+                                    continue;
+                                }
+                                if (entry.Key == null)
+                                {
+                                    Debug.LogWarning($"OnObservedGeometryUpdated: Changed goal key is null for component {JsonConvert.SerializeObject(entry.Value)}");
+                                    continue;
+                                }
+                                Debug.Log($"OnObservedGeometryUpdated: Updating MimicMirroredGeometryManagerImplementation for changed goal {entry.Key}");
+                                MimicMirroredGeometryManagerImplementation.UpdateCompomponentState(entry.Key, entry.Value);
+                            }
+                        }
+                    }
                 }
                 if (InferenceGoalsManager.GoalStatusObserver.Active)
                 {
                     InferenceGoalsManager.GoalStatusObserver.ApplySingleObservedGeometryOverwrite(observedGeometry, GoalSatisfiedMaterial, GoalUnsatisfiedMaterial, OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
-                }
-                if (MimicMirroredGeometryManagerImplementation != null)
-                {
-                    MimicMirroredGeometryManagerImplementation.UpdateObservedGeometry(cur.Name, cur);
                 }
 
 
@@ -1638,6 +1639,10 @@ namespace CompasXR.Core
                     if (MimicGoalsManager.GoalStatusObserver.Active)
                     {
                         MimicGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, GoalSatisfiedMaterial, GoalUnsatisfiedMaterial, OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
+                        if (MimicMirroredGeometryManagerImplementation != null)
+                        {
+                            MimicMirroredGeometryManagerImplementation.UpdateAllComponentStates(MimicGoalsManager.GoalStatusObserver.ComponentStates);
+                        }
                     }
                     if (InferenceGoalsManager.GoalStatusObserver.Active)
                     {

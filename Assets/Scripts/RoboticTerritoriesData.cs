@@ -298,103 +298,224 @@ namespace CompasXR.RoboticTerritories.Data
         }
 
         //TODO: This method can update the informatoin if it returns the changed components.
-        public void ApplySingleObservedGeometryOverwrite(
-            ObservedGeometry observed,
-            Material satisfiedMaterial,
-            Material unsatisfiedMaterial,
-            float positionTolerance = 0.03f,
-            float rotationToleranceDeg = 3f)
+        // public Dictionary<string, GoalObjectComponent> ApplySingleObservedGeometryOverwrite(
+        //     ObservedGeometry observed,
+        //     Material satisfiedMaterial,
+        //     Material unsatisfiedMaterial,
+        //     float positionTolerance = 0.03f,
+        //     float rotationToleranceDeg = 3f)
+        // {
+        //     var changed = new Dictionary<string, GoalObjectComponent>();
+
+        //     if (observed == null || ComponentStates == null || ComponentStates.Count == 0)
+        //     {
+        //         Debug.LogWarning("GoalStateObserver: ApplySingleObservedGeometryOverwrite: missing observed or components.");
+        //         return changed;
+        //     }
+
+        //     // Cache & validate observed refs early
+        //     var observedGO = observed.GeometryObject;
+        //     if (observedGO == null)
+        //     {
+        //         Debug.LogWarning($"ApplySingleObservedGeometryOverwrite: observed '{observed.Name}' has null GeometryObject (likely race: update before instantiation).");
+        //         return changed;
+        //     }
+        //     var obsTransform = observedGO.transform;
+
+        //     // 1) Locate any component currently satisfied by THIS observed object (by GO, not instance)
+        //     GoalObjectComponent previouslyAssigned = null;
+        //     foreach (var comp in ComponentStates.Values)
+        //     {
+        //         var sat = comp?.SatisfyingObservedGeometry;
+        //         if (sat != null && sat.GeometryObject == observedGO)
+        //         {
+        //             previouslyAssigned = comp;
+        //             break;
+        //         }
+        //     }
+
+        //     // 2) Find the BEST in-tolerance component
+        //     GoalObjectComponent bestComp = null;
+        //     float bestScore = float.MaxValue;
+
+        //     foreach (var comp in ComponentStates.Values)
+        //     {
+        //         if (comp == null) continue;
+
+        //         var compGO = comp.ComponentGameObject;
+        //         if (compGO == null)
+        //         {
+        //             Debug.LogWarning($"ApplySingleObservedGeometryOverwrite: Component '{comp.Name}' has null GameObject — skipping.");
+        //             continue;
+        //         }
+
+        //         float posErr = (obsTransform.position - compGO.transform.position).magnitude;
+        //         if (posErr > positionTolerance) continue;
+
+        //         float rotErr = Quaternion.Angle(obsTransform.rotation, compGO.transform.rotation);
+        //         if (rotErr > rotationToleranceDeg) continue;
+
+        //         float score = posErr + 0.02f * rotErr;
+        //         if (score < bestScore)
+        //         {
+        //             bestScore = score;
+        //             bestComp = comp;
+        //         }
+        //     }
+
+        //     // 3) If no match now, unsatisfy whoever used to have this observed
+        //     if (bestComp == null)
+        //     {
+        //         if (previouslyAssigned != null)
+        //         {
+        //             previouslyAssigned.IsSatisfied = false;
+        //             previouslyAssigned.SatisfyingObservedGeometry = null;
+
+        //             var rPrev = previouslyAssigned.ComponentGameObject?.GetComponentInChildren<Renderer>();
+        //             if (rPrev != null && unsatisfiedMaterial != null) rPrev.material = unsatisfiedMaterial;
+
+        //             Debug.Log($"GoalStateObserver: '{observed.Name}' no longer satisfies '{previouslyAssigned.Name}'.");
+
+        //             changed[previouslyAssigned.Name] = previouslyAssigned;
+        //         }
+        //         return changed;
+        //     }
+
+        //     // 4) Enforce single-owner: unsatisfy any OTHER component currently linked to this observed GO
+        //     foreach (var comp in ComponentStates.Values)
+        //     {
+        //         if (comp == null || ReferenceEquals(comp, bestComp)) continue;
+        //         var sat = comp.SatisfyingObservedGeometry;
+        //         if (sat != null && sat.GeometryObject == observedGO)
+        //         {
+        //             comp.IsSatisfied = false;
+        //             comp.SatisfyingObservedGeometry = null;
+        //             var r = comp.ComponentGameObject?.GetComponentInChildren<Renderer>();
+        //             if (r != null && unsatisfiedMaterial != null) r.material = unsatisfiedMaterial;
+        //             Debug.Log($"GoalStateObserver: '{observed.Name}' unlinked from '{comp.Name}' (reassigning).");
+
+        //             changed[comp.Name] = comp;
+        //         }
+        //     }
+
+        //     // 5) If it moved from a different component, unsatisfy that previous one
+        //     if (previouslyAssigned != null && !ReferenceEquals(previouslyAssigned, bestComp))
+        //     {
+        //         previouslyAssigned.IsSatisfied = false;
+        //         previouslyAssigned.SatisfyingObservedGeometry = null;
+
+        //         var rPrev = previouslyAssigned.ComponentGameObject?.GetComponentInChildren<Renderer>();
+        //         if (rPrev != null && unsatisfiedMaterial != null) rPrev.material = unsatisfiedMaterial;
+
+        //         Debug.Log($"GoalStateObserver: '{observed.Name}' moved from '{previouslyAssigned.Name}' to '{bestComp.Name}'.");
+
+        //         changed[previouslyAssigned.Name] = previouslyAssigned;
+        //     }
+
+        //     // 6) Assign to the best match
+        //     bestComp.IsSatisfied = true;
+        //     bestComp.SatisfyingObservedGeometry = observed;
+
+        //     var rBest = bestComp.ComponentGameObject?.GetComponentInChildren<Renderer>();
+        //     if (rBest != null && satisfiedMaterial != null) rBest.material = satisfiedMaterial;
+
+        //     Debug.Log($"GoalStateObserver: '{observed.Name}' satisfies '{bestComp.Name}' (score {bestScore:F4}).");
+
+        //     changed[bestComp.Name] = bestComp;
+
+        //     return changed;
+        // }
+
+        // Helper: never add a null/empty key to `changed`
+    private static void TryRecordChanged(
+        Dictionary<string, GoalObjectComponent> changed,
+        GoalObjectComponent comp,
+        string contextForLog)
+    {
+        if (comp == null) return;
+
+        // Prefer explicit component name; fall back to GO name if needed
+        string key = !string.IsNullOrEmpty(comp.Name)
+            ? comp.Name
+            : comp.ComponentGameObject != null ? comp.ComponentGameObject.name : null;
+
+        if (string.IsNullOrEmpty(key))
         {
-            if (observed == null || ComponentStates == null || ComponentStates.Count == 0)
+            Debug.LogWarning($"ApplySingleObservedGeometryOverwrite: Skipping changed entry with null/empty key (context: {contextForLog}).");
+            return;
+        }
+
+        changed[key] = comp;
+    }
+
+    public Dictionary<string, GoalObjectComponent> ApplySingleObservedGeometryOverwrite(
+        ObservedGeometry observed,
+        Material satisfiedMaterial,
+        Material unsatisfiedMaterial,
+        float positionTolerance = 0.03f,
+        float rotationToleranceDeg = 3f)
+    {
+        var changed = new Dictionary<string, GoalObjectComponent>();
+
+        if (observed == null || ComponentStates == null || ComponentStates.Count == 0)
+        {
+            Debug.LogWarning("GoalStateObserver: ApplySingleObservedGeometryOverwrite: missing observed or components.");
+            return changed;
+        }
+
+        var observedGO = observed.GeometryObject;
+        if (observedGO == null)
+        {
+            Debug.LogWarning($"ApplySingleObservedGeometryOverwrite: observed '{observed.Name}' has null GeometryObject (likely race: update before instantiation).");
+            return changed;
+        }
+        var obsTransform = observedGO.transform;
+
+        // 1) who is currently satisfied by THIS observed GO?
+        GoalObjectComponent previouslyAssigned = null;
+        foreach (var comp in ComponentStates.Values)
+        {
+            var sat = comp?.SatisfyingObservedGeometry;
+            if (sat != null && sat.GeometryObject == observedGO)
             {
-                Debug.LogWarning("GoalStateObserver: ApplySingleObservedGeometryOverwrite: missing observed or components.");
-                return;
+                previouslyAssigned = comp;
+                break;
+            }
+        }
+
+        // 2) best in-tolerance match
+        GoalObjectComponent bestComp = null;
+        float bestScore = float.MaxValue;
+
+        foreach (var comp in ComponentStates.Values)
+        {
+            if (comp == null) continue;
+
+            var compGO = comp.ComponentGameObject;
+            if (compGO == null)
+            {
+                Debug.LogWarning($"ApplySingleObservedGeometryOverwrite: Component '{comp.Name}' has null GameObject — skipping.");
+                continue;
             }
 
-            // Cache & validate observed refs early
-            var observedGO = observed.GeometryObject;
-            if (observedGO == null)
+            float posErr = (obsTransform.position - compGO.transform.position).magnitude;
+            if (posErr > positionTolerance) continue;
+
+            float rotErr = Quaternion.Angle(obsTransform.rotation, compGO.transform.rotation);
+            if (rotErr > rotationToleranceDeg) continue;
+
+            float score = posErr + 0.02f * rotErr;
+            if (score < bestScore)
             {
-                Debug.LogWarning($"ApplySingleObservedGeometryOverwrite: observed '{observed.Name}' has null GeometryObject (likely race: update before instantiation).");
-                return;
+                bestScore = score;
+                bestComp = comp;
             }
-            var obsTransform = observedGO.transform;
+        }
 
-            // 1) Locate any component currently satisfied by THIS observed object (by GO, not instance)
-            GoalObjectComponent previouslyAssigned = null;
-            foreach (var comp in ComponentStates.Values)
-            {
-                var sat = comp?.SatisfyingObservedGeometry;
-                if (sat != null && sat.GeometryObject == observedGO)   // <-- key change
-                {
-                    previouslyAssigned = comp;
-                    break;
-                }
-            }
-
-            // 2) Find the BEST in-tolerance component
-            GoalObjectComponent bestComp = null;
-            float bestScore = float.MaxValue;
-
-            foreach (var comp in ComponentStates.Values)
-            {
-                if (comp == null) continue;
-
-                var compGO = comp.ComponentGameObject;
-                if (compGO == null)
-                {
-                    Debug.LogWarning($"ApplySingleObservedGeometryOverwrite: Component '{comp.Name}' has null GameObject — skipping.");
-                    continue;
-                }
-
-                float posErr = (obsTransform.position - compGO.transform.position).magnitude;
-                if (posErr > positionTolerance) continue;
-
-                float rotErr = Quaternion.Angle(obsTransform.rotation, compGO.transform.rotation);
-                if (rotErr > rotationToleranceDeg) continue;
-
-                float score = posErr + 0.02f * rotErr;
-                if (score < bestScore)
-                {
-                    bestScore = score;
-                    bestComp = comp;
-                }
-            }
-
-            // 3) If no match now, unsatisfy whoever used to have this observed
-            if (bestComp == null)
-            {
-                if (previouslyAssigned != null)
-                {
-                    previouslyAssigned.IsSatisfied = false;
-                    previouslyAssigned.SatisfyingObservedGeometry = null;
-
-                    var rPrev = previouslyAssigned.ComponentGameObject?.GetComponentInChildren<Renderer>();
-                    if (rPrev != null && unsatisfiedMaterial != null) rPrev.material = unsatisfiedMaterial;
-
-                    Debug.Log($"GoalStateObserver: '{observed.Name}' no longer satisfies '{previouslyAssigned.Name}'.");
-                }
-                return;
-            }
-
-            // 4) Enforce single-owner: unsatisfy any OTHER component currently linked to this observed GO
-            foreach (var comp in ComponentStates.Values)
-            {
-                if (comp == null || ReferenceEquals(comp, bestComp)) continue;
-                var sat = comp.SatisfyingObservedGeometry;
-                if (sat != null && sat.GeometryObject == observedGO)
-                {
-                    comp.IsSatisfied = false;
-                    comp.SatisfyingObservedGeometry = null;
-                    var r = comp.ComponentGameObject?.GetComponentInChildren<Renderer>();
-                    if (r != null && unsatisfiedMaterial != null) r.material = unsatisfiedMaterial;
-                    Debug.Log($"GoalStateObserver: '{observed.Name}' unlinked from '{comp.Name}' (reassigning).");
-                }
-            }
-
-            // 5) If it moved from a different component, unsatisfy that previous one (already covered above,
-            //    but keep this for clarity and logs if previouslyAssigned was a different comp)
-            if (previouslyAssigned != null && !ReferenceEquals(previouslyAssigned, bestComp))
+        // 3) no match: unsatisfy previous
+        if (bestComp == null)
+        {
+            if (previouslyAssigned != null)
             {
                 previouslyAssigned.IsSatisfied = false;
                 previouslyAssigned.SatisfyingObservedGeometry = null;
@@ -402,18 +523,57 @@ namespace CompasXR.RoboticTerritories.Data
                 var rPrev = previouslyAssigned.ComponentGameObject?.GetComponentInChildren<Renderer>();
                 if (rPrev != null && unsatisfiedMaterial != null) rPrev.material = unsatisfiedMaterial;
 
-                Debug.Log($"GoalStateObserver: '{observed.Name}' moved from '{previouslyAssigned.Name}' to '{bestComp.Name}'.");
+                Debug.Log($"GoalStateObserver: '{observed.Name}' no longer satisfies '{previouslyAssigned.Name}'.");
+                TryRecordChanged(changed, previouslyAssigned, "no-match unsatisfy previous");
             }
-
-            // 6) Assign to the best match
-            bestComp.IsSatisfied = true;
-            bestComp.SatisfyingObservedGeometry = observed;  // store the NEW instance is fine; we match by GO later
-
-            var rBest = bestComp.ComponentGameObject?.GetComponentInChildren<Renderer>();
-            if (rBest != null && satisfiedMaterial != null) rBest.material = satisfiedMaterial;
-
-            Debug.Log($"GoalStateObserver: '{observed.Name}' satisfies '{bestComp.Name}' (score {bestScore:F4}).");
+            return changed;
         }
+
+        // 4) single-owner: unlink others pointing to this observed GO
+        foreach (var comp in ComponentStates.Values)
+        {
+            if (comp == null || ReferenceEquals(comp, bestComp)) continue;
+            var sat = comp.SatisfyingObservedGeometry;
+            if (sat != null && sat.GeometryObject == observedGO)
+            {
+                comp.IsSatisfied = false;
+                comp.SatisfyingObservedGeometry = null;
+
+                var r = comp.ComponentGameObject?.GetComponentInChildren<Renderer>();
+                if (r != null && unsatisfiedMaterial != null) r.material = unsatisfiedMaterial;
+
+                Debug.Log($"GoalStateObserver: '{observed.Name}' unlinked from '{comp.Name}' (reassigning).");
+                TryRecordChanged(changed, comp, "single-owner unlink");
+            }
+        }
+
+        // 5) moved from a different component
+        if (previouslyAssigned != null && !ReferenceEquals(previouslyAssigned, bestComp))
+        {
+            previouslyAssigned.IsSatisfied = false;
+            previouslyAssigned.SatisfyingObservedGeometry = null;
+
+            var rPrev = previouslyAssigned.ComponentGameObject?.GetComponentInChildren<Renderer>();
+            if (rPrev != null && unsatisfiedMaterial != null) rPrev.material = unsatisfiedMaterial;
+
+            Debug.Log($"GoalStateObserver: '{observed.Name}' moved from '{previouslyAssigned.Name}' to '{bestComp.Name}'.");
+            TryRecordChanged(changed, previouslyAssigned, "moved unsatisfy previous");
+        }
+
+        // 6) assign best (this is the "becomes satisfied again" path)
+        bestComp.IsSatisfied = true;
+        bestComp.SatisfyingObservedGeometry = observed;
+
+        var rBest = bestComp.ComponentGameObject?.GetComponentInChildren<Renderer>();
+        if (rBest != null && satisfiedMaterial != null) rBest.material = satisfiedMaterial;
+
+        Debug.Log($"GoalStateObserver: '{observed.Name}' satisfies '{bestComp.Name}' (score {bestScore:F4}).");
+
+        // CRITICAL: don’t add null key if Name is missing
+        TryRecordChanged(changed, bestComp, "assign best");
+
+        return changed;
+    }
         public void DebugLogComponentsStates()
         {
             foreach (var component in ComponentStates.Values)
@@ -548,57 +708,136 @@ namespace CompasXR.RoboticTerritories.Data
             }
             return observedGeometriesDict;
         }
-
-        public Dictionary<string, GoalObjectComponent> _CreateGoalCompoenetsDict(GameObject MirroredGeometriesParentObject, Dictionary<string, GoalObjectComponent> CurrentGoalComponentsDict, string CurrentMimicGoalName)
+        public Dictionary<string, GoalObjectComponent> _CreateGoalCompoenetsDict(
+            GameObject MirroredGeometriesParentObject,
+            Dictionary<string, GoalObjectComponent> CurrentGoalComponentsDict,
+            string CurrentMimicGoalName)
         {
-            Dictionary<string, GoalObjectComponent> goalComponentsDict = new Dictionary<string, GoalObjectComponent>();
-            GameObject goalObject = MirroredGeometriesParentObject.FindObject("MimicGoals");
-            if (goalObject == null)
+            var goalComponentsDict = new Dictionary<string, GoalObjectComponent>();
+
+            // Validate inputs
+            if (MirroredGeometriesParentObject == null)
             {
-                Debug.LogWarning($"GoalParentObject not found under {MirroredGeometriesParentObject.name}");
+                Debug.LogWarning("_CreateGoalCompoenetsDict: MirroredGeometriesParentObject is null.");
                 return goalComponentsDict;
             }
-            GameObject currentGoalObject = goalObject.FindObject(CurrentMimicGoalName);
+            if (CurrentGoalComponentsDict == null || CurrentGoalComponentsDict.Count == 0)
+            {
+                Debug.LogWarning("_CreateGoalCompoenetsDict: CurrentGoalComponentsDict is null or empty.");
+                return goalComponentsDict;
+            }
+            if (string.IsNullOrEmpty(CurrentMimicGoalName))
+            {
+                Debug.LogWarning("_CreateGoalCompoenetsDict: CurrentMimicGoalName is null or empty.");
+                return goalComponentsDict;
+            }
+
+            // Locate goal parents
+            var goalParent = MirroredGeometriesParentObject.FindObject("MimicGoals");
+            if (goalParent == null)
+            {
+                Debug.LogWarning($"GoalParentObject 'MimicGoals' not found under {MirroredGeometriesParentObject.name}");
+                return goalComponentsDict;
+            }
+
+            var currentGoalObject = goalParent.FindObject(CurrentMimicGoalName);
             if (currentGoalObject == null)
             {
-                Debug.LogWarning($"Current Mimic Goal '{CurrentMimicGoalName}' not found under {goalObject.name}");
+                Debug.LogWarning($"Current Mimic Goal '{CurrentMimicGoalName}' not found under {goalParent.name}");
                 return goalComponentsDict;
             }
-            foreach (KeyValuePair<string, GoalObjectComponent> kvp in CurrentGoalComponentsDict)
+
+            // Local helper: map an observed geometry into the mirrored dict by name first, then by GO
+            ObservedGeometry MapObserved(ObservedGeometry src)
             {
-                GameObject child = currentGoalObject.FindObject(kvp.Key);
-                if (child == null)
+                if (src == null) return null;
+                if (MimicObservedGeometriesDict == null || MimicObservedGeometriesDict.Count == 0) return null;
+
+                // 1) By name (preferred)
+                var n = src.Name;
+                if (!string.IsNullOrEmpty(n) && MimicObservedGeometriesDict.TryGetValue(n, out var namedHit))
+                    return namedHit;
+
+                // 2) By GO reference / instance id (fallback for when Name is set later)
+                var go = src.GeometryObject;
+                if (go != null)
                 {
-                    Debug.LogWarning($"Goal component '{kvp.Key}' not found under {goalObject.name}");
+                    int id = go.GetInstanceID();
+                    foreach (var kv in MimicObservedGeometriesDict)
+                    {
+                        var v = kv.Value;
+                        if (v?.GeometryObject == go) return v;
+                        if (v?.GeometryObject && v.GeometryObject.GetInstanceID() == id) return v;
+                    }
+                }
+                return null;
+            }
+
+            // Build mirrored components
+            foreach (var kvp in CurrentGoalComponentsDict)
+            {
+                var srcName = kvp.Key;
+                var srcComp  = kvp.Value;
+                if (srcComp == null)
+                {
+                    Debug.LogWarning($"_CreateGoalCompoenetsDict: Source component '{srcName}' is null.");
                     continue;
                 }
-                GoalObjectComponent goalComponent = new GoalObjectComponent(kvp.Key, child);
-                goalComponent.IsSatisfied = kvp.Value.IsSatisfied;
-                if (goalComponent.SatisfyingObservedGeometry != null)
+
+                // Find the mirrored child GameObject for this component
+                var child = currentGoalObject.FindObject(srcName);
+                if (child == null)
                 {
-                    goalComponent.SatisfyingObservedGeometry = MimicObservedGeometriesDict.ContainsKey(kvp.Value.SatisfyingObservedGeometry?.Name) ? MimicObservedGeometriesDict[kvp.Value.SatisfyingObservedGeometry.Name] : null;
+                    Debug.LogWarning($"Goal component '{srcName}' not found under {currentGoalObject.name}");
+                    continue;
+                }
+
+                // Create mirrored component with same name and GO
+                var goalComponent = new GoalObjectComponent(srcName, child)
+                {
+                    IsSatisfied = srcComp.IsSatisfied
+                };
+
+                // Map satisfying observed geometry from SOURCE (bug fix: don't check goalComponent.SatisfyingObservedGeometry here)
+                var srcSat = srcComp.SatisfyingObservedGeometry;
+                if (srcSat != null)
+                {
+                    var mapped = MapObserved(srcSat);
+                    goalComponent.SatisfyingObservedGeometry = mapped;
+
+                    // Optional: debug to understand mapping outcomes
+                    if (mapped == null)
+                    {
+                        var srcSatName = string.IsNullOrEmpty(srcSat.Name) ? "(null)" : srcSat.Name;
+                        var srcGoName  = srcSat.GeometryObject ? srcSat.GeometryObject.name : "(null GO)";
+                        Debug.LogWarning(
+                            $"_CreateGoalCompoenetsDict: Could not map satisfying observed geometry for '{srcName}'. " +
+                            $"src.Name={srcSatName}, src.GO={srcGoName}."
+                        );
+                    }
                 }
                 else
                 {
                     goalComponent.SatisfyingObservedGeometry = null;
-                    Debug.LogWarning($"Goal component '{kvp.Key}' has no satisfying observed geometry.");
+                    // This is informational, not an error—some components simply aren’t satisfied yet.
+                    // Debug.Log($"_CreateGoalCompoenetsDict: Component '{srcName}' has no satisfying observed geometry.");
                 }
-                if (goalComponent.ComponentGameObject != null)
+
+                // Add to mirrored dict (warn on duplicates)
+                if (!goalComponentsDict.TryAdd(goalComponent.Name, goalComponent))
                 {
-                    goalComponentsDict.Add(goalComponent.Name, goalComponent);
-                }
-                else
-                {
-                    Debug.LogWarning($"Goal component '{kvp.Key}' not found under {MirroredGeometriesParentObject.name}");
+                    Debug.LogWarning($"_CreateGoalCompoenetsDict: Duplicate component key '{goalComponent.Name}' — overwriting.");
+                    goalComponentsDict[goalComponent.Name] = goalComponent;
                 }
             }
+
             return goalComponentsDict;
         }
         public void UpdateCurrentGoal(string goalName)
         {
             //TODO: Mimic Parent Find Goal by name and update
             GameObject CurrentMimicGoal = MirroredGeometriesParentObject.FindObject("MimicGoals").FindObject(CurrentMimicGoalName);
-            if (CurrentMimicGoal == null)
+            if (CurrentMimicGoal != null)
             {
                 if (CurrentMimicGoal.activeSelf)
                 {
@@ -660,75 +899,164 @@ namespace CompasXR.RoboticTerritories.Data
             MirroredGeometriesParentObject.transform.position = mimicGoalsParentObject.transform.position;
             MirroredGeometriesParentObject.transform.rotation = mimicGoalsParentObject.transform.rotation;
         }
+        // public void UpdateCompomponentState(string componentName, GoalObjectComponent satisfyingGoalComponentActual)
+        // {
+        //     // Check if the component exists in the dictionary
+        //     if (!MimicGoalComponentsDict.ContainsKey(componentName))
+        //     {
+        //         Debug.LogWarning($"Component '{componentName}' not found in MimicGoalComponentsDict");
+        //         return;
+        //     }
+
+        //     // Retrieve the component from the dictionary
+        //     GoalObjectComponent component = MimicGoalComponentsDict[componentName];
+        //     if (component == null)
+        //     {
+        //         Debug.LogWarning($"Component '{componentName}' is null in MimicGoalComponentsDict");
+        //         return;
+        //     }
+
+        //     // Retrieve the GameObject associated with the component
+        //     GameObject componentObject = component.ComponentGameObject;
+        //     if (componentObject == null)
+        //     {
+        //         Debug.LogWarning($"Component GameObject for '{componentName}' is null");
+        //         return;
+        //     }
+
+        //     // Update IsSatisfied state
+        //     component.IsSatisfied = satisfyingGoalComponentActual.IsSatisfied;
+
+        //     // Update SatisfyingObservedGeometry
+        //     ObservedGeometry satisfyingObservedGeometry = satisfyingGoalComponentActual.SatisfyingObservedGeometry;
+        //     if (satisfyingObservedGeometry != null)
+        //     {
+        //         string satisfyingGeometryName = satisfyingObservedGeometry.Name;
+
+        //         if (MimicObservedGeometriesDict.ContainsKey(satisfyingGeometryName))
+        //         {
+        //             Debug.Log($"Updating SatisfyingObservedGeometry for component '{componentName}' to '{satisfyingGeometryName}'");
+        //             component.SatisfyingObservedGeometry = MimicObservedGeometriesDict[satisfyingGeometryName];
+        //         }
+        //         else
+        //         {
+        //             component.SatisfyingObservedGeometry = null;
+        //             Debug.LogWarning($"Satisfying Observed Geometry '{satisfyingGeometryName}' not found in MimicObservedGeometriesDict for component '{componentName}'");
+        //         }
+        //     }
+        //     else
+        //     {
+        //         Debug.Log($"Clearing SatisfyingObservedGeometry for component '{componentName}'");
+        //         component.SatisfyingObservedGeometry = null;
+        //     }
+
+        //     // Get the renderer for the component object
+        //     Renderer renderer = componentObject.GetComponentInChildren<Renderer>();
+        //     if (renderer == null)
+        //     {
+        //         Debug.LogWarning($"Renderer not found on component '{componentName}'");
+        //         return;
+        //     }
+
+        //     // Get the renderer for the satisfying goal component
+        //     Renderer satisfyingGoalComponentRenderer = satisfyingGoalComponentActual.ComponentGameObject.GetComponentInChildren<Renderer>();
+        //     if (satisfyingGoalComponentRenderer == null)
+        //     {
+        //         Debug.LogWarning($"Renderer not found on satisfying component '{satisfyingGoalComponentActual.Name}'");
+        //         return;
+        //     }
+
+        //     // Update the material if satisfied
+        //     renderer.material = satisfyingGoalComponentRenderer.material;
+        // }
+
         public void UpdateCompomponentState(string componentName, GoalObjectComponent satisfyingGoalComponentActual)
         {
-            // Check if the component exists in the dictionary
-            if (!MimicGoalComponentsDict.ContainsKey(componentName))
+            // Guard for null/empty key (will prevent the ContainsKey throw)
+            if (string.IsNullOrEmpty(componentName))
             {
-                Debug.LogWarning($"Component '{componentName}' not found in MimicGoalComponentsDict");
+                Debug.LogWarning("UpdateCompomponentState: componentName is null or empty — skipping.");
+                return;
+            }
+            if (satisfyingGoalComponentActual == null)
+            {
+                Debug.LogWarning($"UpdateCompomponentState('{componentName}'): satisfyingGoalComponentActual is null — skipping.");
+                return;
+            }
+            if (MimicGoalComponentsDict == null)
+            {
+                Debug.LogWarning("UpdateCompomponentState: MimicGoalComponentsDict is null.");
                 return;
             }
 
-            // Retrieve the component from the dictionary
-            GoalObjectComponent component = MimicGoalComponentsDict[componentName];
-            if (component == null)
+            // Safe fetch
+            if (!MimicGoalComponentsDict.TryGetValue(componentName, out var component) || component == null)
             {
-                Debug.LogWarning($"Component '{componentName}' is null in MimicGoalComponentsDict");
+                Debug.LogWarning($"Component '{componentName}' not found or null in MimicGoalComponentsDict");
                 return;
             }
 
-            // Retrieve the GameObject associated with the component
-            GameObject componentObject = component.ComponentGameObject;
+            var componentObject = component.ComponentGameObject;
             if (componentObject == null)
             {
                 Debug.LogWarning($"Component GameObject for '{componentName}' is null");
                 return;
             }
 
-            // Update IsSatisfied state
+            // Update IsSatisfied
             component.IsSatisfied = satisfyingGoalComponentActual.IsSatisfied;
 
-            // Update SatisfyingObservedGeometry
-            ObservedGeometry satisfyingObservedGeometry = satisfyingGoalComponentActual.SatisfyingObservedGeometry;
+            // Update SatisfyingObservedGeometry via name mapping (guard all nulls)
+            var satisfyingObservedGeometry = satisfyingGoalComponentActual.SatisfyingObservedGeometry;
             if (satisfyingObservedGeometry != null)
             {
-                string satisfyingGeometryName = satisfyingObservedGeometry.Name;
+                var satisfyingGeometryName = satisfyingObservedGeometry.Name;
 
-                if (MimicObservedGeometriesDict.ContainsKey(satisfyingGeometryName))
+                if (!string.IsNullOrEmpty(satisfyingGeometryName) &&
+                    MimicObservedGeometriesDict != null &&
+                    MimicObservedGeometriesDict.TryGetValue(satisfyingGeometryName, out var mappedObserved))
                 {
-                    component.SatisfyingObservedGeometry = MimicObservedGeometriesDict[satisfyingGeometryName];
+                    Debug.Log($"Updating SatisfyingObservedGeometry for component '{componentName}' to '{satisfyingGeometryName}'");
+                    component.SatisfyingObservedGeometry = mappedObserved;
                 }
                 else
                 {
                     component.SatisfyingObservedGeometry = null;
+                    Debug.LogWarning(
+                        $"Satisfying Observed Geometry name is {(satisfyingGeometryName == null ? "null" : $"'{satisfyingGeometryName}' not found")} " +
+                        $"in MimicObservedGeometriesDict for component '{componentName}'"
+                    );
                 }
             }
             else
             {
+                Debug.Log($"Clearing SatisfyingObservedGeometry for component '{componentName}'");
                 component.SatisfyingObservedGeometry = null;
             }
 
-            // Get the renderer for the component object
-            Renderer renderer = componentObject.GetComponentInChildren<Renderer>();
+            // Materials (defensive)
+            var renderer = componentObject.GetComponentInChildren<Renderer>();
             if (renderer == null)
             {
                 Debug.LogWarning($"Renderer not found on component '{componentName}'");
                 return;
             }
 
-            // Get the renderer for the satisfying goal component
-            Renderer satisfyingGoalComponentRenderer = satisfyingGoalComponentActual.ComponentGameObject.GetComponentInChildren<Renderer>();
+            var srcGO = satisfyingGoalComponentActual.ComponentGameObject;
+            if (srcGO == null)
+            {
+                Debug.LogWarning($"Satisfying component '{satisfyingGoalComponentActual.Name}' has null GameObject");
+                return;
+            }
+
+            var satisfyingGoalComponentRenderer = srcGO.GetComponentInChildren<Renderer>();
             if (satisfyingGoalComponentRenderer == null)
             {
                 Debug.LogWarning($"Renderer not found on satisfying component '{satisfyingGoalComponentActual.Name}'");
                 return;
             }
 
-            // Update the material if satisfied
-            if (satisfyingGoalComponentActual.IsSatisfied)
-            {
-                renderer.material = satisfyingGoalComponentRenderer.material;
-            }
+            renderer.material = satisfyingGoalComponentRenderer.material;
         }
         public void UpdateAllComponentStates(Dictionary<string, GoalObjectComponent> currentGoalComponentsDict)
         {
