@@ -452,7 +452,32 @@ namespace CompasXR.RoboticTerritories.Data
         }
         public List<string> GetSatisfyingGeometryNames()
         {
-            return ComponentStates.Values.Where(c => c.IsSatisfied && c.SatisfyingObservedGeometry != null).Select(c => c.SatisfyingObservedGeometry.Name).ToList();
+            var names = new List<string>();
+            foreach (var c in ComponentStates.Values)
+            {
+                if (!c?.IsSatisfied ?? true) continue;
+                var og = c.SatisfyingObservedGeometry;
+                if (og == null) continue;
+
+                var name = og.Name;
+                if (string.IsNullOrEmpty(name))
+                {
+                    // Try to salvage from GO, log once
+                    var goName = og.GeometryObject ? og.GeometryObject.name : null;
+                    if (!string.IsNullOrEmpty(goName))
+                    {
+                        name = goName;
+                        og.Name = goName; // persist fix
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"GetSatisfyingGeometryNames: Satisfied component '{c.Name}' has observed geometry with null/empty Name and no recoverable GameObject name.");
+                        continue; // or add "(unnamed_observed)" if you prefer
+                    }
+                }
+                names.Add(name);
+            }
+            return names;
         }
         public List<string> GetIncompleteComponentsNames()
         {

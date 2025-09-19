@@ -312,7 +312,7 @@ namespace CompasXR.UI
         public GameObject FollowMeButton;
         public CompasXRButtonHeldEvent FollowMeButtonHeldEventComponent;
         public GameObject RealtimeMimicControlsParent;
-        public GameObject RealtimeMimicEditorTestToggleObject;
+        // public GameObject RealtimeMimicEditorTestToggleObject;
         public int REALTIMEMIMICINDEXCOUNTER = 0;
         public int REALTIMEMIMICLASTSENTINDEX = -1;
         public int REALTIMEMIMICLASTCOMPLETEDINDEX = -1;
@@ -1099,10 +1099,10 @@ namespace CompasXR.UI
             }
 
             //TODO: //TODO: //TODO: //TODO: //TODO: THIS IS LITERALLY JUST FOR TESTING PURPOSES IN THE REALTIME MIMIC.
-            RealtimeMimicEditorTestToggleObject = RealtimeMimicControlsParent.FindObject("TestingToggle");
-            RealtimeMimicEditorTestToggleObject = RealtimeMimicControlsParent.FindObject("TestingToggle");
-            Toggle RealtimeMimicTestingToggle = RealtimeMimicEditorTestToggleObject.GetComponentInChildren<Toggle>();
-            RealtimeMimicTestingToggle.onValueChanged.AddListener(TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY);
+            // RealtimeMimicEditorTestToggleObject = RealtimeMimicControlsParent.FindObject("TestingToggle");
+            // RealtimeMimicEditorTestToggleObject = RealtimeMimicControlsParent.FindObject("TestingToggle");
+            // Toggle RealtimeMimicTestingToggle = RealtimeMimicEditorTestToggleObject.GetComponentInChildren<Toggle>();
+            // RealtimeMimicTestingToggle.onValueChanged.AddListener(TEMPORARYToggleRealtimeMimicIsPressedTestingMethodTEMPORARY);
         }
         public void ResetInferenceGameObjectsInScene()
         {
@@ -1477,6 +1477,10 @@ namespace CompasXR.UI
                 return;
             }
 
+            if (instantiateObjects.MimicGoalsManager.GoalStatusObserver != null)
+            {
+                instantiateObjects.MimicGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, instantiateObjects.GoalUnsatisfiedMaterial, instantiateObjects.GoalSatisfiedMaterial, instantiateObjects.OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, instantiateObjects.OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
+            }
             List<string> satisfiedGoals = instantiateObjects.InferenceGoalsManager.GoalStatusObserver.GetCompletedComponentsNames();
             List<string> completedObjectNames = instantiateObjects.InferenceGoalsManager.GoalStatusObserver.GetSatisfyingGeometryNames();
             Dictionary<string, Frame> currentGeometryFramesAsDict = databaseManager.GetObservedGeometryFramesAsDict();
@@ -2365,6 +2369,11 @@ namespace CompasXR.UI
                 foreach (Transform child in RealtimeMimicControlsParent.transform)
                 {
                     var go = child.gameObject;
+
+                    if (go.name == "TestingToggle")
+                    {
+                        continue;
+                    }
 
                     // Show/hide
                     go.SetActive(setControlsActive);
