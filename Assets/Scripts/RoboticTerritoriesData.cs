@@ -192,7 +192,7 @@ namespace CompasXR.RoboticTerritories.Data
         {
             public string Name { get; private set; }
             public bool IsSatisfied { get; set; }
-            public GameObject ComponentGameObject { get; private set; }
+            public GameObject ComponentGameObject { get; set; }
             public ObservedGeometry SatisfyingObservedGeometry { get; set; }
 
             public GoalObjectComponent(string name, GameObject componentObject)
@@ -777,7 +777,7 @@ namespace CompasXR.RoboticTerritories.Data
             foreach (var kvp in CurrentGoalComponentsDict)
             {
                 var srcName = kvp.Key;
-                var srcComp  = kvp.Value;
+                var srcComp = kvp.Value;
                 if (srcComp == null)
                 {
                     Debug.LogWarning($"_CreateGoalCompoenetsDict: Source component '{srcName}' is null.");
@@ -809,7 +809,7 @@ namespace CompasXR.RoboticTerritories.Data
                     if (mapped == null)
                     {
                         var srcSatName = string.IsNullOrEmpty(srcSat.Name) ? "(null)" : srcSat.Name;
-                        var srcGoName  = srcSat.GeometryObject ? srcSat.GeometryObject.name : "(null GO)";
+                        var srcGoName = srcSat.GeometryObject ? srcSat.GeometryObject.name : "(null GO)";
                         Debug.LogWarning(
                             $"_CreateGoalCompoenetsDict: Could not map satisfying observed geometry for '{srcName}'. " +
                             $"src.Name={srcSatName}, src.GO={srcGoName}."
@@ -819,8 +819,6 @@ namespace CompasXR.RoboticTerritories.Data
                 else
                 {
                     goalComponent.SatisfyingObservedGeometry = null;
-                    // This is informational, not an error—some components simply aren’t satisfied yet.
-                    // Debug.Log($"_CreateGoalCompoenetsDict: Component '{srcName}' has no satisfying observed geometry.");
                 }
 
                 // Add to mirrored dict (warn on duplicates)
@@ -832,6 +830,14 @@ namespace CompasXR.RoboticTerritories.Data
             }
 
             return goalComponentsDict;
+        }
+        public void SetGoalComponentsDictFromCurrentGoal(Dictionary<string, GoalObjectComponent> CurrentGoalComponentsDict, string currentMimicGoalName)
+        {
+            if (MimicGoalComponentsDict == null)
+            {
+                MimicGoalComponentsDict = new Dictionary<string, GoalObjectComponent>();
+            }
+            MimicGoalComponentsDict = _CreateGoalCompoenetsDict(MirroredGeometriesParentObject, CurrentGoalComponentsDict, currentMimicGoalName);
         }
         public void UpdateCurrentGoal(string goalName)
         {
@@ -854,10 +860,35 @@ namespace CompasXR.RoboticTerritories.Data
                     NewMimicGoal.SetActive(true);
                 }
                 CurrentMimicGoalName = goalName;
+                UpdateMimicGoalComponentsDictGameObjects(goalName);
             }
             else
             {
                 Debug.LogWarning($"Current Mimic Goal '{goalName}' not found under MimicGoals");
+            }
+        }
+        public void UpdateMimicGoalComponentsDictGameObjects(string newGoalName)
+        {
+            if (MimicGoalComponentsDict == null || MimicGoalComponentsDict.Count == 0)
+            {
+                Debug.LogWarning("MimicGoalComponentsDict is null or empty");
+                return;
+            }
+            GameObject NewMimicGoal = MirroredGeometriesParentObject.FindObject("MimicGoals").FindObject(newGoalName);
+            if (NewMimicGoal == null)
+            {
+                Debug.LogWarning($"New Mimic Goal '{newGoalName}' not found under MimicGoals");
+                return;
+            }
+            foreach (KeyValuePair<string, GoalObjectComponent> kvp in MimicGoalComponentsDict)
+            {
+                GameObject child = NewMimicGoal.FindObject(kvp.Key);
+                if (child == null)
+                {
+                    Debug.LogWarning($"Goal component '{kvp.Key}' not found under {NewMimicGoal.name}");
+                    continue;
+                }
+                kvp.Value.ComponentGameObject = child;
             }
         }
         public void UpdateObservedGeometry(string observedGeometryName, ObservedGeometry observedGeometryActual)
@@ -884,7 +915,7 @@ namespace CompasXR.RoboticTerritories.Data
             observedGeometry.MarkerType = observedGeometryActual.MarkerType;
             ObjectInstantiaion.UpdateExistingObjectFromRightHandFrameData(observedGeometryObject, observedGeometryActual.Box.frame.point, observedGeometryActual.Box.frame.xaxis, observedGeometryActual.Box.frame.yaxis, false, false);
         }
-        public void UpdateGoalLocationPosition(GameObject mimicGoalsParentObject) //TODO: I am not sure if this will actual work.
+        public void UpdateGoalLocationPosition(GameObject mimicGoalsParentObject, Frame anchorCubeFrame) //TODO: I am not sure if this will actual work.
         {
             if (MirroredGeometriesParentObject == null)
             {
@@ -896,83 +927,19 @@ namespace CompasXR.RoboticTerritories.Data
                 Debug.LogWarning("mimicGoalsParentObject is null");
                 return;
             }
-            MirroredGeometriesParentObject.transform.position = mimicGoalsParentObject.transform.position;
-            MirroredGeometriesParentObject.transform.rotation = mimicGoalsParentObject.transform.rotation;
+            ObjectInstantiaion.UpdateExistingObjectFromRightHandFrameData(mimicGoalsParentObject, anchorCubeFrame.point, anchorCubeFrame.xaxis, anchorCubeFrame.yaxis, false, false);
         }
-        // public void UpdateCompomponentState(string componentName, GoalObjectComponent satisfyingGoalComponentActual)
-        // {
-        //     // Check if the component exists in the dictionary
-        //     if (!MimicGoalComponentsDict.ContainsKey(componentName))
-        //     {
-        //         Debug.LogWarning($"Component '{componentName}' not found in MimicGoalComponentsDict");
-        //         return;
-        //     }
-
-        //     // Retrieve the component from the dictionary
-        //     GoalObjectComponent component = MimicGoalComponentsDict[componentName];
-        //     if (component == null)
-        //     {
-        //         Debug.LogWarning($"Component '{componentName}' is null in MimicGoalComponentsDict");
-        //         return;
-        //     }
-
-        //     // Retrieve the GameObject associated with the component
-        //     GameObject componentObject = component.ComponentGameObject;
-        //     if (componentObject == null)
-        //     {
-        //         Debug.LogWarning($"Component GameObject for '{componentName}' is null");
-        //         return;
-        //     }
-
-        //     // Update IsSatisfied state
-        //     component.IsSatisfied = satisfyingGoalComponentActual.IsSatisfied;
-
-        //     // Update SatisfyingObservedGeometry
-        //     ObservedGeometry satisfyingObservedGeometry = satisfyingGoalComponentActual.SatisfyingObservedGeometry;
-        //     if (satisfyingObservedGeometry != null)
-        //     {
-        //         string satisfyingGeometryName = satisfyingObservedGeometry.Name;
-
-        //         if (MimicObservedGeometriesDict.ContainsKey(satisfyingGeometryName))
-        //         {
-        //             Debug.Log($"Updating SatisfyingObservedGeometry for component '{componentName}' to '{satisfyingGeometryName}'");
-        //             component.SatisfyingObservedGeometry = MimicObservedGeometriesDict[satisfyingGeometryName];
-        //         }
-        //         else
-        //         {
-        //             component.SatisfyingObservedGeometry = null;
-        //             Debug.LogWarning($"Satisfying Observed Geometry '{satisfyingGeometryName}' not found in MimicObservedGeometriesDict for component '{componentName}'");
-        //         }
-        //     }
-        //     else
-        //     {
-        //         Debug.Log($"Clearing SatisfyingObservedGeometry for component '{componentName}'");
-        //         component.SatisfyingObservedGeometry = null;
-        //     }
-
-        //     // Get the renderer for the component object
-        //     Renderer renderer = componentObject.GetComponentInChildren<Renderer>();
-        //     if (renderer == null)
-        //     {
-        //         Debug.LogWarning($"Renderer not found on component '{componentName}'");
-        //         return;
-        //     }
-
-        //     // Get the renderer for the satisfying goal component
-        //     Renderer satisfyingGoalComponentRenderer = satisfyingGoalComponentActual.ComponentGameObject.GetComponentInChildren<Renderer>();
-        //     if (satisfyingGoalComponentRenderer == null)
-        //     {
-        //         Debug.LogWarning($"Renderer not found on satisfying component '{satisfyingGoalComponentActual.Name}'");
-        //         return;
-        //     }
-
-        //     // Update the material if satisfied
-        //     renderer.material = satisfyingGoalComponentRenderer.material;
-        // }
-
+        public void DebugLogAllComponentStatesAsDictionary()
+        {
+            var dict = new Dictionary<string, (bool isSatisfied, string observedName)>();
+            foreach (var component in MimicGoalComponentsDict.Values)
+            {
+                dict[component.Name] = (component.IsSatisfied, component.SatisfyingObservedGeometry != null ? component.SatisfyingObservedGeometry.Name : "None");
+            }
+            Debug.Log("Mimic Goal Component States Dictionary: " + JsonConvert.SerializeObject(dict, Formatting.Indented));
+        }
         public void UpdateCompomponentState(string componentName, GoalObjectComponent satisfyingGoalComponentActual)
         {
-            // Guard for null/empty key (will prevent the ContainsKey throw)
             if (string.IsNullOrEmpty(componentName))
             {
                 Debug.LogWarning("UpdateCompomponentState: componentName is null or empty — skipping.");
@@ -989,7 +956,6 @@ namespace CompasXR.RoboticTerritories.Data
                 return;
             }
 
-            // Safe fetch
             if (!MimicGoalComponentsDict.TryGetValue(componentName, out var component) || component == null)
             {
                 Debug.LogWarning($"Component '{componentName}' not found or null in MimicGoalComponentsDict");
@@ -1003,60 +969,124 @@ namespace CompasXR.RoboticTerritories.Data
                 return;
             }
 
-            // Update IsSatisfied
+            // 1) Update IsSatisfied flag
             component.IsSatisfied = satisfyingGoalComponentActual.IsSatisfied;
 
-            // Update SatisfyingObservedGeometry via name mapping (guard all nulls)
+            // 2) Map observed geometry by name (if present)
             var satisfyingObservedGeometry = satisfyingGoalComponentActual.SatisfyingObservedGeometry;
             if (satisfyingObservedGeometry != null)
             {
                 var satisfyingGeometryName = satisfyingObservedGeometry.Name;
-
                 if (!string.IsNullOrEmpty(satisfyingGeometryName) &&
                     MimicObservedGeometriesDict != null &&
                     MimicObservedGeometriesDict.TryGetValue(satisfyingGeometryName, out var mappedObserved))
                 {
-                    Debug.Log($"Updating SatisfyingObservedGeometry for component '{componentName}' to '{satisfyingGeometryName}'");
                     component.SatisfyingObservedGeometry = mappedObserved;
                 }
                 else
                 {
                     component.SatisfyingObservedGeometry = null;
-                    Debug.LogWarning(
-                        $"Satisfying Observed Geometry name is {(satisfyingGeometryName == null ? "null" : $"'{satisfyingGeometryName}' not found")} " +
-                        $"in MimicObservedGeometriesDict for component '{componentName}'"
-                    );
                 }
             }
             else
             {
-                Debug.Log($"Clearing SatisfyingObservedGeometry for component '{componentName}'");
                 component.SatisfyingObservedGeometry = null;
             }
 
-            // Materials (defensive)
-            var renderer = componentObject.GetComponentInChildren<Renderer>();
-            if (renderer == null)
+            // 3) Get the target renderer (include inactive children so hidden goals still work)
+            var targetRenderer = componentObject.GetComponentInChildren<Renderer>(true);
+            if (!targetRenderer)
             {
-                Debug.LogWarning($"Renderer not found on component '{componentName}'");
+                Debug.LogWarning($"Renderer not found on component '{componentName}' (includeInactive:true)");
                 return;
             }
 
+            // 4) Get the source renderer from the satisfying component
+            Renderer sourceRenderer = null;
             var srcGO = satisfyingGoalComponentActual.ComponentGameObject;
-            if (srcGO == null)
+            if (srcGO)
             {
-                Debug.LogWarning($"Satisfying component '{satisfyingGoalComponentActual.Name}' has null GameObject");
+                sourceRenderer = srcGO.GetComponentInChildren<Renderer>(true);
+            }
+            if (!sourceRenderer)
+            {
+                Debug.LogWarning($"Source renderer not found on satisfying component '{satisfyingGoalComponentActual.Name}'");
                 return;
             }
 
-            var satisfyingGoalComponentRenderer = srcGO.GetComponentInChildren<Renderer>();
-            if (satisfyingGoalComponentRenderer == null)
+            // 5) Copy materials directly from source to target
+            var srcMats = sourceRenderer.sharedMaterials;
+            if (srcMats != null && srcMats.Length > 0)
             {
-                Debug.LogWarning($"Renderer not found on satisfying component '{satisfyingGoalComponentActual.Name}'");
+                targetRenderer.sharedMaterials = srcMats;
+                Debug.Log($"Copied {srcMats.Length} materials from '{satisfyingGoalComponentActual.Name}' to '{componentName}'");
+            }
+            else
+            {
+                Debug.LogWarning($"Source renderer on '{satisfyingGoalComponentActual.Name}' has no materials");
+            }
+        }
+
+        public void ColorAllGoalComponentsBasedOnState(Material satisfiedMaterial, Material unsatisfiedMaterial)
+        {
+            if (MimicGoalComponentsDict == null || MimicGoalComponentsDict.Count == 0)
+            {
+                Debug.LogWarning("ColorAllGoalComponentsBasedOnState: MimicGoalComponentsDict is null or empty.");
                 return;
             }
 
-            renderer.material = satisfyingGoalComponentRenderer.material;
+            foreach (var kvp in MimicGoalComponentsDict)
+            {
+                var componentName = kvp.Key;
+                var component = kvp.Value;
+                if (component == null)
+                {
+                    Debug.LogWarning($"ColorAllGoalComponentsBasedOnState: Component '{componentName}' is null — skipping.");
+                    continue;
+                }
+
+                var componentObject = component.ComponentGameObject;
+                if (componentObject == null)
+                {
+                    Debug.LogWarning($"ColorAllGoalComponentsBasedOnState: Component GameObject for '{componentName}' is null — skipping.");
+                    continue;
+                }
+
+                var renderer = componentObject.GetComponentInChildren<Renderer>(true);
+                if (renderer == null)
+                {
+                    Debug.LogWarning($"ColorAllGoalComponentsBasedOnState: Renderer not found on component '{componentName}' — skipping.");
+                    continue;
+                }
+
+                // Apply material based on IsSatisfied state
+                if (component.IsSatisfied)
+                {
+                    if (satisfiedMaterial != null)
+                    {
+                        renderer.material = satisfiedMaterial;
+                        Debug.Log($"ColorAllGoalComponentsBasedOnState: Applied satisfiedMaterial to '{componentName}'.");
+                    }
+                    else
+                    {
+
+                        Debug.Log($"Compoent name : {componentName}, Component parent name: {componentObject.transform.parent.name}, Component grandparent name: {componentObject.transform.parent.parent.name}, Component great-grandparent name: {componentObject.transform.parent.parent.parent.name}");
+                        Debug.LogWarning($"ColorAllGoalComponentsBasedOnState: satisfiedMaterial is null — cannot apply to '{componentName}'.");
+                    }
+                }
+                else
+                {
+                    if (unsatisfiedMaterial != null)
+                    {
+                        renderer.material = unsatisfiedMaterial;
+                        Debug.Log($"ColorAllGoalComponentsBasedOnState: Applied unsatisfiedMaterial to '{componentName}'.");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"ColorAllGoalComponentsBasedOnState: unsatisfiedMaterial is null — cannot apply to '{componentName}'.");
+                    }
+                }
+            }
         }
         public void UpdateAllComponentStates(Dictionary<string, GoalObjectComponent> currentGoalComponentsDict)
         {

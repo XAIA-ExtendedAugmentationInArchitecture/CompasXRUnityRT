@@ -1641,6 +1641,10 @@ namespace CompasXR.Core
                         MimicGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, GoalSatisfiedMaterial, GoalUnsatisfiedMaterial, OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
                         if (MimicMirroredGeometryManagerImplementation != null)
                         {
+                            // MimicMirroredGeometryManagerImplementation.Clear();
+                            // GameObject.Destroy(MirroredGeometriesParentObject);
+                            // CreateDuplicatGeometriesForMimic(ref AllGeometiresParentObjects, ref MirroredGeometriesParentObject);
+                            MimicMirroredGeometryManagerImplementation.UpdateGoalLocationPosition(MirroredGeometriesParentObject.FindObject("MimicGoals"), cur.Box.frame);
                             MimicMirroredGeometryManagerImplementation.UpdateAllComponentStates(MimicGoalsManager.GoalStatusObserver.ComponentStates);
                         }
                     }

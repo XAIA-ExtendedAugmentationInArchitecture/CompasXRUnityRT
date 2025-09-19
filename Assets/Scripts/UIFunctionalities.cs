@@ -582,8 +582,11 @@ namespace CompasXR.UI
             //TODO: THERE IS A BUG HERE. The MIrrored Geometry does not render properly. When switching goals.
             if (instantiateObjects.MimicMirroredGeometryManagerImplementation != null)
             {
+                Debug.Log($"SetMimicGoalFromIndex: Updating Mimic Mirrored Geometry Manager with new selected goal {newSelectedGoal.Name}");
                 instantiateObjects.MimicMirroredGeometryManagerImplementation.UpdateCurrentGoal(newSelectedGoal.Name);
                 instantiateObjects.MimicMirroredGeometryManagerImplementation.UpdateAllComponentStates(instantiateObjects.MimicGoalsManager.GoalStatusObserver.ComponentStates);
+                instantiateObjects.MimicMirroredGeometryManagerImplementation.DebugLogAllComponentStatesAsDictionary();
+                goalStateObserver.DebugLogAllComponentStatesAsDictionary();
             }
         }
         public void MimicSelectPreviousGoalButtonMethod() //TODO: Working on this now...
