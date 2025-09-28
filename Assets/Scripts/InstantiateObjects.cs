@@ -98,6 +98,9 @@ namespace CompasXR.Core
         public GameObject InferenceCollaborationZoneLine;
         public GameObject InferencePickZoneLine;
         public GameObject BoundaryZoneLine;
+
+        //TODO: Robotic Territories Target Information Prefab for Observed Geometries
+        public GameObject TargetInformationPrefab;
         
         //TODO: Robotic Territories Materials //////////////////////////////////////////
         public Material ObservedGeometryMaterial;
@@ -255,6 +258,7 @@ namespace CompasXR.Core
                     observedGeometry.GeometryObject = observedGeometryObject;
                     observedGeometry.GeometryObject.name = observedGeometry.Name;
                     observedGeometryObject.transform.SetParent(TrackedGeometriesParentObject.transform, false);
+                    AddTargetToObservedGeometry(ref TargetInformationPrefab, observedGeometry);
                 }
                 ColorObservedGeometries(observedGeometriesDict);
             }
@@ -262,6 +266,30 @@ namespace CompasXR.Core
             {
                 Debug.LogWarning("InstanteObservedGeometries: Observed Geometries Dict is null or empty");
             }
+        }
+        
+        public void AddTargetToObservedGeometry(ref GameObject PrefabTarget, ObservedGeometry observedGeometry)
+        {
+            /*
+            * Method is used to add the target prefab to the observed geometry.
+            */
+            if (PrefabTarget == null)
+            {
+                Debug.LogWarning("AddTargetToObservedGeometry: Prefab Target is null");
+                return;
+            }
+            if (observedGeometry == null || observedGeometry.GeometryObject == null)
+            {
+                Debug.LogWarning("AddTargetToObservedGeometry: Observed Geometry or its Geometry Object is null");
+                return;
+            }
+
+            GameObject targetObject = Instantiate(PrefabTarget);
+            targetObject.transform.position = observedGeometry.GeometryObject.transform.position;
+            targetObject.transform.rotation = observedGeometry.GeometryObject.transform.rotation;
+            targetObject.transform.SetParent(observedGeometry.GeometryObject.transform, true);
+
+            Debug.Log($"AddTargetToObservedGeometry: Added Target to {observedGeometry.Name}");
         }
         public void ColorObservedGeometries(Dictionary<string, ObservedGeometry> observedGeometriesDict)
         {
@@ -304,7 +332,7 @@ namespace CompasXR.Core
                 }
 
                 OnInitialTrackedGeometryPlaced();
-                
+
             }
             else
             {
@@ -1641,9 +1669,6 @@ namespace CompasXR.Core
                         MimicGoalsManager.GoalStatusObserver.CheckAllGoalsStatesFromObservedGeometriesDict(databaseManager.observedGeometriesDict, GoalSatisfiedMaterial, GoalUnsatisfiedMaterial, OBJECT_TRACKING_POSITION_SATISFACTION_TOLERANCE, OBJECT_TRACKING_ROTATION_SATISFACTION_TOLERANCE);
                         if (MimicMirroredGeometryManagerImplementation != null)
                         {
-                            // MimicMirroredGeometryManagerImplementation.Clear();
-                            // GameObject.Destroy(MirroredGeometriesParentObject);
-                            // CreateDuplicatGeometriesForMimic(ref AllGeometiresParentObjects, ref MirroredGeometriesParentObject);
                             MimicMirroredGeometryManagerImplementation.UpdateGoalLocationPosition(MirroredGeometriesParentObject.FindObject("MimicGoals"), cur.Box.frame);
                             MimicMirroredGeometryManagerImplementation.UpdateAllComponentStates(MimicGoalsManager.GoalStatusObserver.ComponentStates);
                         }
@@ -2245,6 +2270,9 @@ namespace CompasXR.Core
             InferencePickZoneLine = ZonesARPrefabObjects.FindObject("ZoneLines").FindObject("InferencePickZoneLine");
             BoundaryZoneLine = ZonesARPrefabObjects.FindObject("ZoneLines").FindObject("BoundaryZoneLine");
 
+
+            //TODO: Find Target Information Prefab for Observed Geometries
+            TargetInformationPrefab = ZonesARPrefabObjects.FindObject("TARGETINFORMATION");
 
             //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
 
