@@ -17,6 +17,7 @@ using Vuforia;
 using RosSharp.RosBridgeClient.MessageTypes.ObjectRecognition;
 using System.Linq;
 using CompasXR.Robots.Model;
+using System.Text.RegularExpressions;
 
 
 namespace CompasXR.Core
@@ -181,6 +182,8 @@ namespace CompasXR.Core
         public GameObject MirroredGeometriesParentObject;
         public MimicMirroredGeometryManager MimicMirroredGeometryManagerImplementation;
 
+        public UserInitiatedMimicPickandPlaceManger userIniatedMimicPickandPlaceManager = new UserInitiatedMimicPickandPlaceManger();
+
         /////////////////////////////// Monobehaviour Methods //////////////////////////////////////////
         public void Awake()
         {
@@ -267,7 +270,7 @@ namespace CompasXR.Core
                 Debug.LogWarning("InstanteObservedGeometries: Observed Geometries Dict is null or empty");
             }
         }
-        
+
         public void AddTargetToObservedGeometry(ref GameObject PrefabTarget, ObservedGeometry observedGeometry)
         {
             /*
@@ -287,6 +290,7 @@ namespace CompasXR.Core
             GameObject targetObject = Instantiate(PrefabTarget);
             targetObject.transform.position = observedGeometry.GeometryObject.transform.position;
             targetObject.transform.rotation = observedGeometry.GeometryObject.transform.rotation;
+            targetObject.name = "TARGETINFORMATION";
             targetObject.transform.SetParent(observedGeometry.GeometryObject.transform, true);
 
             Debug.Log($"AddTargetToObservedGeometry: Added Target to {observedGeometry.Name}");
@@ -924,8 +928,6 @@ namespace CompasXR.Core
             else
             {
                 Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position); //TODO: CHECK THIS IDK WHATS UP.
-                // Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.right); //TODO: CHECK THIS IDK WHATS UP.
-                // Vector3 mirroredPosition = MirrorPositionAcrossBox(humanZone, position, humanZone.transform.forward); //TODO: CHECK THIS IDK WHATS UP.
                 Quaternion mirrorRotation = MirrorQuaternion(rotation, humanZone.transform.right);
                 mappedRobotPosition = MapPointBetweenBoxes(humanZone, robotZone, mirroredPosition);
                 mappedRotation = mirrorRotation;
@@ -953,9 +955,19 @@ namespace CompasXR.Core
             }
         }
 
-        Collider[] GetAllCollidersAtPoint(Vector3 point, float epsilon = 0.0001f)
+        public Collider[] GetAllCollidersAtPoint(Vector3 point, float epsilon = 0.0001f)
         {
             return Physics.OverlapSphere(point, epsilon);
+        }
+        public List<string> GetAllCollidersNamesAtPoint(Vector3 point, float epsilon = 0.0001f)
+        {
+            Collider[] colliders = GetAllCollidersAtPoint(point, epsilon);
+            List<string> colliderNames = new List<string>();
+            foreach (Collider collider in colliders)
+            {
+                colliderNames.Add(collider.gameObject.name);
+            }
+            return colliderNames;
         }
         public Vector3 FindClosestReachablePoint(GameObject reachabilitySphere, Vector3 desiredPosition)
         {
@@ -1345,6 +1357,208 @@ namespace CompasXR.Core
             );
         }
         //TODO: Move to CLASS MADE FOR THIS........        
+
+        //TODO: Finding targets and information for pick and place in mimic User Initiated mode.
+        public void FindHumanandRobotTargetInformation(string objectName, GameObject observedObjectsParent, GameObject goalGeometryParent, GameObject mirroredObservedGeometriesParent, GameObject mirroredGoalGeometryParent)
+        {
+            Debug.Log("FindHumanandRobotTargetInformation: Finding Target Information for " + objectName);
+            if (string.IsNullOrEmpty(objectName))
+            {
+                Debug.LogError("FindHumanandRobotTargetInformation: Object Name is null or empty.");
+                return;
+            }
+
+            if (observedObjectsParent == null || goalGeometryParent == null)
+            {
+                Debug.LogError("FindHumanandRobotTargetInformation: Observed Objects Parent or Goal Geometry Parent is null.");
+                return;
+            }
+
+            if (mirroredObservedGeometriesParent == null || mirroredGoalGeometryParent == null)
+            {
+                Debug.LogError("FindHumanandRobotTargetInformation: Mirrored Observed Geometries Parent or Mirrored Goal Geometry Parent is null.");
+                return;
+            }
+
+            // Search in observed geometries
+            if (Regex.IsMatch(objectName, @"^Cube\d{2}$"))
+            {
+                GameObject foundObservedGeometry = observedObjectsParent.FindObject(objectName);
+                GameObject mirrorredFoundObservedGeometry = mirroredObservedGeometriesParent.FindObject(objectName);
+                if (foundObservedGeometry != null && mirrorredFoundObservedGeometry != null)
+                {
+                    var (targetInformation, placeFrameGeometry, placeFrameVisibility) = FindPlaceFrameGeometryAndVisibility(foundObservedGeometry);
+                    var (mirroredTargetInformation, mirroredPlaceFrameGeometry, mirroredPlaceFrameVisibility) = FindPlaceFrameGeometryAndVisibility(mirrorredFoundObservedGeometry);
+                    if (targetInformation != null && placeFrameGeometry != null && placeFrameVisibility != null &&
+                        mirroredTargetInformation != null && mirroredPlaceFrameGeometry != null && mirroredPlaceFrameVisibility != null)
+                    {
+                        Debug.Log($"FindHumanandRobotTargetInformation: Found Observed Geometry '{objectName}' with PlaceFrame and Visibility.");
+                        targetInformation.SetActive(true);
+                        mirroredTargetInformation.SetActive(true);
+                        // Store or process as needed
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"FindHumanandRobotTargetInformation: Observed Geometry '{objectName}' is missing PlaceFrame or Visibility.");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"FindHumanandRobotTargetInformation: Observed Geometry '{objectName}' not found under Observed Objects Parent.");
+                }
+            }
+            else if (Regex.IsMatch(name, @"^G[0-8]$"))
+            {
+                GameObject foundTargetObject = observedObjectsParent.FindObject(objectName);
+                GameObject mirrorredFoundTarget = mirroredObservedGeometriesParent.FindObject(objectName);
+                if (foundTargetObject != null && mirrorredFoundTarget != null)
+                {
+                    var (targetInformation, placeFrameGeometry, placeFrameVisibility) = FindPlaceFrameGeometryAndVisibility(foundTargetObject);
+                    var (mirroredTargetInformation, mirroredPlaceFrameGeometry, mirroredPlaceFrameVisibility) = FindPlaceFrameGeometryAndVisibility(mirrorredFoundTarget);
+                    if (targetInformation != null && placeFrameGeometry != null && placeFrameVisibility != null &&
+                        mirroredTargetInformation != null && mirroredPlaceFrameGeometry != null && mirroredPlaceFrameVisibility != null)
+                    {
+                        Debug.Log($"FindHumanandRobotTargetInformation: Found Observed Geometry '{objectName}' with PlaceFrame and Visibility.");
+                        targetInformation.SetActive(true);
+                        mirroredTargetInformation.SetActive(true);
+                        // Store or process as needed
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"FindHumanandRobotTargetInformation: Observed Geometry '{objectName}' is missing PlaceFrame or Visibility.");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"FindHumanandRobotTargetInformation: Observed Geometry '{objectName}' not found under Observed Objects Parent.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"FindHumanandRobotTargetInformation: Object Name '{objectName}' does not match expected patterns.");
+            }
+
+        }
+        
+        public (GameObject TargetInfo, GameObject PlaceFrameGeometry, GameObject PlaceFrameVisibility) FindPlaceFrameGeometryAndVisibility(GameObject searchObject)
+        {
+            if (searchObject == null)
+            {
+                Debug.LogError("FindPlaceFrameGeometryAndVisibility: Search Object is null.");
+                return (null, null, null);
+            }
+            GameObject targetInformation = searchObject.FindObject("TARGETINFORMATION");
+            if (targetInformation == null)
+            {
+                Debug.LogWarning($"FindPlaceFrameGeometryAndVisibility: 'TargetInformation' not found under '{searchObject.name}'.");
+                return (null, null, null);
+            }
+
+            GameObject placeFrameGeometry = targetInformation.FindObject("PLACEFRAME");
+            GameObject placeFrameVisibility = targetInformation.FindObject("PLACEFRAME");
+
+            if (placeFrameGeometry == null)
+            {
+                Debug.LogWarning($"FindPlaceFrameGeometryAndVisibility: 'PlaceFrameGeometry' not found under '{searchObject.name}'.");
+            }
+            if (placeFrameVisibility == null)
+            {
+                Debug.LogWarning($"FindPlaceFrameGeometryAndVisibility: 'PlaceFrameVisibility' not found under '{searchObject.name}'.");
+            }
+
+            return (targetInformation, placeFrameGeometry, placeFrameVisibility);
+        }
+        public (int returnIntOption, string itemName) DeterminePickAndPlaceStateFromColliderHits(List<string> collidedWithGameObjectNamesList) //TODO: The Pick & Place State Needs to be updated after this function.
+        {
+            // TODO: Return codes:
+            // 0 = PointShouldBeMade      : Camera not within pick/place; proceed as normal.
+            // 1 = PointShouldNotBeMade   : Camera within restricted zone; do not make a point.
+            // 2 = ObjectShouldBePicked   : Camera within pickable observed Geometry (CubeXX).
+            // 3 = ObjectShouldBePlaced   : Camera within placeable target Geometry (G0..G8).
+
+            if (collidedWithGameObjectNamesList == null || collidedWithGameObjectNamesList.Count == 0)
+            {
+                Debug.LogWarning("CameraIsWithinTargetOrObservedGeometry: Collided With GameObject Names List is null or empty.");
+                return (0, "None");
+            }
+
+            string itemIndex = "None";
+            List<int> potentialSetOptions = new List<int>();
+
+            for (int i = 0; i < collidedWithGameObjectNamesList.Count; i++)
+            {
+                string name = collidedWithGameObjectNamesList[i];
+
+                if (string.IsNullOrEmpty(name))
+                {
+                    Debug.LogWarning("CameraIsWithinTargetOrObservedGeometry: GameObject name is null or empty.");
+                    continue;
+                }
+
+                if (name == "AnchorCube")
+                {
+                    Debug.LogWarning("CameraIsWithinTargetOrObservedGeometry: Camera is within the Anchor Cube.");
+                    potentialSetOptions.Add(1);
+                    //TODO: Signal Onscreen Message.
+                    continue;
+                }
+
+                if (Regex.IsMatch(name, @"^Cube\d{2}$"))
+                {
+                    Debug.Log($"CameraIsWithinTargetOrObservedGeometry: '{name}' matches CubeXX (Observed Geometry).");
+                    if (!userIniatedMimicPickandPlaceManager.ObjectPicked)
+                    {
+                        potentialSetOptions.Add(2);
+                        itemIndex = name; // store the first valid Cube index
+                    }
+                    else
+                    {
+                        Debug.Log("CameraIsWithinTargetOrObservedGeometry: Object is already picked, cannot pick another.");
+                        //TODO: Signal Onscreen Message. This target cannot be picked because it is already holding an object.
+                        potentialSetOptions.Add(1);
+                    }
+                    continue;
+                }
+
+                // Placeable target geometry: G0..G8
+                if (Regex.IsMatch(name, @"^G[0-8]$"))
+                {
+                    Debug.Log($"CameraIsWithinTargetOrObservedGeometry: '{name}' matches G0..G8 (Target Geometry).");
+                    if (userIniatedMimicPickandPlaceManager.ObjectPicked && !userIniatedMimicPickandPlaceManager.ObjectPlaced)
+                    {
+                        potentialSetOptions.Add(3);
+                        itemIndex = name; // store the first valid G index
+                    }
+                    else
+                    {
+                        Debug.Log("CameraIsWithinTargetOrObservedGeometry: No object is picked, cannot place.");
+                        //TODO: Signal Onscreen Message. This target cannot be placed because it is not holding an object.
+                        potentialSetOptions.Add(1);
+                    }
+                    continue;
+                }
+
+                // Neutral / not matching
+                Debug.LogWarning($"CameraIsWithinTargetOrObservedGeometry: '{name}' does not match pick/place patterns.");
+                potentialSetOptions.Add(0);
+            }
+
+            int returnIntOption = 0;
+
+            // Priority: 2 > 3 > 1 > 0
+            if (potentialSetOptions.Contains(2))
+                returnIntOption = 2;
+            else if (potentialSetOptions.Contains(3))
+                returnIntOption = 3;
+            else if (potentialSetOptions.Contains(1))
+                returnIntOption = 1;
+            else
+                returnIntOption = 0;
+
+            return (returnIntOption, itemIndex);
+        }
+
+        //TODO: Finding targets and information for pick and place in mimic User Initiated mode.
 
         public void DestroyRealtimeMimicZoneObjects()
         {

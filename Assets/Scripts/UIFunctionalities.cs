@@ -1721,7 +1721,6 @@ namespace CompasXR.UI
                         Debug.LogWarning("ControlARZoneObjectsBasedOnCurrentMode: Active Robot is null.");
                     }
 
-                    //Setting the Goal Objects To be not visible.
                     if (instantiateObjects.InferenceGoalsParentObject != null)
                     {
                         instantiateObjects.InferenceGoalsParentObject.SetActive(false);
@@ -1729,6 +1728,7 @@ namespace CompasXR.UI
                     if (instantiateObjects.MimicGoalsParentObject != null)
                     {
                         instantiateObjects.MimicGoalsParentObject.SetActive(true);
+                        instantiateObjects.userIniatedMimicPickandPlaceManager.Reset();
                         instantiateObjects.CreateDuplicatGeometriesForMimic(ref instantiateObjects.AllGeometiresParentObjects, ref instantiateObjects.MirroredGeometriesParentObject);
                     }
 
@@ -2066,11 +2066,50 @@ namespace CompasXR.UI
                     if (ObjectInstantiaion.IsPositionWithinBox(humanZoneObject, cameraPositionObject)) //TODO: Write method to create mimic points etc.
                     {
                         Debug.Log("SetMimicPoint: Camera Position is within the Human Zone Object.");
-                        //Set Lines active and Points active
-                        instantiateObjects.MimicHumanObjects.SetActive(true);
-                        instantiateObjects.MimicRobotObjects.SetActive(true);
-                        instantiateObjects.CreateMimicPoints(humanZoneObject, robotZoneObject, ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, instantiateObjects.MimicHumanLine, instantiateObjects.MimicRobotLine, instantiateObjects.MimicHumanPointsParent, instantiateObjects.MimicRobotPointsParent, UserInitiatedMimicMirrorToggle.isOn);
-                        StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(UserInitiatedMimicSetPointGreenScreen, MimicSetandUndoFlashDuration));
+
+                        List<string> colliderObjectHits = instantiateObjects.GetAllCollidersNamesAtPoint(devicePosePosition);
+                        if (colliderObjectHits.Count <= 0)
+                        {
+                            Debug.LogError("SetMimicPoint: No Colliders found at Device Pose Position.");
+                            return;
+                        }
+
+                        (int pickState, string pickOrPlaceItemName) = instantiateObjects.DeterminePickAndPlaceStateFromColliderHits(colliderObjectHits);
+                        Debug.Log($"SetMimicPoint: Pick State: {pickState}, Pick or Place Object Name: {pickOrPlaceItemName}");
+
+                        //TODO: Update Pick State...... for the pick and place managed...
+                        //TODO: Update Pick State...... for the pick and place managed...
+                        //TODO: Update Pick State...... for the pick and place managed...
+                        //TODO: Update Pick State...... for the pick and place managed...
+                        //TODO: Update Pick State...... for the pick and place managed...
+                        //TODO: Update Pick State...... for the pick and place managed...
+                        //TODO: Update Pick State...... for the pick and place managed...
+                        //TODO: Update Pick State...... for the pick and place managed...
+
+                        if (pickState == 1)
+                        {
+                            Debug.Log("SetMimicPoint: Point Should not be made, for some reason. This should be notified in the previous function already.");
+                            return;
+                        }
+                        else if (pickState == 2 || pickState == 3)
+                        {
+                            Debug.Log("SetMimicPoint: Point is a Place Point or Pick Point.");
+                            instantiateObjects.MimicHumanObjects.SetActive(true);
+                            instantiateObjects.MimicRobotObjects.SetActive(true);
+                            string currentGoalName = instantiateObjects.MimicMirroredGeometryManagerImplementation.CurrentMimicGoalName;
+                            instantiateObjects.FindHumanandRobotTargetInformation(pickOrPlaceItemName, instantiateObjects.TrackedGeometriesParentObject, instantiateObjects.MimicGoalsManager.CurrentGoal.GoalGameObject, instantiateObjects.MimicMirroredGeometryManagerImplementation.TrackedGeometriesParent, instantiateObjects.MimicMirroredGeometryManagerImplementation.GoalsParent.FindObject(currentGoalName));
+                            StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(UserInitiatedMimicSetPointGreenScreen, MimicSetandUndoFlashDuration));
+                        }
+                        else
+                        {
+                            //Set Lines active and Points active
+                            Debug.Log("SetMimicPoint: Point is a Normal Point and will be set as a trajectory goal point.");
+                            instantiateObjects.MimicHumanObjects.SetActive(true);
+                            instantiateObjects.MimicRobotObjects.SetActive(true);
+                            instantiateObjects.CreateMimicPoints(humanZoneObject, robotZoneObject, ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, instantiateObjects.MimicHumanLine, instantiateObjects.MimicRobotLine, instantiateObjects.MimicHumanPointsParent, instantiateObjects.MimicRobotPointsParent, UserInitiatedMimicMirrorToggle.isOn);
+                            StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(UserInitiatedMimicSetPointGreenScreen, MimicSetandUndoFlashDuration));
+                        }
+
                     }
                     else
                     {

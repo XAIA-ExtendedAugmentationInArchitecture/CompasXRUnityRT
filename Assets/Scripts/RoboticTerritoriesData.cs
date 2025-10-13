@@ -662,6 +662,10 @@ namespace CompasXR.RoboticTerritories.Data
         public GameObject MirroredGeometriesParentObject { get; set; }
         public Dictionary<string, ObservedGeometry> MimicObservedGeometriesDict { get; set; }
         public Dictionary<string, GoalObjectComponent> MimicGoalComponentsDict { get; set; }
+
+        public GameObject TrackedGeometriesParent { get; set; }
+        public GameObject GoalsParent { get; set; }
+
         public string CurrentMimicGoalName { get; set; }
         bool Active
         { get; set; }
@@ -670,6 +674,10 @@ namespace CompasXR.RoboticTerritories.Data
         {
             this.MirroredGeometriesParentObject = MirroredGeometriesParentObject;
             MimicObservedGeometriesDict = _CreateObservedGeometriesDict(MirroredGeometriesParentObject, CurrentObservedGeometriesDict);
+
+            TrackedGeometriesParent = MirroredGeometriesParentObject.FindObject("TrackedGeometriesParent");
+            GoalsParent = MirroredGeometriesParentObject.FindObject("MimicGoals");
+
             CurrentMimicGoalName = currentMimicGoalName;
             MimicGoalComponentsDict = _CreateGoalCompoenetsDict(MirroredGeometriesParentObject, CurrentGoalComponentsDict, currentMimicGoalName);
         }
@@ -1115,10 +1123,44 @@ namespace CompasXR.RoboticTerritories.Data
             MimicObservedGeometriesDict.Clear();
             MimicGoalComponentsDict.Clear();
             CurrentMimicGoalName = null;
+            TrackedGeometriesParent = null;
+            GoalsParent = null;
             DestroyMirroredGeometriesParentObject();
             Active = false;
         }
 
+    }
+
+    public class UserInitiatedMimicPickandPlaceManger
+    {
+        public bool ObjectPicked { get; set; }
+        public string PickedObjectName { get; set; }
+        public GameObject PickedObject { get; set; }
+        public bool ObjectPlaced { get; set; }
+        public string TargetPositionName { get; set; }
+        public int PickPointIndex { get; set; }
+        public int PlacePointIndex { get; set; }
+
+        public UserInitiatedMimicPickandPlaceManger()
+        {
+            ObjectPicked = false;
+            PickedObjectName = null;
+            PickedObject = null;
+            ObjectPlaced = false;
+            TargetPositionName = null;
+            PickPointIndex = -1;
+            PlacePointIndex = -1;
+        }
+        public void Reset()
+        {
+            ObjectPicked = false;
+            PickedObjectName = null;
+            PickedObject = null;
+            ObjectPlaced = false;
+            TargetPositionName = null;
+            PickPointIndex = -1;
+            PlacePointIndex = -1;
+        }
     }
 
     [System.Serializable]
