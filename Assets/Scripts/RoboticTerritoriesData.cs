@@ -1135,31 +1135,64 @@ namespace CompasXR.RoboticTerritories.Data
     {
         public bool ObjectPicked { get; set; }
         public string PickedObjectName { get; set; }
-        public GameObject PickedObject { get; set; }
+
+        //TODO: Visualization of the picked object for both human and robot
+        public GameObject PickedObjectVisualizationRobot { get; set; }
+        public GameObject PickedObjectVisualizationHuman { get; set; }
         public bool ObjectPlaced { get; set; }
         public string TargetPositionName { get; set; }
-        public int PickPointIndex { get; set; }
-        public int PlacePointIndex { get; set; }
+
+        //TODO: Visualization of the target position for both human and robot
+        public GameObject TargetPositionVisualizationHuman { get; set; }
+        public GameObject TargetPositionVisualizationRobot { get; set; }
+        public int PickPointTrajectoryIndex { get; set; }
+        public int PlacePointTrajectoryIndex { get; set; }
 
         public UserInitiatedMimicPickandPlaceManger()
         {
             ObjectPicked = false;
             PickedObjectName = null;
-            PickedObject = null;
+            PickedObjectVisualizationHuman = null;
+            PickedObjectVisualizationRobot = null;
             ObjectPlaced = false;
             TargetPositionName = null;
-            PickPointIndex = -1;
-            PlacePointIndex = -1;
+            TargetPositionVisualizationHuman = null;
+            TargetPositionVisualizationRobot = null;
+            PickPointTrajectoryIndex = -1;
+            PlacePointTrajectoryIndex = -1;
         }
         public void Reset()
         {
             ObjectPicked = false;
             PickedObjectName = null;
-            PickedObject = null;
+
+            if (PickedObjectVisualizationHuman != null && PickedObjectVisualizationHuman.activeSelf)
+            {
+                PickedObjectVisualizationHuman.SetActive(false);
+            }
+            if (PickedObjectVisualizationRobot != null && PickedObjectVisualizationRobot.activeSelf)
+            {
+                PickedObjectVisualizationRobot.SetActive(false);
+            }
+            PickedObjectVisualizationHuman = null;
+            PickedObjectVisualizationRobot = null;
+
             ObjectPlaced = false;
             TargetPositionName = null;
-            PickPointIndex = -1;
-            PlacePointIndex = -1;
+
+            if (TargetPositionVisualizationRobot != null && TargetPositionVisualizationRobot.activeSelf)
+            {
+                TargetPositionVisualizationRobot.SetActive(false);
+            }
+            if (TargetPositionVisualizationHuman != null && TargetPositionVisualizationHuman.activeSelf)
+            {
+                TargetPositionVisualizationHuman.SetActive(false);
+            }
+            TargetPositionVisualizationRobot = null;
+            TargetPositionVisualizationHuman = null;
+
+            PickPointTrajectoryIndex = -1;
+            PlacePointTrajectoryIndex = -1;
         }
     }
 

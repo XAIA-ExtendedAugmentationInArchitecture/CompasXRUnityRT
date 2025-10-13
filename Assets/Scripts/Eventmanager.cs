@@ -59,7 +59,7 @@ namespace CompasXR.Core
 
             //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
             databaseManager.RobotBaseFrameReceived += trajectoryVisualizer.OnRobotBaseFrameReceived;
-            instantiateObjects.InitialZonesPlaced += addZoneHapticsManager;
+            // instantiateObjects.InitialZonesPlaced += addZoneHapticsManager; //TODO: COMMENT ME BACK IN LATER....
             //TODO: Robotic Territories Testing ////////////////////////////////////////////////////////////////////////////////////////////////////
 
             databaseManager.ZonesInfoReceived += instantiateObjects.OnZonesReceived;

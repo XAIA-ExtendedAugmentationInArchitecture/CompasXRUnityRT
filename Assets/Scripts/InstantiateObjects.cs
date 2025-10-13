@@ -1395,7 +1395,33 @@ namespace CompasXR.Core
                         Debug.Log($"FindHumanandRobotTargetInformation: Found Observed Geometry '{objectName}' with PlaceFrame and Visibility.");
                         targetInformation.SetActive(true);
                         mirroredTargetInformation.SetActive(true);
-                        // Store or process as needed
+
+                        //TODO: These objects need to be added to the mirrored geometry list.
+                        userIniatedMimicPickandPlaceManager.PickedObjectName = objectName;
+                        ObjectInstantiaion.ColorObjectbyInputMaterial(placeFrameVisibility, RobotBuiltMaterial);
+                        ObjectInstantiaion.ColorObjectbyInputMaterial(mirroredPlaceFrameVisibility, HumanBuiltMaterial);
+                        userIniatedMimicPickandPlaceManager.PickedObjectVisualizationRobot = placeFrameVisibility;
+                        userIniatedMimicPickandPlaceManager.PickedObjectVisualizationHuman = mirroredPlaceFrameVisibility;
+                        userIniatedMimicPickandPlaceManager.ObjectPicked = true;
+
+                        MimicHumanPoints.Add(mirroredPlaceFrameGeometry);
+                        MimicRobotPoints.Add(placeFrameGeometry);
+                        //TODO: NEED TO CREATE AN IO LIST FOR ADDING AND REMOVING GEOMETRIES.... DOUBLE CHECK PYLIB
+
+                        if (MimicHumanPoints.Count != MimicRobotPoints.Count)
+                        {
+                            Debug.LogError("FindHumanandRobotTargetInformation: Mimic Human Points and Mimic Robot Points count do not match.");
+                        }
+                        else
+                        {
+                            Debug.Log("FindHumanandRobotTargetInformation: Mimic Human Points and Mimic Robot Points count match: " + MimicHumanPoints.Count);
+                        }
+                        Color humanColor = new Color(1.0f, 1.0f, 0.0f, 1.0f);
+                        Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
+                        DrawLineFromGameObjectList(MimicHumanPoints, MimicHumanLine, humanColor, 0.01f);
+                        DrawLineFromGameObjectList(MimicRobotPoints, MimicRobotLine, robotColor, 0.01f);
+                        userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex = MimicHumanPoints.Count - 1;
+                        Debug.Log("FindHumanandRobotTargetInformation: Pick Point Set for Trajectory Index: " + userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex);
                     }
                     else
                     {
@@ -1407,10 +1433,10 @@ namespace CompasXR.Core
                     Debug.LogWarning($"FindHumanandRobotTargetInformation: Observed Geometry '{objectName}' not found under Observed Objects Parent.");
                 }
             }
-            else if (Regex.IsMatch(name, @"^G[0-8]$"))
+            else if (Regex.IsMatch(objectName, @"^G[0-8]$")) // TODO: MAY NEED TO CHANGE THIS TO MAX INDEX AND MAKE IT AN INPUT LATER...
             {
-                GameObject foundTargetObject = observedObjectsParent.FindObject(objectName);
-                GameObject mirrorredFoundTarget = mirroredObservedGeometriesParent.FindObject(objectName);
+                GameObject foundTargetObject = goalGeometryParent.FindObject(objectName);
+                GameObject mirrorredFoundTarget = mirroredGoalGeometryParent.FindObject(objectName);
                 if (foundTargetObject != null && mirrorredFoundTarget != null)
                 {
                     var (targetInformation, placeFrameGeometry, placeFrameVisibility) = FindPlaceFrameGeometryAndVisibility(foundTargetObject);
@@ -1421,7 +1447,33 @@ namespace CompasXR.Core
                         Debug.Log($"FindHumanandRobotTargetInformation: Found Observed Geometry '{objectName}' with PlaceFrame and Visibility.");
                         targetInformation.SetActive(true);
                         mirroredTargetInformation.SetActive(true);
-                        // Store or process as needed
+
+                        //TODO: These objects need to be added to the mirrored geometry list.
+                        userIniatedMimicPickandPlaceManager.TargetPositionName = objectName;
+                        ObjectInstantiaion.ColorObjectbyInputMaterial(placeFrameVisibility, RobotBuiltMaterial);
+                        ObjectInstantiaion.ColorObjectbyInputMaterial(mirroredPlaceFrameVisibility, HumanBuiltMaterial);
+                        userIniatedMimicPickandPlaceManager.TargetPositionVisualizationHuman = placeFrameVisibility;
+                        userIniatedMimicPickandPlaceManager.TargetPositionVisualizationRobot = mirroredPlaceFrameVisibility;
+                        userIniatedMimicPickandPlaceManager.ObjectPlaced = true;
+
+                        MimicHumanPoints.Add(mirroredPlaceFrameGeometry);
+                        MimicRobotPoints.Add(placeFrameGeometry);
+                        //TODO: NEED TO CREATE AN IO LIST FOR ADDING AND REMOVING GEOMETRIES.... DOUBLE CHECK PYLIB
+
+                        if (MimicHumanPoints.Count != MimicRobotPoints.Count)
+                        {
+                            Debug.LogError("FindHumanandRobotTargetInformation: Mimic Human Points and Mimic Robot Points count do not match.");
+                        }
+                        else
+                        {
+                            Debug.Log("FindHumanandRobotTargetInformation: Mimic Human Points and Mimic Robot Points count match: " + MimicHumanPoints.Count);
+                        }
+                        Color humanColor = new Color(1.0f, 1.0f, 0.0f, 1.0f);
+                        Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
+                        DrawLineFromGameObjectList(MimicHumanPoints, MimicHumanLine, humanColor, 0.01f);
+                        DrawLineFromGameObjectList(MimicRobotPoints, MimicRobotLine, robotColor, 0.01f);
+                        userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex = MimicHumanPoints.Count - 1;
+                        Debug.Log($"FindHumanandRobotTargetInformation: Pick Point Set {userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex} and Place Point Set Ready to Request {userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex}");
                     }
                     else
                     {
@@ -1437,9 +1489,8 @@ namespace CompasXR.Core
             {
                 Debug.LogWarning($"FindHumanandRobotTargetInformation: Object Name '{objectName}' does not match expected patterns.");
             }
-
         }
-        
+ 
         public (GameObject TargetInfo, GameObject PlaceFrameGeometry, GameObject PlaceFrameVisibility) FindPlaceFrameGeometryAndVisibility(GameObject searchObject)
         {
             if (searchObject == null)
@@ -1455,7 +1506,7 @@ namespace CompasXR.Core
             }
 
             GameObject placeFrameGeometry = targetInformation.FindObject("PLACEFRAME");
-            GameObject placeFrameVisibility = targetInformation.FindObject("PLACEFRAME");
+            GameObject placeFrameVisibility = targetInformation.FindObject("PLACEVIS");
 
             if (placeFrameGeometry == null)
             {
@@ -1520,9 +1571,9 @@ namespace CompasXR.Core
                     continue;
                 }
 
-                // Placeable target geometry: G0..G8
-                if (Regex.IsMatch(name, @"^G[0-8]$"))
+                if (Regex.IsMatch(name, @"^G[0-8]$")) // TODO: MAY NEED TO CHANGE THIS TO MAX INDEX AND MAKE IT AN INPUT LATER...
                 {
+                    //TODO: THIS NEEDS TO MAKE SURE THAT THE TARGET IS NOT SATISFIED ALREADY....
                     Debug.Log($"CameraIsWithinTargetOrObservedGeometry: '{name}' matches G0..G8 (Target Geometry).");
                     if (userIniatedMimicPickandPlaceManager.ObjectPicked && !userIniatedMimicPickandPlaceManager.ObjectPlaced)
                     {
@@ -1537,8 +1588,6 @@ namespace CompasXR.Core
                     }
                     continue;
                 }
-
-                // Neutral / not matching
                 Debug.LogWarning($"CameraIsWithinTargetOrObservedGeometry: '{name}' does not match pick/place patterns.");
                 potentialSetOptions.Add(0);
             }
@@ -1559,7 +1608,6 @@ namespace CompasXR.Core
         }
 
         //TODO: Finding targets and information for pick and place in mimic User Initiated mode.
-
         public void DestroyRealtimeMimicZoneObjects()
         {
             /*
@@ -3777,6 +3825,21 @@ namespace CompasXR.Core
         public static bool RotationsAreCloserThanThreshold(Quaternion a, Quaternion b, float degreesThreshold)
         {
             return Quaternion.Angle(a, b) < degreesThreshold;
+        }
+        public static void ColorObjectbyInputMaterial(GameObject gamobj, Material material)
+        {
+            /*
+            * Method is used to color the object by the input material
+            * based on the game object.
+            */
+            Renderer m_renderer = gamobj.GetComponentInChildren<Renderer>();
+            Debug.Log($"ColorObjectbyInputMaterial: Coloring {gamobj.name} with material {material.name}");
+            if (m_renderer == null)
+            {
+                Debug.LogError("ColorObjectbyInputMaterial: No Renderer found on the GameObject or its children.");
+                return;
+            }
+            m_renderer.material = material; 
         }
 
     }
