@@ -2139,6 +2139,36 @@ namespace CompasXR.UI
             Debug.Log("UndoMimicPoint: Undoing Last Mimic Point.");
             if(instantiateObjects.MimicHumanPoints.Count > 0 && instantiateObjects.MimicRobotPoints.Count > 0)
             {
+                if (instantiateObjects.MimicHumanPoints.Count != instantiateObjects.MimicRobotPoints.Count)
+                {
+                    Debug.LogError("UndoMimicPoint: Mimic Human Points and Mimic Robot Points count do not match.");
+                    return;
+                }
+
+                if (instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPicked || instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPlaced)
+                {
+                    if(instantiateObjects.MimicHumanPoints.Count - 1 == instantiateObjects.userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex)
+                    {
+                        Debug.Log("UndoMimicPoint: Last Point is a Pick Point, resetting Pick State.");
+                        instantiateObjects.userIniatedMimicPickandPlaceManager.ResetPickObjects();
+                        instantiateObjects.DestroyLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine);
+                        StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(UserInitiatedMimicUndoPointRedScreen, MimicSetandUndoFlashDuration));
+                        return;
+                    }
+                    else if (instantiateObjects.MimicHumanPoints.Count - 1 == instantiateObjects.userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex)
+                    {
+                        Debug.Log("UndoMimicPoint: Last Point is a Place Point, resetting Place State.");
+                        instantiateObjects.userIniatedMimicPickandPlaceManager.ResetPlaceObjects();
+                        instantiateObjects.DestroyLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine);
+                        StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(UserInitiatedMimicUndoPointRedScreen, MimicSetandUndoFlashDuration));
+                        return;
+                    }
+                    else
+                    {
+                        Debug.Log("UndoMimicPoint: Last Point is not a Pick or Place Point, no need to reset Pick and Place State.");
+                    }
+                }
+
                 instantiateObjects.DestroyLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine);
                 StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(UserInitiatedMimicUndoPointRedScreen, MimicSetandUndoFlashDuration));
             }

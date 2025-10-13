@@ -1194,6 +1194,44 @@ namespace CompasXR.RoboticTerritories.Data
             PickPointTrajectoryIndex = -1;
             PlacePointTrajectoryIndex = -1;
         }
+
+        public void ResetPickObjects()
+        {
+            ObjectPicked = false;
+            PickedObjectName = null;
+
+            if (PickedObjectVisualizationHuman != null && PickedObjectVisualizationHuman.activeSelf)
+            {
+                PickedObjectVisualizationHuman.SetActive(false);
+            }
+            if (PickedObjectVisualizationRobot != null && PickedObjectVisualizationRobot.activeSelf)
+            {
+                PickedObjectVisualizationRobot.SetActive(false);
+            }
+            PickedObjectVisualizationHuman = null;
+            PickedObjectVisualizationRobot = null;
+
+            PickPointTrajectoryIndex = -1;
+        }
+
+        public void ResetPlaceObjects()
+        {
+            ObjectPlaced = false;
+            TargetPositionName = null;
+
+            if (TargetPositionVisualizationRobot != null && TargetPositionVisualizationRobot.activeSelf)
+            {
+                TargetPositionVisualizationRobot.SetActive(false);
+            }
+            if (TargetPositionVisualizationHuman != null && TargetPositionVisualizationHuman.activeSelf)
+            {
+                TargetPositionVisualizationHuman.SetActive(false);
+            }
+            TargetPositionVisualizationRobot = null;
+            TargetPositionVisualizationHuman = null;
+
+            PlacePointTrajectoryIndex = -1;
+        }
     }
 
     [System.Serializable]
