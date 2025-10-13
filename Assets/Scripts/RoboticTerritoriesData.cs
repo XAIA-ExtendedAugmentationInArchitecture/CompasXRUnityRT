@@ -189,20 +189,20 @@ namespace CompasXR.RoboticTerritories.Data
         }
     }
     public class GoalObjectComponent
-        {
-            public string Name { get; private set; }
-            public bool IsSatisfied { get; set; }
-            public GameObject ComponentGameObject { get; set; }
-            public ObservedGeometry SatisfyingObservedGeometry { get; set; }
+    {
+        public string Name { get; private set; }
+        public bool IsSatisfied { get; set; }
+        public GameObject ComponentGameObject { get; set; }
+        public ObservedGeometry SatisfyingObservedGeometry { get; set; }
 
-            public GoalObjectComponent(string name, GameObject componentObject)
-            {
-                Name = name;
-                ComponentGameObject = componentObject;
-                IsSatisfied = false;
-                SatisfyingObservedGeometry = null;
-            }
+        public GoalObjectComponent(string name, GameObject componentObject)
+        {
+            Name = name;
+            ComponentGameObject = componentObject;
+            IsSatisfied = false;
+            SatisfyingObservedGeometry = null;
         }
+    }
 
     public class GoalStateObserver //TODO: Integrate this class within the GoalManager Class. (Active when zones switch (For Mimic), but When Inference, active when inference is complete)
     {
@@ -297,136 +297,7 @@ namespace CompasXR.RoboticTerritories.Data
             ColorGoalComponentbySatisfaction(true, satisfiedMaterial, unsatisfiedMaterial);
         }
 
-        //TODO: This method can update the informatoin if it returns the changed components.
-        // public Dictionary<string, GoalObjectComponent> ApplySingleObservedGeometryOverwrite(
-        //     ObservedGeometry observed,
-        //     Material satisfiedMaterial,
-        //     Material unsatisfiedMaterial,
-        //     float positionTolerance = 0.03f,
-        //     float rotationToleranceDeg = 3f)
-        // {
-        //     var changed = new Dictionary<string, GoalObjectComponent>();
-
-        //     if (observed == null || ComponentStates == null || ComponentStates.Count == 0)
-        //     {
-        //         Debug.LogWarning("GoalStateObserver: ApplySingleObservedGeometryOverwrite: missing observed or components.");
-        //         return changed;
-        //     }
-
-        //     // Cache & validate observed refs early
-        //     var observedGO = observed.GeometryObject;
-        //     if (observedGO == null)
-        //     {
-        //         Debug.LogWarning($"ApplySingleObservedGeometryOverwrite: observed '{observed.Name}' has null GeometryObject (likely race: update before instantiation).");
-        //         return changed;
-        //     }
-        //     var obsTransform = observedGO.transform;
-
-        //     // 1) Locate any component currently satisfied by THIS observed object (by GO, not instance)
-        //     GoalObjectComponent previouslyAssigned = null;
-        //     foreach (var comp in ComponentStates.Values)
-        //     {
-        //         var sat = comp?.SatisfyingObservedGeometry;
-        //         if (sat != null && sat.GeometryObject == observedGO)
-        //         {
-        //             previouslyAssigned = comp;
-        //             break;
-        //         }
-        //     }
-
-        //     // 2) Find the BEST in-tolerance component
-        //     GoalObjectComponent bestComp = null;
-        //     float bestScore = float.MaxValue;
-
-        //     foreach (var comp in ComponentStates.Values)
-        //     {
-        //         if (comp == null) continue;
-
-        //         var compGO = comp.ComponentGameObject;
-        //         if (compGO == null)
-        //         {
-        //             Debug.LogWarning($"ApplySingleObservedGeometryOverwrite: Component '{comp.Name}' has null GameObject — skipping.");
-        //             continue;
-        //         }
-
-        //         float posErr = (obsTransform.position - compGO.transform.position).magnitude;
-        //         if (posErr > positionTolerance) continue;
-
-        //         float rotErr = Quaternion.Angle(obsTransform.rotation, compGO.transform.rotation);
-        //         if (rotErr > rotationToleranceDeg) continue;
-
-        //         float score = posErr + 0.02f * rotErr;
-        //         if (score < bestScore)
-        //         {
-        //             bestScore = score;
-        //             bestComp = comp;
-        //         }
-        //     }
-
-        //     // 3) If no match now, unsatisfy whoever used to have this observed
-        //     if (bestComp == null)
-        //     {
-        //         if (previouslyAssigned != null)
-        //         {
-        //             previouslyAssigned.IsSatisfied = false;
-        //             previouslyAssigned.SatisfyingObservedGeometry = null;
-
-        //             var rPrev = previouslyAssigned.ComponentGameObject?.GetComponentInChildren<Renderer>();
-        //             if (rPrev != null && unsatisfiedMaterial != null) rPrev.material = unsatisfiedMaterial;
-
-        //             Debug.Log($"GoalStateObserver: '{observed.Name}' no longer satisfies '{previouslyAssigned.Name}'.");
-
-        //             changed[previouslyAssigned.Name] = previouslyAssigned;
-        //         }
-        //         return changed;
-        //     }
-
-        //     // 4) Enforce single-owner: unsatisfy any OTHER component currently linked to this observed GO
-        //     foreach (var comp in ComponentStates.Values)
-        //     {
-        //         if (comp == null || ReferenceEquals(comp, bestComp)) continue;
-        //         var sat = comp.SatisfyingObservedGeometry;
-        //         if (sat != null && sat.GeometryObject == observedGO)
-        //         {
-        //             comp.IsSatisfied = false;
-        //             comp.SatisfyingObservedGeometry = null;
-        //             var r = comp.ComponentGameObject?.GetComponentInChildren<Renderer>();
-        //             if (r != null && unsatisfiedMaterial != null) r.material = unsatisfiedMaterial;
-        //             Debug.Log($"GoalStateObserver: '{observed.Name}' unlinked from '{comp.Name}' (reassigning).");
-
-        //             changed[comp.Name] = comp;
-        //         }
-        //     }
-
-        //     // 5) If it moved from a different component, unsatisfy that previous one
-        //     if (previouslyAssigned != null && !ReferenceEquals(previouslyAssigned, bestComp))
-        //     {
-        //         previouslyAssigned.IsSatisfied = false;
-        //         previouslyAssigned.SatisfyingObservedGeometry = null;
-
-        //         var rPrev = previouslyAssigned.ComponentGameObject?.GetComponentInChildren<Renderer>();
-        //         if (rPrev != null && unsatisfiedMaterial != null) rPrev.material = unsatisfiedMaterial;
-
-        //         Debug.Log($"GoalStateObserver: '{observed.Name}' moved from '{previouslyAssigned.Name}' to '{bestComp.Name}'.");
-
-        //         changed[previouslyAssigned.Name] = previouslyAssigned;
-        //     }
-
-        //     // 6) Assign to the best match
-        //     bestComp.IsSatisfied = true;
-        //     bestComp.SatisfyingObservedGeometry = observed;
-
-        //     var rBest = bestComp.ComponentGameObject?.GetComponentInChildren<Renderer>();
-        //     if (rBest != null && satisfiedMaterial != null) rBest.material = satisfiedMaterial;
-
-        //     Debug.Log($"GoalStateObserver: '{observed.Name}' satisfies '{bestComp.Name}' (score {bestScore:F4}).");
-
-        //     changed[bestComp.Name] = bestComp;
-
-        //     return changed;
-        // }
-
-        // Helper: never add a null/empty key to `changed`
+    // Helper: never add a null/empty key to `changed`
     private static void TryRecordChanged(
         Dictionary<string, GoalObjectComponent> changed,
         GoalObjectComponent comp,
@@ -1194,7 +1065,6 @@ namespace CompasXR.RoboticTerritories.Data
             PickPointTrajectoryIndex = -1;
             PlacePointTrajectoryIndex = -1;
         }
-
         public void ResetPickObjects()
         {
             ObjectPicked = false;
@@ -1213,7 +1083,6 @@ namespace CompasXR.RoboticTerritories.Data
 
             PickPointTrajectoryIndex = -1;
         }
-
         public void ResetPlaceObjects()
         {
             ObjectPlaced = false;
