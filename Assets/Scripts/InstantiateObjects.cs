@@ -1228,7 +1228,7 @@ namespace CompasXR.Core
         }
 
         //TODO: Double check that this works.....
-        public void DestroyUserInstatiatedMimicZoneObjects()
+        public void DestroyUserInstatiatedMimicZoneObjects(bool visibility=false)
         {
             /*
             * Method is used to destroy the mimic zone objects in the AR space
@@ -1276,8 +1276,8 @@ namespace CompasXR.Core
                 MimicHumanLine.GetComponentInChildren<LineRenderer>().positionCount = 0;
                 MimicRobotLine.GetComponentInChildren<LineRenderer>().positionCount = 0;
 
-                MimicHumanObjects.SetActive(false);
-                MimicRobotObjects.SetActive(false);
+                MimicHumanObjects.SetActive(visibility);
+                MimicRobotObjects.SetActive(visibility);
             }
             else
             {
@@ -1559,7 +1559,7 @@ namespace CompasXR.Core
         //TODO: Double check that this works in all scenarios........
         //TODO: A Big question should the code be able to establish the sequence in reverse order?
 
-        public (int returnIntOption, string itemName) DeterminePickAndPlaceStateFromColliderHits(List<string> collidedWithGameObjectNamesList) //TODO: The Pick & Place State Needs to be updated after this function.
+        public (int returnIntOption, string itemName) DeterminePickAndPlaceStateFromColliderHitsPickThenPlace(List<string> collidedWithGameObjectNamesList) //TODO: The Pick & Place State Needs to be updated after this function.
         {
             // TODO: Return codes:
             // 0 = PointShouldBeMade      : Camera not within pick/place; proceed as normal.
@@ -1627,6 +1627,140 @@ namespace CompasXR.Core
                         //TODO: Signal Onscreen Message. This target cannot be placed because it is not holding an object.
                         potentialSetOptions.Add(1);
                     }
+                    continue;
+                }
+                Debug.LogWarning($"CameraIsWithinTargetOrObservedGeometry: '{name}' does not match pick/place patterns.");
+                potentialSetOptions.Add(0);
+            }
+
+            int returnIntOption = 0;
+
+            // Priority: 2 > 3 > 1 > 0
+            if (potentialSetOptions.Contains(2))
+                returnIntOption = 2;
+            else if (potentialSetOptions.Contains(3))
+                returnIntOption = 3;
+            else if (potentialSetOptions.Contains(1))
+                returnIntOption = 1;
+            else
+                returnIntOption = 0;
+
+            return (returnIntOption, itemIndex);
+        }
+        public (int returnIntOption, string itemName) DeterminePickAndPlaceStateFromColliderHitsPickorPlace(List<string> collidedWithGameObjectNamesList) //TODO: The Pick & Place State Needs to be updated after this function.
+        {
+            // TODO: Return codes:
+            // 0 = PointShouldBeMade      : Camera not within pick/place; proceed as normal.
+            // 1 = PointShouldNotBeMade   : Camera within restricted zone; do not make a point.
+            // 2 = ObjectShouldBePicked   : Camera within pickable observed Geometry (CubeXX).
+            // 3 = ObjectShouldBePlaced   : Camera within placeable target Geometry (G0..G8).
+
+            if (collidedWithGameObjectNamesList == null || collidedWithGameObjectNamesList.Count == 0)
+            {
+                Debug.LogWarning("CameraIsWithinTargetOrObservedGeometry: Collided With GameObject Names List is null or empty.");
+                return (0, "None");
+            }
+
+            string itemIndex = "None";
+            List<int> potentialSetOptions = new List<int>();
+
+            for (int i = 0; i < collidedWithGameObjectNamesList.Count; i++)
+            {
+                string name = collidedWithGameObjectNamesList[i];
+
+                if (string.IsNullOrEmpty(name))
+                {
+                    Debug.LogWarning("CameraIsWithinTargetOrObservedGeometry: GameObject name is null or empty.");
+                    continue;
+                }
+
+                if (name == "AnchorCube")
+                {
+                    Debug.LogWarning("CameraIsWithinTargetOrObservedGeometry: Camera is within the Anchor Cube.");
+                    potentialSetOptions.Add(1);
+                    //TODO: Signal Onscreen Message.
+                    continue;
+                }
+
+                if (Regex.IsMatch(name, @"^Cube\d{2}$"))
+                {
+                    //This does not check if the object satifies a target or not... I could try to add this, but ultimately it is not needed. It only means that people can pick up objects that are already placed....
+                    Debug.Log($"CameraIsWithinTargetOrObservedGeometry: '{name}' matches CubeXX (Observed Geometry).");
+                    if (!userIniatedMimicPickandPlaceManager.ObjectPicked)
+                    {
+                        potentialSetOptions.Add(2);
+                        itemIndex = name; // store the first valid Cube index
+
+                        if (!userIniatedMimicPickandPlaceManager.ObjectPlaced)
+                        {
+                            //TODO: This is not needed, but just to be safe it is here.
+                            userIniatedMimicPickandPlaceManager.ReverseConfigurations = false;
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log("CameraIsWithinTargetOrObservedGeometry: Object is already picked, cannot pick another.");
+                        //TODO: Signal Onscreen Message. This target cannot be picked because it is already holding an object.
+                        potentialSetOptions.Add(1);
+                    }
+                    continue;
+                }
+
+                if (Regex.IsMatch(name, @"^G[0-8]$")) // TODO: MAY NEED TO CHANGE THIS TO MAX INDEX AND MAKE IT AN INPUT LATER...
+                {
+                    Debug.Log($"CameraIsWithinTargetOrObservedGeometry: '{name}' matches G0..G8 (Target Geometry).");
+                    GoalObjectComponent currentTargetClass = MimicGoalsManager.GoalStatusObserver.ComponentStates[name];
+                    if (currentTargetClass == null)
+                    {
+                        Debug.LogError($"CameraIsWithinTargetOrObservedGeometry: Current Target Class for '{name}' is null.");
+                        //TODO: Signal Onscreen Error. Fatal Error..... restart please.
+                    }
+                    else
+                    {
+                        if (currentTargetClass.IsSatisfied)
+                        {
+                            Debug.LogWarning($"CameraIsWithinTargetOrObservedGeometry: Current Target '{name}' is already satisfied, cannot place another object here.");
+                            potentialSetOptions.Add(1);
+                            //TODO: Signal Onscreen Message. This target cannot be placed because it is already satisfied.
+                            break;
+                        }
+                    }
+                    if(userIniatedMimicPickandPlaceManager.ObjectPlaced)
+                    {
+                        Debug.Log("CameraIsWithinTargetOrObservedGeometry: Object is already placed, cannot place another, this should be set as a normal point.");
+                        potentialSetOptions.Add(0);
+                    }
+                    else if(!userIniatedMimicPickandPlaceManager.ObjectPlaced)
+                    {
+                        if(userIniatedMimicPickandPlaceManager.ObjectPicked)
+                        {
+                            //This is the normal case.
+                            userIniatedMimicPickandPlaceManager.ReverseConfigurations = false;
+                            Debug.Log("CameraIsWithinTargetOrObservedGeometry: User is placing after picking, normal configurations.");
+                            potentialSetOptions.Add(3);
+                            itemIndex = name; // store the first valid G index
+                        }
+                        else if(!userIniatedMimicPickandPlaceManager.ObjectPicked)
+                        {
+                            //This means that the user is placing without picking first, so we need to reverse the configurations.
+                            userIniatedMimicPickandPlaceManager.ReverseConfigurations = true;
+                            Debug.LogWarning("CameraIsWithinTargetOrObservedGeometry: User is placing without picking first, reversing configurations prior to sending should happen.");
+                            potentialSetOptions.Add(3);
+                            itemIndex = name;
+                        }
+                    }
+                    // if (userIniatedMimicPickandPlaceManager.ObjectPicked && !userIniatedMimicPickandPlaceManager.ObjectPlaced)
+                    // {
+                    //     //TODO: THIS NEEDS TO MAKE SURE THAT THE TARGET IS NOT SATISFIED ALREADY....
+                    //     potentialSetOptions.Add(3);
+                    //     itemIndex = name; // store the first valid G index
+                    // }
+                    // else
+                    // {
+                    //     Debug.Log("CameraIsWithinTargetOrObservedGeometry: No object is picked, cannot place.");
+                    //     //TODO: Signal Onscreen Message. This target cannot be placed because it is not holding an object.
+                    //     potentialSetOptions.Add(1);
+                    // }
                     continue;
                 }
                 Debug.LogWarning($"CameraIsWithinTargetOrObservedGeometry: '{name}' does not match pick/place patterns.");

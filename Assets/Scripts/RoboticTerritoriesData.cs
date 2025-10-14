@@ -1016,6 +1016,9 @@ namespace CompasXR.RoboticTerritories.Data
         //TODO: Visualization of the target position for both human and robot
         public GameObject TargetPositionVisualizationHuman { get; set; }
         public GameObject TargetPositionVisualizationRobot { get; set; }
+
+        public bool ReverseConfigurations { get; set; }
+
         public int PickPointTrajectoryIndex { get; set; }
         public int PlacePointTrajectoryIndex { get; set; }
 
@@ -1029,6 +1032,7 @@ namespace CompasXR.RoboticTerritories.Data
             TargetPositionName = null;
             TargetPositionVisualizationHuman = null;
             TargetPositionVisualizationRobot = null;
+            ReverseConfigurations = false;
             PickPointTrajectoryIndex = -1;
             PlacePointTrajectoryIndex = -1;
         }
@@ -1064,6 +1068,7 @@ namespace CompasXR.RoboticTerritories.Data
 
             PickPointTrajectoryIndex = -1;
             PlacePointTrajectoryIndex = -1;
+            ReverseConfigurations = false;
         }
         public void ResetPickObjects()
         {
@@ -1082,6 +1087,11 @@ namespace CompasXR.RoboticTerritories.Data
             PickedObjectVisualizationRobot = null;
 
             PickPointTrajectoryIndex = -1;
+
+            if(!ObjectPlaced && ReverseConfigurations)
+            {
+                ReverseConfigurations = false;
+            }
         }
         public void ResetPlaceObjects()
         {
@@ -1100,6 +1110,11 @@ namespace CompasXR.RoboticTerritories.Data
             TargetPositionVisualizationHuman = null;
 
             PlacePointTrajectoryIndex = -1;
+
+            if (!ObjectPicked && ReverseConfigurations)
+            {
+                ReverseConfigurations = false;
+            }
         }
         public List<int> CreateIOControlIndeciesFromMimicPointCount(int mimicPointCount)
         {

@@ -562,6 +562,16 @@ namespace CompasXR.UI
 
                     mimicCurrentSelectedGoalIndex += 1;
 
+                    //TODO:Testing the addition of removing everything associated with the previous set pick and place
+                    if (databaseManager.ProjectZones.CurrentMimicMode == ProjectZones.MimicZoneMode.UserInitiated)
+                    {
+                        if (instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPicked || instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPlaced)
+                        {
+                            instantiateObjects.DestroyUserInstatiatedMimicZoneObjects(true);
+                            instantiateObjects.userIniatedMimicPickandPlaceManager.Reset();
+                        }
+                    }
+
                     SetMimicGoalFromIndex(mimicCurrentSelectedGoalIndex);
 
                     Debug.Log($"MimicSelectNextGoalButtonMethod: Changed Selected Goal to {CurrentSelectedGoalName}");
@@ -610,6 +620,16 @@ namespace CompasXR.UI
                 {
                     GameObject previousSelectedGoal = instantiateObjects.MimicGoalsManager.Goals[mimicCurrentSelectedGoalIndex].GoalGameObject;
                     previousSelectedGoal.SetActive(false);
+
+                    //TODO:Testing the addition of removing everything associated with the previous set pick and place
+                    if (databaseManager.ProjectZones.CurrentMimicMode == ProjectZones.MimicZoneMode.UserInitiated)
+                    {
+                        if (instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPicked || instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPlaced)
+                        {
+                            instantiateObjects.DestroyUserInstatiatedMimicZoneObjects(true);
+                            instantiateObjects.userIniatedMimicPickandPlaceManager.Reset();
+                        }
+                    }
 
                     mimicCurrentSelectedGoalIndex -= 1;
                     SetMimicGoalFromIndex(mimicCurrentSelectedGoalIndex);
@@ -2080,7 +2100,8 @@ namespace CompasXR.UI
                             return;
                         }
 
-                        (int pickState, string pickOrPlaceItemName) = instantiateObjects.DeterminePickAndPlaceStateFromColliderHits(colliderObjectHits);
+                        // (int pickState, string pickOrPlaceItemName) = instantiateObjects.DeterminePickAndPlaceStateFromColliderHitsPickThenPlace(colliderObjectHits);
+                        (int pickState, string pickOrPlaceItemName) = instantiateObjects.DeterminePickAndPlaceStateFromColliderHitsPickorPlace(colliderObjectHits);
                         Debug.Log($"SetMimicPoint: Pick State: {pickState}, Pick or Place Object Name: {pickOrPlaceItemName}");
 
                         if (pickState == 1)
@@ -2483,6 +2504,20 @@ namespace CompasXR.UI
                 List<Frame> humanFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicHumanPoints, instantiateObjects.ZonesARPrefabObjects);
                 List<Frame> robotFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicRobotPoints, instantiateObjects.ZonesARPrefabObjects);
                 List<int> ioControlIndexes = instantiateObjects.userIniatedMimicPickandPlaceManager.CreateIOControlIndeciesFromMimicPointCount(instantiateObjects.MimicHumanPoints.Count);
+
+                //TODO: CHECK IF THIS WORKS....
+                if (humanFrames == null || robotFrames == null || ioControlIndexes == null)
+                {
+                    Debug.LogError("MimicRequestTrajectoryButton: Human or Robot Frames or IO Control Indexes are null.");
+                    return;
+                }
+                if (instantiateObjects.userIniatedMimicPickandPlaceManager.ReverseConfigurations)
+                {
+                    humanFrames.Reverse();
+                    robotFrames.Reverse();
+                    ioControlIndexes.Reverse();
+                    Debug.Log("MimicRequestTrajectoryButton: Reversing Configurations as specified by the user.");
+                }
 
                 //TODO: IF WE WANT THINGS TO GO IN REVERSE AS WELL THEN ALL THAT NEEDS TO BE DONE IS... REVERSE ALL LISTS HERE BEFORE SENDING THEM...
 
