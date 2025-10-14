@@ -2472,9 +2472,11 @@ namespace CompasXR.UI
                 UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref ActiveRobotIsNullWarningMessageObject, "ActiveRobotNullWarningMessage", MessagesParent, message, "MimicRequestTrajectoryButtonMethod: Active Robot is null.");
                 return;
             }
-            //TODO: Insert chunk of code  if pick, but not place, signal and return
+            //TODO: This should check if it is just the pick and the place that do not have reachability, and signal onscreen message for these two specifically...
+            //TODO: OOOORRRRRRRRRRRRRRRRRRRRRRRRRR.... make it not check them, and have another one that checks them and returns message (this might be the easiest... but we will see...)
             else if (!ObjectInstantiaion.AllGameObjectsInListsPositionsAreWithinAnotherObject(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility))
             {
+
                 var mimicZones = databaseManager.ProjectZones.MimicZones;
 
                 if (mimicZones.TryGetValue("human_zone", out Zone humanZone))

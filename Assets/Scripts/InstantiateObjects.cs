@@ -741,6 +741,9 @@ namespace CompasXR.Core
 
             for (int i = 0; i < pointsToCheck.Count; i++)
             {
+                //TODO: Testing remap including logic for the pick and place objects...
+                // I think it can just skip them..... if the index matches....
+
                 GameObject point = pointsToCheck[i];
                 Vector3 position = point.transform.position;
                 Quaternion rotation = point.transform.rotation;
@@ -773,14 +776,16 @@ namespace CompasXR.Core
 
             UIFunctionalities.SignalMimicPointsRemaptoRobotReachabilityMessage();
         }
-        public void MakeMimicPointsFromSystemProposedPoints(ref List<GameObject> humanPoints, ref List<GameObject> robotPoints, ref List<GameObject> systemProposedHumanPoints, ref List<GameObject> systemProposedRobotPoints, 
-        GameObject humanPointsParent, GameObject robotPointsParent, GameObject systemProposedHumanParent, GameObject systemProposedRobotParent, 
+
+        //TODO: The pick and place point indexes just need to be added here so that they are not lost. Then they cannot be destroyed in the process.
+        public void MakeMimicPointsFromSystemProposedPoints(ref List<GameObject> humanPoints, ref List<GameObject> robotPoints, ref List<GameObject> systemProposedHumanPoints, ref List<GameObject> systemProposedRobotPoints,
+        GameObject humanPointsParent, GameObject robotPointsParent, GameObject systemProposedHumanParent, GameObject systemProposedRobotParent,
         GameObject humanLine, GameObject robotLine, GameObject systemProposedHumanLine, GameObject systemProposedRobotLine)
         {
             /*
             * Method is used to create the mimic points from the system proposed points in the AR space
             */
-            
+
             if (humanPoints.Count <= 0 || robotPoints.Count <= 0)
             {
                 Debug.LogWarning("MakeMimicPointsFromSystemProposedPoints: human points or robot points are not greater then 0 for some reason");
@@ -795,17 +800,19 @@ namespace CompasXR.Core
                 MigrateSystemProposedMimicPointsToCurrentSelection(ref humanPoints, ref systemProposedHumanPoints, humanPointsParent, humanLine, systemProposedHumanLine, HumanBuiltMaterial, Color.yellow);
                 MigrateSystemProposedMimicPointsToCurrentSelection(ref robotPoints, ref systemProposedRobotPoints, robotPointsParent, robotLine, systemProposedRobotLine, RobotBuiltMaterial, Color.cyan);
 
-                if(systemProposedHumanPoints.Count > 0)
+                if (systemProposedHumanPoints.Count > 0)
                 {
                     ObjectInstantiaion.DestroyChildrenOfGameObject(systemProposedHumanParent);
                 }
-                if(systemProposedRobotPoints.Count > 0)
+                if (systemProposedRobotPoints.Count > 0)
                 {
                     ObjectInstantiaion.DestroyChildrenOfGameObject(systemProposedRobotParent);
                 }
             }
 
         }
+        
+        //TODO: The pick and place point indexes just need to be added here so that they are not lost. Then they cannot be destroyed in the process.
         public void MigrateSystemProposedMimicPointsToCurrentSelection(ref List<GameObject> pointListReferenceToSet, ref List<GameObject> systemProposedPointsList, 
         GameObject currentListParent, GameObject currentLine, GameObject systemProposedLine, Material materialToAssignSystemPoints, Color currentLineColor)
         {
