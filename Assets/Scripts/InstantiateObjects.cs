@@ -1029,7 +1029,7 @@ namespace CompasXR.Core
             
             return mappedWorldPosition;
         }
-        public void DestroyLastMimicPoint(ref List<GameObject> MimicHumanPoints, ref List<GameObject> MimicRobotPoints, ref GameObject MimicHumanLine, ref GameObject MimicRobotLine)
+        public void DestroyOrRemoveLastMimicPoint(ref List<GameObject> MimicHumanPoints, ref List<GameObject> MimicRobotPoints, ref GameObject MimicHumanLine, ref GameObject MimicRobotLine, bool Destry=true)
         {
             if (MimicHumanPoints.Count > 0 && MimicRobotPoints.Count > 0)
             {
@@ -1037,8 +1037,11 @@ namespace CompasXR.Core
                 Debug.Log("DestroyLastMimicPoint: Human Points Count: " + MimicHumanPoints.Count);
                 Debug.Log("DestroyLastMimicPoint: Robot Points Count: " + MimicRobotPoints.Count);
 
-                Destroy(MimicHumanPoints[MimicHumanPoints.Count - 1]);
-                Destroy(MimicRobotPoints[MimicRobotPoints.Count - 1]);
+                if (Destry)
+                {
+                    Destroy(MimicHumanPoints[MimicHumanPoints.Count - 1]);
+                    Destroy(MimicRobotPoints[MimicRobotPoints.Count - 1]);
+                }
                 MimicHumanPoints.RemoveAt(MimicHumanPoints.Count - 1);
                 MimicRobotPoints.RemoveAt(MimicRobotPoints.Count - 1);
                 
@@ -1223,6 +1226,8 @@ namespace CompasXR.Core
             lineRenderer.positionCount = positions.Count;
             lineRenderer.SetPositions(positions.ToArray());
         }
+
+        //TODO: Double check that this works.....
         public void DestroyUserInstatiatedMimicZoneObjects()
         {
             /*
@@ -1230,8 +1235,36 @@ namespace CompasXR.Core
             */
             if (MimicHumanPoints.Count > 0 && MimicRobotPoints.Count > 0)
             {
-                ObjectInstantiaion.DestroyChildrenOfGameObject(MimicHumanPointsParent);
-                ObjectInstantiaion.DestroyChildrenOfGameObject(MimicRobotPointsParent);
+                // ObjectInstantiaion.DestroyChildrenOfGameObject(MimicHumanPointsParent);
+                // ObjectInstantiaion.DestroyChildrenOfGameObject(MimicRobotPointsParent);
+                int pickIndex = -1;
+                int placeIndex = -1;
+
+                if (userIniatedMimicPickandPlaceManager.ObjectPicked)
+                {
+                    pickIndex = userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex;
+                    userIniatedMimicPickandPlaceManager.ResetPickObjects();
+                }
+                if (userIniatedMimicPickandPlaceManager.ObjectPlaced)
+                {
+                    placeIndex = userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex;
+                    userIniatedMimicPickandPlaceManager.ResetPlaceObjects();
+                }
+
+                for (int i = 0; i < MimicHumanPoints.Count; i++)
+                {
+                    if (pickIndex != -1 && i == pickIndex)
+                    {
+                        Debug.Log($"DestroyMimicZoneObjects: Skipping Destroying Point at index {i} because it is picked.");
+                        continue;
+                    }
+                    if (placeIndex != -1 && i == placeIndex)
+                    {
+                        Debug.Log($"DestroyMimicZoneObjects: Skipping Destroying Point at index {i} because it is picked.");
+                        continue;
+                    }
+                    Destroy(MimicHumanPoints[i]);
+                }
 
                 MimicHumanPoints.Clear();
                 MimicRobotPoints.Clear();
@@ -1490,7 +1523,6 @@ namespace CompasXR.Core
                 Debug.LogWarning($"FindHumanandRobotTargetInformation: Object Name '{objectName}' does not match expected patterns.");
             }
         }
- 
         public (GameObject TargetInfo, GameObject PlaceFrameGeometry, GameObject PlaceFrameVisibility) FindPlaceFrameGeometryAndVisibility(GameObject searchObject)
         {
             if (searchObject == null)
@@ -1519,6 +1551,10 @@ namespace CompasXR.Core
 
             return (targetInformation, placeFrameGeometry, placeFrameVisibility);
         }
+
+        //TODO: Double check that this works in all scenarios........
+        //TODO: A Big question should the code be able to establish the sequence in reverse order?
+
         public (int returnIntOption, string itemName) DeterminePickAndPlaceStateFromColliderHits(List<string> collidedWithGameObjectNamesList) //TODO: The Pick & Place State Needs to be updated after this function.
         {
             // TODO: Return codes:
@@ -1573,10 +1609,11 @@ namespace CompasXR.Core
 
                 if (Regex.IsMatch(name, @"^G[0-8]$")) // TODO: MAY NEED TO CHANGE THIS TO MAX INDEX AND MAKE IT AN INPUT LATER...
                 {
-                    //TODO: THIS NEEDS TO MAKE SURE THAT THE TARGET IS NOT SATISFIED ALREADY....
                     Debug.Log($"CameraIsWithinTargetOrObservedGeometry: '{name}' matches G0..G8 (Target Geometry).");
+                    //TODO: Should check this later to see if things the target is satisfied already, then we can improve this....
                     if (userIniatedMimicPickandPlaceManager.ObjectPicked && !userIniatedMimicPickandPlaceManager.ObjectPlaced)
                     {
+                        //TODO: THIS NEEDS TO MAKE SURE THAT THE TARGET IS NOT SATISFIED ALREADY....
                         potentialSetOptions.Add(3);
                         itemIndex = name; // store the first valid G index
                     }

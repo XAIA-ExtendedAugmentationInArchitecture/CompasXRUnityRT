@@ -296,6 +296,11 @@ namespace CompasXR.UI
         public GameObject MimicSetPointOutsideOfHumanZone;
         public GameObject RealtimeMimicActiveRobotNull;
         public GameObject MimicPointsTooFewMessage;
+
+        // Pick and Place Mimic Helpers...
+        public GameObject MimicObjectPickedButNotPlaced;
+        public GameObject MimicObjectPlacedButNotPicked;
+
         public GameObject MimicUnabletoExecuteTrajectory;
 
         public GameObject UserInitiatedMimicSetPointGreenScreen;
@@ -2042,6 +2047,7 @@ namespace CompasXR.UI
                 Debug.LogWarning("SetMimicPoint: User has already executed a trajectory, cannot set more points.");
                 instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();
                 USERINSTIANTEDTRAJECTORYEXECUTED = false;
+                //TODO: Needs to reset the PickandPlaceStateManager
                 if(trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
                 {
                     trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
@@ -2066,6 +2072,7 @@ namespace CompasXR.UI
                     {
                         Debug.Log("SetMimicPoint: Camera Position is within the Human Zone Object.");
 
+                        //TODO: THIS NEEDS TO TAKE CODE FROM THE OLD APPLICATION THAT CHECKS IF THE COLDIDERS AR ON OR NOT...
                         List<string> colliderObjectHits = instantiateObjects.GetAllCollidersNamesAtPoint(devicePosePosition);
                         if (colliderObjectHits.Count <= 0)
                         {
@@ -2128,6 +2135,8 @@ namespace CompasXR.UI
             {
                 Debug.LogWarning("SetMimicPoint: User has already executed a trajectory, cannot set more points.");
                 instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();
+                //TODO: Needs to reset the PickandPlaceStateManager
+
                 USERINSTIANTEDTRAJECTORYEXECUTED = false;
                 if (trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
                 {
@@ -2151,15 +2160,17 @@ namespace CompasXR.UI
                     {
                         Debug.Log("UndoMimicPoint: Last Point is a Pick Point, resetting Pick State.");
                         instantiateObjects.userIniatedMimicPickandPlaceManager.ResetPickObjects();
-                        instantiateObjects.DestroyLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine);
+                        //TODO: DO NOT DESTROY JUST REMOVE...
+                        instantiateObjects.DestroyOrRemoveLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine, false);
                         StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(UserInitiatedMimicUndoPointRedScreen, MimicSetandUndoFlashDuration));
                         return;
                     }
                     else if (instantiateObjects.MimicHumanPoints.Count - 1 == instantiateObjects.userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex)
                     {
                         Debug.Log("UndoMimicPoint: Last Point is a Place Point, resetting Place State.");
+                        //TODO: DO NOT DESTROY JUST REMOVE...
                         instantiateObjects.userIniatedMimicPickandPlaceManager.ResetPlaceObjects();
-                        instantiateObjects.DestroyLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine);
+                        instantiateObjects.DestroyOrRemoveLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine, false);
                         StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(UserInitiatedMimicUndoPointRedScreen, MimicSetandUndoFlashDuration));
                         return;
                     }
@@ -2169,7 +2180,7 @@ namespace CompasXR.UI
                     }
                 }
 
-                instantiateObjects.DestroyLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine);
+                instantiateObjects.DestroyOrRemoveLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine);
                 StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(UserInitiatedMimicUndoPointRedScreen, MimicSetandUndoFlashDuration));
             }
             else
@@ -2390,11 +2401,12 @@ namespace CompasXR.UI
         {
             Debug.Log($"MimicRequestTrajectoryButtonMethod: Requesting Trajectory for {instantiateObjects.MimicHumanPoints.Count} points.");
 
-
             if (USERINSTIANTEDTRAJECTORYEXECUTED)
             {
                 Debug.LogWarning("SetMimicPoint: User has already executed a trajectory, cannot set more points.");
                 instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();
+                //TODO: Needs to reset the PickandPlaceStateManager
+
                 USERINSTIANTEDTRAJECTORYEXECUTED = false;
                 if (trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
                 {
@@ -2403,6 +2415,28 @@ namespace CompasXR.UI
                 return;
             }
 
+            //TODO: Should I allow for reversable pick and place? Where the place is set first, and the pick second?
+            if (instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPicked || instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPlaced)
+            {
+                if (instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPicked && !instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPlaced)
+                {
+                    Debug.Log("MimicRequestTrajectoryButton: There is not enough mimic points to request a trajectory");
+                    string message = "WARNING: You need at least 2 points to request a trajectory for mimicry.";
+                    UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref MimicObjectPickedButNotPlaced, "MimicObjectPickedButNotPlaced", MessagesParent, message, "MimicRequestTrajectoryButtonMethod: An object has been specified to be picked, but not to be placed.");
+                    return;
+                }
+                else if (!instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPicked && instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPlaced)
+                {
+                    Debug.LogError("MimicRequestTrajectoryButton: There is a no pick but a place which makes no sense, and shouldn't happen.");
+                    string message = "WARNING: There is a place but not a pick, and the system should be reset.";
+                    UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref MimicObjectPlacedButNotPicked, "MimicObjectPlacedButNotPicked", MessagesParent, message, "MimicRequestTrajectoryButtonMethod: An object has been specified to be placed, but not to be picked.");
+                    return;
+                }
+                else
+                {
+                    Debug.Log("MimicRequestTrajectoryButton: There is a pick and a place specified, proceeding with trajectory request.");
+                }
+            }
             if (instantiateObjects.MimicHumanPoints.Count < 2)
             {
                 Debug.Log("MimicRequestTrajectoryButton: There is not enough mimic points to request a trajectory");
@@ -2417,6 +2451,7 @@ namespace CompasXR.UI
                 UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref ActiveRobotIsNullWarningMessageObject, "ActiveRobotNullWarningMessage", MessagesParent, message, "MimicRequestTrajectoryButtonMethod: Active Robot is null.");
                 return;
             }
+            //TODO: Insert chunk of code  if pick, but not place, signal and return
             else if (!ObjectInstantiaion.AllGameObjectsInListsPositionsAreWithinAnotherObject(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility))
             {
                 var mimicZones = databaseManager.ProjectZones.MimicZones;
@@ -2427,6 +2462,7 @@ namespace CompasXR.UI
                     {
                         GameObject humanZoneObject = humanZone.ZoneObject;
                         GameObject robotZoneObject = robotZone.ZoneObject;
+                        //TODO: Update to ignore the pick and place indexes.......
                         instantiateObjects.CreateSystemProposalPoints(humanZoneObject, robotZoneObject, trajectoryVisualizer.humanZoneMimicReachibility, ref instantiateObjects.MimicHumanPoints,
                         ref instantiateObjects.MimicHumanSystemProposedPoints, ref instantiateObjects.MimicRobotSystemProposedPoints,
                         instantiateObjects.MimicSystemProposedLineHuman, instantiateObjects.MimicHumanSystemProposedPointsParent, instantiateObjects.MimicSystemProposedLineRobot,
@@ -2446,8 +2482,17 @@ namespace CompasXR.UI
             {
                 List<Frame> humanFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicHumanPoints, instantiateObjects.ZonesARPrefabObjects);
                 List<Frame> robotFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicRobotPoints, instantiateObjects.ZonesARPrefabObjects);
+                List<int> ioControlIndexes = instantiateObjects.userIniatedMimicPickandPlaceManager.CreateIOControlIndeciesFromMimicPointCount(instantiateObjects.MimicHumanPoints.Count);
 
-                MimicTrajectoryRequestMessage requestMessage = new MimicTrajectoryRequestMessage(humanFrames, robotFrames, mqttTrajectoryManager.serviceManager.ActiveRobotName); //TODO: ROBOT NAME NEEDS TO BE CHANGED FOR SURE...
+                //TODO: IF WE WANT THINGS TO GO IN REVERSE AS WELL THEN ALL THAT NEEDS TO BE DONE IS... REVERSE ALL LISTS HERE BEFORE SENDING THEM...
+
+                if (humanFrames.Count != robotFrames.Count || humanFrames.Count != ioControlIndexes.Count)
+                {
+                    Debug.LogError("MimicRequestTrajectoryButton: Human and Robot Frames count do not match or IO Control Index Count Does not match.");
+                    return;
+                }
+
+                MimicTrajectoryRequestMessage requestMessage = new MimicTrajectoryRequestMessage(humanFrames, robotFrames, mqttTrajectoryManager.serviceManager.ActiveRobotName, ioControlIndexes); //TODO: ROBOT NAME NEEDS TO BE CHANGED FOR SURE...
                 Debug.Log($"MimicRequestTrajectoryButton: Publishing Mimic request {JsonConvert.SerializeObject(requestMessage.GetData())} on topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic}");
 
                 mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic, requestMessage.GetData());
@@ -4532,7 +4577,7 @@ namespace CompasXR.UI
             * This method is used throughout the CompasXR Application, and serves as a simple way to set on click actions.
             */
             if (searchObject != null)
-            {    
+            {
                 buttonParentObjectReference = searchObject.FindObject(unityObjectName);
                 Button buttonComponent = buttonParentObjectReference.GetComponent<Button>();
                 buttonComponent.onClick.AddListener(customAction);
@@ -4542,7 +4587,7 @@ namespace CompasXR.UI
                 Debug.LogError($"FindButtonandSetOnClickAction: Could not Set OnClick Action because search object is null for {unityObjectName}");
             }
         }
-        
+
         public static void FindButtonandSetOnClickActionDebug(
         GameObject searchObject,
         ref GameObject buttonParentObjectReference,
@@ -4615,7 +4660,7 @@ namespace CompasXR.UI
             * Find Slider and Set On Value Change Action is used to find the slider and set the on value change action.
             * This method is used throughout the CompasXR Application, and serves as a simple way to set on value change actions.
             */
-            if(searchObject != null)
+            if (searchObject != null)
             {
                 sliderParentObjectReference = searchObject.FindObject(unityObjectName);
                 sliderObjectReference = sliderParentObjectReference.GetComponent<Slider>();
@@ -4639,7 +4684,7 @@ namespace CompasXR.UI
             * Set Drop Down Options From String List is used to set the add a list to a drop down item.
             */
             List<TMP_Dropdown.OptionData> options = new List<TMP_Dropdown.OptionData>();
-            foreach(string stringItem in stringList)
+            foreach (string stringItem in stringList)
             {
                 options.Add(new TMP_Dropdown.OptionData(stringItem));
             }
@@ -4649,7 +4694,7 @@ namespace CompasXR.UI
         {
             /*
             * Add Option Data To Dropdown is used to add an option to a drop down UI item.
-            */            
+            */
             TMP_Dropdown.OptionData newOption = new TMP_Dropdown.OptionData(option);
             dropDown.options.Add(newOption);
             return newOption;
@@ -4662,7 +4707,7 @@ namespace CompasXR.UI
             * Additionally it is dependent on the structure of the prefab.
             */
             Debug.Log($"SignalOnScreenMessageFromPrefab: {logMessageName}: Signal On Screen Message.");
-            if(messageObjectReference == null)
+            if (messageObjectReference == null)
             {
                 messageObjectReference = GameObject.Instantiate(prefabReference);
                 messageObjectReference.transform.SetParent(activeMessageParent.transform, false);
@@ -4671,11 +4716,11 @@ namespace CompasXR.UI
             TMP_Text messageTextComponent = messageObjectReference.FindObject("MessageText").GetComponent<TMP_Text>();
 
             //TODO: THIS WAS UPDATED FOR ROBOTIC TERRITORIES.
-            if(messageTextComponent != null && message != null && messageObjectReference != null && messageObjectReference.activeSelf == false)
+            if (messageTextComponent != null && message != null && messageObjectReference != null && messageObjectReference.activeSelf == false)
             {
                 SignalOnScreenMessageWithButton(messageObjectReference, messageTextComponent, message);
             }
-            else if(messageObjectReference != null && messageObjectReference.activeSelf == true)
+            else if (messageObjectReference != null && messageObjectReference.activeSelf == true)
             {
                 Debug.LogWarning($"SignalOnScreenMessageFromPrefab: {logMessageName}: Message is already active.");
             }
@@ -4695,28 +4740,28 @@ namespace CompasXR.UI
             GameObject newCanvas = new GameObject($"{messageGameObjectName}Canvas");
             Canvas canvas = newCanvas.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-	        newCanvas.AddComponent<CanvasScaler>();
-	        newCanvas.AddComponent<GraphicRaycaster>();
+            newCanvas.AddComponent<CanvasScaler>();
+            newCanvas.AddComponent<GraphicRaycaster>();
 
             GameObject panel = new GameObject($"{messageGameObjectName}Panel");
-	        panel.AddComponent<CanvasRenderer>();
-	        UnityEngine.UI.Image panelImage = panel.AddComponent<UnityEngine.UI.Image>();
-	        panelImage.color = messagePanelColor;
-	        panel.transform.SetParent(newCanvas.transform, false);
+            panel.AddComponent<CanvasRenderer>();
+            UnityEngine.UI.Image panelImage = panel.AddComponent<UnityEngine.UI.Image>();
+            panelImage.color = messagePanelColor;
+            panel.transform.SetParent(newCanvas.transform, false);
             RectTransform panelRect = panel.GetComponent<RectTransform>();
             panelRect.sizeDelta = new Vector2(messageWidth, messageHeight);
             panelRect.anchoredPosition = new Vector2(0, 0);
 
             GameObject textObject = new GameObject($"{messageGameObjectName}Text");
-	        textObject.transform.SetParent(newCanvas.transform, false);
+            textObject.transform.SetParent(newCanvas.transform, false);
             TMPro.TextMeshProUGUI messageText = textObject.AddComponent<TMPro.TextMeshProUGUI>();
             RectTransform textRectObject = textObject.GetComponent<RectTransform>();
-            float textWidth = messageWidth-textBoarderOffset*2;
-            float textHeight = messageHeight-textBoarderOffset*3-buttonHeight;
+            float textWidth = messageWidth - textBoarderOffset * 2;
+            float textHeight = messageHeight - textBoarderOffset * 3 - buttonHeight;
             textRectObject.sizeDelta = new Vector2(textWidth, textHeight);
 
             GameObject randomItems = GameObject.Instantiate(textObject, newCanvas.transform, false);
-            textRectObject.anchoredPosition = new Vector2(0, (textBoarderOffset*2 + buttonHeight)/2);
+            textRectObject.anchoredPosition = new Vector2(0, (textBoarderOffset * 2 + buttonHeight) / 2);
 
             messageText.alignment = textAlignment;
             messageText.color = textColor;
@@ -4726,8 +4771,8 @@ namespace CompasXR.UI
             messageText.fontSizeMax = 100;
 
             GameObject buttonObject = new GameObject($"{messageGameObjectName}Button");
-	        buttonObject.transform.SetParent(newCanvas.transform, false);
-            float buttonYLocation = (messageHeight/2 - textBoarderOffset - buttonHeight/2)*-1;
+            buttonObject.transform.SetParent(newCanvas.transform, false);
+            float buttonYLocation = (messageHeight / 2 - textBoarderOffset - buttonHeight / 2) * -1;
             RectTransform buttonRectObject = buttonObject.AddComponent<RectTransform>();
             buttonRectObject.anchoredPosition = new Vector2(0, buttonYLocation);
             buttonRectObject.sizeDelta = new Vector2(buttonWidth, buttonHeight);
@@ -4736,11 +4781,11 @@ namespace CompasXR.UI
             buttonImage.color = buttonColor;
 
             GameObject buttonTextObject = new GameObject($"{messageGameObjectName}ButtonText");
-	        buttonTextObject.transform.SetParent(buttonObject.transform, false);
+            buttonTextObject.transform.SetParent(buttonObject.transform, false);
             TMPro.TextMeshProUGUI buttonTextComponent = buttonTextObject.AddComponent<TMPro.TextMeshProUGUI>();
             RectTransform buttontextRectObject = buttonTextComponent.GetComponent<RectTransform>();
             buttontextRectObject.anchoredPosition = new Vector2(0, 0);
-            buttontextRectObject.sizeDelta = new Vector2(buttonWidth-buttonTextBoarderOffset, buttonHeight-buttonTextBoarderOffset);
+            buttontextRectObject.sizeDelta = new Vector2(buttonWidth - buttonTextBoarderOffset, buttonHeight - buttonTextBoarderOffset);
 
             buttonTextComponent.enableAutoSizing = true;
             buttonTextComponent.fontSizeMin = 1;
@@ -4761,7 +4806,7 @@ namespace CompasXR.UI
             Debug.Log($"SignalOnScreenMessageFromReference: {logMessageName}: Signal On Screen Message.");
             TMP_Text messageTextComponent = messageObjectReference.FindObject("MessageText").GetComponent<TMP_Text>();
 
-            if(messageTextComponent != null && message != null && messageObjectReference != null)
+            if (messageTextComponent != null && message != null && messageObjectReference != null)
             {
                 SignalOnScreenMessageWithButton(messageObjectReference, messageTextComponent, message);
             }
@@ -4779,7 +4824,7 @@ namespace CompasXR.UI
             */
             if (messageGameObject != null)
             {
-                if(message != "None" && messageComponent != null)
+                if (message != "None" && messageComponent != null)
                 {
                     messageComponent.text = message;
                 }
@@ -4794,8 +4839,9 @@ namespace CompasXR.UI
             else
             {
                 Debug.LogWarning($"Message: Could not find message object or message component inside of GameObject {messageGameObject.name}.");
-            }  
+            }
         }
+
     }
 }
 

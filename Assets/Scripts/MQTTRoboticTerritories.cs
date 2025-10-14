@@ -306,13 +306,15 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public Header Header { get; private set; }
         public List<Frame> HumanFrames { get; private set; }
         public List<Frame> RobotFrames { get; private set; }
+        public List<int> IOControlIndexes { get; private set; }
         public string RobotName { get; private set; }
-        public MimicTrajectoryRequestMessage(List<Frame> humanFrames, List<Frame> robotFrames, string robotName, Header header = null)
+        public MimicTrajectoryRequestMessage(List<Frame> humanFrames, List<Frame> robotFrames, string robotName, List<int> ioControlIndexes, Header header = null)
         {
             Header = header ?? new Header();
             HumanFrames = humanFrames;
             RobotFrames = robotFrames;
             RobotName = robotName;
+            IOControlIndexes = ioControlIndexes;
         }
         public Dictionary<string, object> GetData()
         {
@@ -324,7 +326,8 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 { "header", Header.GetData() },
                 { "human_frames", MessageHandelingExtensions._getDataFromFramesList(HumanFrames) },
                 { "robot_frames", MessageHandelingExtensions._getDataFromFramesList(RobotFrames) },
-                { "robot_name", RobotName }
+                { "robot_name", RobotName },
+                { "io_control_indexes", IOControlIndexes }
             };
         }
         public static MimicTrajectoryRequestMessage Parse(string jsonString)
@@ -342,9 +345,11 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             var robotFramesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["human_frames"].ToString());
             List<Frame> robotFrames = Frame._parseFramesData(robotFramesData);
 
+            var ioControlIndexesData = JsonConvert.DeserializeObject<List<int>>(jsonObject["io_control_indexes"].ToString());
+
             var robotName = jsonObject["robot_name"].ToString();
 
-            return new MimicTrajectoryRequestMessage(humanFrames, robotFrames, robotName, header);
+            return new MimicTrajectoryRequestMessage(humanFrames, robotFrames, robotName, ioControlIndexesData, header);
         }
     }
 

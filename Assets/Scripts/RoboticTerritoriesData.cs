@@ -1070,13 +1070,13 @@ namespace CompasXR.RoboticTerritories.Data
             ObjectPicked = false;
             PickedObjectName = null;
 
-            if (PickedObjectVisualizationHuman != null && PickedObjectVisualizationHuman.activeSelf)
+            if (PickedObjectVisualizationHuman != null && PickedObjectVisualizationHuman.transform.parent.gameObject.activeSelf)
             {
-                PickedObjectVisualizationHuman.SetActive(false);
+                PickedObjectVisualizationHuman.transform.parent.gameObject.SetActive(false);
             }
-            if (PickedObjectVisualizationRobot != null && PickedObjectVisualizationRobot.activeSelf)
+            if (PickedObjectVisualizationRobot != null && PickedObjectVisualizationRobot.transform.parent.gameObject.activeSelf)
             {
-                PickedObjectVisualizationRobot.SetActive(false);
+                PickedObjectVisualizationRobot.transform.parent.gameObject.SetActive(false);
             }
             PickedObjectVisualizationHuman = null;
             PickedObjectVisualizationRobot = null;
@@ -1088,19 +1088,41 @@ namespace CompasXR.RoboticTerritories.Data
             ObjectPlaced = false;
             TargetPositionName = null;
 
-            if (TargetPositionVisualizationRobot != null && TargetPositionVisualizationRobot.activeSelf)
+            if (TargetPositionVisualizationRobot != null && TargetPositionVisualizationRobot.transform.parent.gameObject.activeSelf)
             {
-                TargetPositionVisualizationRobot.SetActive(false);
+                TargetPositionVisualizationRobot.transform.parent.gameObject.SetActive(false);
             }
-            if (TargetPositionVisualizationHuman != null && TargetPositionVisualizationHuman.activeSelf)
+            if (TargetPositionVisualizationHuman != null && TargetPositionVisualizationHuman.transform.parent.gameObject.activeSelf)
             {
-                TargetPositionVisualizationHuman.SetActive(false);
+                TargetPositionVisualizationHuman.transform.parent.gameObject.SetActive(false);
             }
             TargetPositionVisualizationRobot = null;
             TargetPositionVisualizationHuman = null;
 
             PlacePointTrajectoryIndex = -1;
         }
+        public List<int> CreateIOControlIndeciesFromMimicPointCount(int mimicPointCount)
+        {
+            List<int> ioControlIndecies = new List<int>();
+
+            for (int i = 0; i < mimicPointCount; i++)
+            {
+                if (PickPointTrajectoryIndex != -1 && i == PickPointTrajectoryIndex)
+                {
+                    ioControlIndecies.Add(1); //Pick
+                }
+                else if (PlacePointTrajectoryIndex != -1 && i == PlacePointTrajectoryIndex)
+                {
+                    ioControlIndecies.Add(2); //Place
+                }
+                else
+                {
+                    ioControlIndecies.Add(0); //No Action
+                }
+            }
+            return ioControlIndecies;
+        }
+
     }
 
     [System.Serializable]
