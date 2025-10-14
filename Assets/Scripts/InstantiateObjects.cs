@@ -1235,8 +1235,11 @@ namespace CompasXR.Core
             */
             if (MimicHumanPoints.Count > 0 && MimicRobotPoints.Count > 0)
             {
-                // ObjectInstantiaion.DestroyChildrenOfGameObject(MimicHumanPointsParent);
-                // ObjectInstantiaion.DestroyChildrenOfGameObject(MimicRobotPointsParent);
+                if (MimicHumanPoints.Count != MimicRobotPoints.Count)
+                {
+                    Debug.LogError("DestroyMimicZoneObjects: Human and Robot Points count mismatch.");
+                }
+
                 int pickIndex = -1;
                 int placeIndex = -1;
 
@@ -1264,6 +1267,7 @@ namespace CompasXR.Core
                         continue;
                     }
                     Destroy(MimicHumanPoints[i]);
+                    Destroy(MimicRobotPoints[i]);
                 }
 
                 MimicHumanPoints.Clear();
