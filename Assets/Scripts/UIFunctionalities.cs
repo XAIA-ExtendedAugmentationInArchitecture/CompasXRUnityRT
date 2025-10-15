@@ -344,6 +344,9 @@ namespace CompasXR.UI
 
         //TODO: Robotic Territories Testing ///////////////////////////////////////////////////////////////////////////////////
 
+        //TODO : REALTIME MIMCIC PICK AND ONSCREEN MESSAGES
+        public GameObject RealtimeMimicCannotFindTargetOnScreenMsg;
+
         /////////////////////////////////// Monobehaviour Methods ///////////////////////////////////////////////////////////        
         void Start()
         {
@@ -1882,6 +1885,8 @@ namespace CompasXR.UI
                     // Additional logic for both zones can go here
                     Vector3 cameraPositionObjectPosition = arCamera.transform.position;
                     Quaternion cameraRotationObjectRotation = arCamera.transform.rotation;
+                    Vector3 devicePosePosition = devicePoseBehavior.transform.position;
+
 
                     if (ObjectInstantiaion.IsPositionWithinBox(humanZoneObject, cameraPositionObjectPosition))
                     {
@@ -1912,7 +1917,6 @@ namespace CompasXR.UI
                         //TODO: ADD METHOD TO RETURN IF THRESHOLD IS NOT MET.
                         float DRAWINGTHRESHOLD = instantiateObjects.REALTIMEMIMICDRAWRINGTHRESHOLD; //TODO: TESTING....
                         float ROTTHRESHOLD = 3.0f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
-                        // if (instantiateObjects.RealtimeMimicHumanPoints.Count >= 1 && instantiateObjects.RealtimeMimicRobotPoints.Count >= 1)
                         if(REALTIMEMIMICINDEXCOUNTER >= 1)
                         {
                             Vector3 lastRealtimeMimicPointPosition = instantiateObjects.RealtimeMimicHumanPoints[instantiateObjects.RealtimeMimicHumanPoints.Count - 1].transform.position;
@@ -1933,11 +1937,6 @@ namespace CompasXR.UI
                                 Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Rotations and Positions are closer than threshold, not creating new points.");
                                 return;
                             }
-                            // if (ObjectInstantiaion.Vector3sAreCloserThenThreshold(cameraPositionObjectPosition, lastRealtimeMimicPointPosition, DRAWINGTHRESHOLD))
-                            // {
-                            //     Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY: Points are closer than threshold, not creating new points.");
-                            //     return;
-                            // }
                             else
                             {
                                 Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Camera Position is within the Human Zone Object and Points are not closer than threshold point will be set for Index {REALTIMEMIMICINDEXCOUNTER}.");
@@ -1948,6 +1947,37 @@ namespace CompasXR.UI
                                 ref instantiateObjects.RealtimeMimicHumanPoints, ref instantiateObjects.RealtimeMimicRobotPoints,
                                 instantiateObjects.RealtimeMimicHumanPointsParent, instantiateObjects.RealtimeMimicRobotPointsParent,
                                 instantiateObjects.RealtimeMimicHumanLine, instantiateObjects.RealtimeMimicRobotLine, REALTIMEMIMICINDEXCOUNTER, RealtimeMimicMirrorToggle.isOn);
+
+                                //TODO: Testing ADD here.....
+                                List<string> colliderObjectHits = instantiateObjects.GetAllCollidersNamesAtPoint(devicePosePosition);
+                                (int pickState, string pickOrPlaceItemName) = instantiateObjects.DetermineOrAndPlaceObjectFromColliderHitsRTMimic(colliderObjectHits);
+
+                                if (pickState == 0)
+                                {
+                                    Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: This point should be made as normal and published {pickOrPlaceItemName}");
+                                }
+                                else if (pickState == 1)
+                                {
+                                    Debug.LogWarning($"CreateRealtimeMimicPointsBasicTEMPORARY: This point should not be made..... for some reason {pickOrPlaceItemName}");
+                                    return;
+                                }
+                                else if (pickState == 2)
+                                {
+                                    Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: This point should be a pick point {pickOrPlaceItemName}");
+                                    //TODO: Signal On screen message that pick could be made. The only thing is that I need to be sure the published value has correct index.
+                                    return;
+                                }
+                                else if (pickState == 3)
+                                {
+                                    Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: This point should be a place point {pickOrPlaceItemName}.");
+                                    //TODO: signal on screen message that place could be made. The only thing is that I need to be sure the published value has correct index.
+                                    return;
+                                }
+                                else
+                                {
+                                    Debug.LogError("CreateRealtimeMimicPointsBasicTEMPORARY: This point should not be made.....");
+                                    return;
+                                }
 
                                 //TODO: CONVERT TO FRAME FROM LAST GAMEOBJECT IN ROBOT POINTS LIST.
                                 GameObject lastRealtimeMimicPointTest = instantiateObjects.RealtimeMimicRobotPoints[instantiateObjects.RealtimeMimicRobotPoints.Count - 1];
@@ -2101,11 +2131,6 @@ namespace CompasXR.UI
 
                         //TODO: THIS NEEDS TO TAKE CODE FROM THE OLD APPLICATION THAT CHECKS IF THE COLDIDERS AR ON OR NOT...
                         List<string> colliderObjectHits = instantiateObjects.GetAllCollidersNamesAtPoint(devicePosePosition);
-                        if (colliderObjectHits.Count <= 0)
-                        {
-                            Debug.LogError("SetMimicPoint: No Colliders found at Device Pose Position.");
-                            return;
-                        }
 
                         // (int pickState, string pickOrPlaceItemName) = instantiateObjects.DeterminePickAndPlaceStateFromColliderHitsPickThenPlace(colliderObjectHits);
                         (int pickState, string pickOrPlaceItemName) = instantiateObjects.DeterminePickAndPlaceStateFromColliderHitsPickorPlace(colliderObjectHits);

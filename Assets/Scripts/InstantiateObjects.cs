@@ -1985,7 +1985,7 @@ namespace CompasXR.Core
 
             if (collidedWithGameObjectNamesList == null || collidedWithGameObjectNamesList.Count == 0)
             {
-                Debug.LogWarning("CameraIsWithinTargetOrObservedGeometry: Collided With GameObject Names List is null or empty.");
+                Debug.LogWarning("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Collided With GameObject Names List is null or empty.");
                 return (0, "None");
             }
 
@@ -1998,13 +1998,13 @@ namespace CompasXR.Core
 
                 if (string.IsNullOrEmpty(name))
                 {
-                    Debug.LogWarning("CameraIsWithinTargetOrObservedGeometry: GameObject name is null or empty.");
+                    Debug.LogWarning("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: GameObject name is null or empty.");
                     continue;
                 }
 
                 if (name == "AnchorCube")
                 {
-                    Debug.LogWarning("CameraIsWithinTargetOrObservedGeometry: Camera is within the Anchor Cube.");
+                    Debug.LogWarning("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Camera is within the Anchor Cube.");
                     potentialSetOptions.Add(1);
                     Debug.Log("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Set Target is within the Anchor block, so it cannot be set.");
                     string message = "WARNING: This point cannot be set as it is within the Anchor Block location.";
@@ -2015,7 +2015,7 @@ namespace CompasXR.Core
                 if (Regex.IsMatch(name, @"^Cube\d{2}$"))
                 {
                     //This does not check if the object satifies a target or not... I could try to add this, but ultimately it is not needed. It only means that people can pick up objects that are already placed....
-                    Debug.Log($"CameraIsWithinTargetOrObservedGeometry: '{name}' matches CubeXX (Observed Geometry).");
+                    Debug.Log($"DeterminePickAndPlaceStateFromColliderHitsPickorPlace: '{name}' matches CubeXX (Observed Geometry).");
                     if (!userIniatedMimicPickandPlaceManager.ObjectPicked)
                     {
                         potentialSetOptions.Add(2);
@@ -2029,7 +2029,7 @@ namespace CompasXR.Core
                     }
                     else
                     {
-                        Debug.Log("CameraIsWithinTargetOrObservedGeometry: Object is already picked, cannot pick another.");
+                        Debug.Log("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Object is already picked, cannot pick another.");
                         //TODO: Signal Onscreen Message. This target cannot be picked because it is already holding an object.
                         Debug.Log("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Set Target is within the within another know observed block, so it cannot be set.");
                         string message = "WARNING: This point cannot be set, a pick is already set and there cannot be duplicates.";
@@ -2041,21 +2041,22 @@ namespace CompasXR.Core
 
                 if (Regex.IsMatch(name, @"^G[0-8]$")) // TODO: MAY NEED TO CHANGE THIS TO MAX INDEX AND MAKE IT AN INPUT LATER...
                 {
-                    Debug.Log($"CameraIsWithinTargetOrObservedGeometry: '{name}' matches G0..G8 (Target Geometry).");
+                    Debug.Log($"DeterminePickAndPlaceStateFromColliderHitsPickorPlace: '{name}' matches G0..G8 (Target Geometry).");
                     GoalObjectComponent currentTargetClass = MimicGoalsManager.GoalStatusObserver.ComponentStates[name];
                     if (currentTargetClass == null)
                     {
-                        Debug.LogError($"CameraIsWithinTargetOrObservedGeometry: Current Target Class for '{name}' is null.");
+                        Debug.LogError($"DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Current Target Class for '{name}' is null.");
                         //TODO: Signal Onscreen Error. Fatal Error..... restart please.
                         Debug.Log("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Cannot find target this is a fatal error, please reset the application.");
                         string message = "WARNING: This is a fatal error, because the target is not found please reset the application.";
-                        UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab,ref UIFunctionalities.UserInitiatedMimicCannotFindTargetOnScreenMsg, "UIMimicPointCannotFindSpecifiedTarget", UIFunctionalities.MessagesParent, message, "DeterminePickAndPlaceStateFromColliderHitsPickorPlace: The place target cannot be found, THIS IS A FATAL ERROR.");
+                        UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.UserInitiatedMimicCannotFindTargetOnScreenMsg, "UIMimicPointCannotFindSpecifiedTarget", UIFunctionalities.MessagesParent, message, "DeterminePickAndPlaceStateFromColliderHitsPickorPlace: The place target cannot be found, THIS IS A FATAL ERROR.");
+                        return (1, "None");
                     }
                     else
                     {
                         if (currentTargetClass.IsSatisfied)
                         {
-                            Debug.LogWarning($"CameraIsWithinTargetOrObservedGeometry: Current Target '{name}' is already satisfied, cannot place another object here.");
+                            Debug.LogWarning($"DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Current Target '{name}' is already satisfied, cannot place another object here.");
                             potentialSetOptions.Add(1);
                             //TODO: Signal Onscreen Message. This target cannot be placed because it is already satisfied.
                             Debug.Log("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: The target cannot be set because this target is already satisfied.");
@@ -2066,7 +2067,7 @@ namespace CompasXR.Core
                     }
                     if(userIniatedMimicPickandPlaceManager.ObjectPlaced)
                     {
-                        Debug.Log("CameraIsWithinTargetOrObservedGeometry: Object is already placed, cannot place another, this should be set as a normal point.");
+                        Debug.Log("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Object is already placed, cannot place another, this should be set as a normal point.");
                         potentialSetOptions.Add(0);
                     }
                     else if(!userIniatedMimicPickandPlaceManager.ObjectPlaced)
@@ -2075,7 +2076,7 @@ namespace CompasXR.Core
                         {
                             //This is the normal case.
                             userIniatedMimicPickandPlaceManager.ReverseConfigurations = false;
-                            Debug.Log("CameraIsWithinTargetOrObservedGeometry: User is placing after picking, normal configurations.");
+                            Debug.Log("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: User is placing after picking, normal configurations.");
                             potentialSetOptions.Add(3);
                             itemIndex = name; // store the first valid G index
                         }
@@ -2083,7 +2084,7 @@ namespace CompasXR.Core
                         {
                             //This means that the user is placing without picking first, so we need to reverse the configurations.
                             userIniatedMimicPickandPlaceManager.ReverseConfigurations = true;
-                            Debug.LogWarning("CameraIsWithinTargetOrObservedGeometry: User is placing without picking first, reversing configurations prior to sending should happen.");
+                            Debug.LogWarning("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: User is placing without picking first, reversing configurations prior to sending should happen.");
                             potentialSetOptions.Add(3);
                             itemIndex = name;
                         }
@@ -2096,13 +2097,13 @@ namespace CompasXR.Core
                     // }
                     // else
                     // {
-                    //     Debug.Log("CameraIsWithinTargetOrObservedGeometry: No object is picked, cannot place.");
+                    //     Debug.Log("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: No object is picked, cannot place.");
                     //     //TODO: Signal Onscreen Message. This target cannot be placed because it is not holding an object.
                     //     potentialSetOptions.Add(1);
                     // }
                     continue;
                 }
-                Debug.LogWarning($"CameraIsWithinTargetOrObservedGeometry: '{name}' does not match pick/place patterns.");
+                Debug.LogWarning($"DeterminePickAndPlaceStateFromColliderHitsPickorPlace: '{name}' does not match pick/place patterns.");
                 potentialSetOptions.Add(0);
             }
 
@@ -2120,6 +2121,261 @@ namespace CompasXR.Core
 
             return (returnIntOption, itemIndex);
         }
+
+        public (int returnIntOption, string itemName) DetermineOrAndPlaceObjectFromColliderHitsRTMimic(List<string> collidedWithGameObjectNamesList) //TODO: The Pick & Place State Needs to be updated after this function.
+        {
+            // 0 = PointShouldBeMade
+            // 1 = PointShouldNotBeMade
+            // 2 = ObjectShouldBePicked
+            // 3 = ObjectShouldBePlaced
+
+            if (collidedWithGameObjectNamesList == null || collidedWithGameObjectNamesList.Count == 0)
+            {
+                Debug.LogWarning("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Collided With GameObject Names List is null or empty.");
+                return (0, "None");
+            }
+
+            bool sawRestricted = false;
+            bool sawSatisfiedGoal = false;
+            string satisfiedByCubeName = null;
+            bool sawUnsatisfiedGoal = false;
+            string unsatisfiedGoalName = "None";
+            bool sawPickCube = false;
+            string pickCubeName = "None";
+
+            foreach (var name in collidedWithGameObjectNamesList)
+            {
+                if (string.IsNullOrEmpty(name))
+                {
+                    Debug.LogWarning("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: GameObject name is null or empty.");
+                    continue;
+                }
+
+                if (name == "AnchorCube")
+                {
+                    Debug.LogWarning("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Camera is within the Anchor Cube Collider. Set Point Anyway.");
+                    sawRestricted = true;
+                    continue;
+                }
+
+                // G0..G8 (Target Geometry)
+                if (name.Length == 2 && name[0] == 'G' && name[1] >= '0' && name[1] <= '8')
+                {
+                    Debug.Log($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: '{name}' matches G0..G8 (Target Geometry).");
+
+                    if (!MimicGoalsManager.GoalStatusObserver.ComponentStates.TryGetValue(name, out var currentTargetClass) || currentTargetClass == null)
+                    {
+                        Debug.LogError($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Current Target Class for '{name}' is null. Fatal error, please reset the application.");
+                        string message = "WARNING: Target not found. Please reset the application.";
+                        UserInterface.SignalOnScreenMessageFromPrefab(
+                            ref UIFunctionalities.OnScreenErrorMessagePrefab,
+                            ref UIFunctionalities.RealtimeMimicCannotFindTargetOnScreenMsg,
+                            "UIMimicPointCannotFindSpecifiedTarget",
+                            UIFunctionalities.MessagesParent,
+                            message,
+                            "DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Fatal Error - Missing Target."
+                        );
+                        return (1, "None");
+                    }
+
+                    if (currentTargetClass.IsSatisfied)
+                    {
+                        Debug.LogWarning($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Current Target '{name}' is already satisfied, might not want to place here.");
+                        sawSatisfiedGoal = true;
+                        satisfiedByCubeName = currentTargetClass.SatisfyingObservedGeometry?.Name ?? "None";
+                        Debug.Log($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: '{name}' is satisfied by '{satisfiedByCubeName}'.");
+                    }
+                    else
+                    {
+                        Debug.Log($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Target '{name}' is not satisfied, potential place candidate.");
+                        if (!sawUnsatisfiedGoal)
+                        {
+                            sawUnsatisfiedGoal = true;
+                            unsatisfiedGoalName = name;
+                        }
+                    }
+                    continue;
+                }
+
+                // CubeXX (Observed Geometry)
+                if (name.StartsWith("Cube") && name.Length == 6 && char.IsDigit(name[4]) && char.IsDigit(name[5]))
+                {
+                    Debug.Log($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: '{name}' matches CubeXX (Observed Geometry).");
+                    if (!sawPickCube)
+                    {
+                        sawPickCube = true;
+                        pickCubeName = name;
+                    }
+                    continue;
+                }
+
+                Debug.LogWarning($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: '{name}' does not match pick/place patterns.");
+            }
+
+            // -------------------- RESOLUTION --------------------
+
+            // Conflict Rule: satisfied goal + cube ≠ satisfying cube ⇒ ignore (0)
+            if (sawSatisfiedGoal && sawPickCube &&
+                !string.Equals(pickCubeName, satisfiedByCubeName, StringComparison.Ordinal))
+            {
+                Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Conflict detected — satisfied goal and unrelated cube present. Ignoring and setting point as normal (return 0).");
+                return (0, "None");
+            }
+
+            // If satisfied goal alone or with its satisfying cube ⇒ ignore (return 0)
+            if (sawSatisfiedGoal)
+            {
+                if (sawPickCube && string.Equals(pickCubeName, satisfiedByCubeName, StringComparison.Ordinal))
+                {
+                    Debug.Log($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Satisfied goal and satisfying cube '{pickCubeName}' detected — ignoring placement.");
+                }
+                else
+                {
+                    Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Satisfied goal detected — ignoring placement.");
+                }
+                return (0, "None");
+            }
+
+            // Pick first (higher priority)
+            if (sawPickCube)
+            {
+                Debug.Log($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Returning Pick action for '{pickCubeName}'.");
+                return (2, pickCubeName);
+            }
+
+            // Place next
+            if (sawUnsatisfiedGoal)
+            {
+                Debug.Log($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Returning Place action for '{unsatisfiedGoalName}'.");
+                return (3, unsatisfiedGoalName);
+            }
+
+            // Restricted zones
+            if (sawRestricted)
+            {
+                Debug.LogWarning("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Restricted zone detected. Point should not be made.");
+                return (1, "None");
+            }
+
+            // Default case
+            Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: No matching colliders. Proceed as normal.");
+            return (0, "None");
+        }
+        // {
+        //     // TODO: Return codes:
+        //     // 0 = PointShouldBeMade      : Camera not within pick/place; proceed as normal.
+        //     // 1 = PointShouldNotBeMade   : Camera within restricted zone; do not make a point.
+        //     // 2 = ObjectShouldBePicked   : Camera within pickable observed Geometry (CubeXX).
+        //     // 3 = ObjectShouldBePlaced   : Camera within placeable target Geometry (G0..G8).
+
+        //     if (collidedWithGameObjectNamesList == null || collidedWithGameObjectNamesList.Count == 0)
+        //     {
+        //         Debug.LogWarning("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Collided With GameObject Names List is null or empty.");
+        //         return (0, "None");
+        //     }
+
+        //     string itemIndex = "None";
+        //     List<int> potentialSetOptions = new List<int>();
+        //     string satisfyingComponentName = "None";
+
+        //     for (int i = 0; i < collidedWithGameObjectNamesList.Count; i++)
+        //     {
+        //         string name = collidedWithGameObjectNamesList[i];
+
+        //         if (string.IsNullOrEmpty(name))
+        //         {
+        //             Debug.LogWarning("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: GameObject name is null or empty.");
+        //             continue;
+        //         }
+
+        //         if (name == "AnchorCube")
+        //         {
+        //             Debug.LogWarning("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Camera is within the Anchor Cube Collider Set Point Anyway.");
+        //             potentialSetOptions.Add(0);
+        //             continue;
+        //         }
+
+        //         if (Regex.IsMatch(name, @"^G[0-8]$")) // TODO: MAY NEED TO CHANGE THIS TO MAX INDEX AND MAKE IT AN INPUT LATER...
+        //         {
+        //             Debug.Log($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: '{name}' matches G0..G8 (Target Geometry).");
+        //             GoalObjectComponent currentTargetClass = MimicGoalsManager.GoalStatusObserver.ComponentStates[name];
+        //             if (currentTargetClass == null)
+        //             {
+        //                 Debug.LogError($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Current Target Class for '{name}' is null.");
+        //                 //TODO: Signal Onscreen Error. Fatal Error..... restart please.
+        //                 Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Cannot find target this is a fatal error, please reset the application.");
+        //                 string message = "WARNING: This is a fatal error, because the target is not found please reset the application.";
+        //                 UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.RealtimeMimicCannotFindTargetOnScreenMsg, "UIMimicPointCannotFindSpecifiedTarget", UIFunctionalities.MessagesParent, message, "DeterminePickAndPlaceStateFromColliderHitsPickorPlace: The place target cannot be found, THIS IS A FATAL ERROR.");
+        //                 return (1, "None");
+        //             }
+        //             else
+        //             {
+        //                 if (currentTargetClass.IsSatisfied)
+        //                 {
+
+        //                     Debug.LogWarning($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Current Target '{name}' is already satisfied, might not want to place here.");
+        //                     potentialSetOptions.Add(3); // This means that the point should look for a pick.
+        //                     // potentialSetOptions.Add(0); // This means that the point can be made as normal.
+        //                     //TODO: Add flag to check if there is something that should be satisfied??????
+        //                     satisfyingComponentName = currentTargetClass.SatisfyingObservedGeometry.Name;
+        //                 }
+        //                 else
+        //                 {
+        //                     //TODO: Return place here.... The next component should signal an onscreen message to ask if they want to place.
+        //                     Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: The target is not satisfied, proceeding to request place prompt.");
+        //                     potentialSetOptions.Add(3);
+        //                     itemIndex = name;
+        //                 }
+        //             }
+        //             continue;
+        //         }
+
+        //         if (Regex.IsMatch(name, @"^Cube\d{2}$"))
+        //         {
+        //             //This does not check if the object satifies a target or not... I could try to add this, but ultimately it is not needed. It only means that people can pick up objects that are already placed....
+        //             Debug.Log($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: '{name}' matches CubeXX (Observed Geometry).");
+        //             if (satisfyingComponentName != "None")
+        //             {
+        //                 if (name == satisfyingComponentName)
+        //                 {
+        //                     Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: The potential pick object satisfies the target, this should be ignored.");
+        //                     potentialSetOptions.Add(0);
+        //                 }
+        //                 else
+        //                 {
+        //                     Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: The potential pick object does NOT satisfy the target, proceeding to request pick.");
+        //                     potentialSetOptions.Add(2);
+        //                     itemIndex = name;
+        //                     // satisfyingComponentName = "None"; // reset the satisfying component name
+        //                 }
+        //             }
+        //             else
+        //             {
+
+        //                 Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: The potential pick object does NOT satisfy the target, proceeding to request pick.");
+        //                 potentialSetOptions.Add(2);
+        //                 itemIndex = name;
+        //             }
+        //             continue;
+        //         }
+        //         Debug.LogWarning($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: '{name}' does not match pick/place patterns.");
+        //         potentialSetOptions.Add(0);
+        //     }
+
+        //     int returnIntOption = 0;
+
+        //     // Priority: 2 > 3 > 1 > 0
+        //     if (potentialSetOptions.Contains(2))
+        //         returnIntOption = 2;
+        //     else if (potentialSetOptions.Contains(3))
+        //         returnIntOption = 3;
+        //     else if (potentialSetOptions.Contains(1))
+        //         returnIntOption = 1;
+        //     else
+        //         returnIntOption = 0;
+
+        //     return (returnIntOption, itemIndex);
+        // }
 
         //TODO: Finding targets and information for pick and place in mimic User Initiated mode.
         public void DestroyRealtimeMimicZoneObjects()
