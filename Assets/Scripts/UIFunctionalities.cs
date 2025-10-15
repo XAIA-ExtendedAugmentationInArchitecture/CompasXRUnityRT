@@ -478,7 +478,6 @@ namespace CompasXR.UI
             ref MimicPreviousModeButtonObject,
             "PreviousModeButton", PreviousMimicModeButtonMethod);
         }
-
         public void DrawLinesToggleMethod(bool toggle)
         {
             /*
@@ -1026,8 +1025,9 @@ namespace CompasXR.UI
                 
                 //Control Zone Coloring, UI Objects, and AR Objects
                 ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
-                SetUIObjectsFromCurrentMode(databaseManager.ProjectZones.CurrentZone);
+                // SetUIObjectsFromCurrentMode(databaseManager.ProjectZones.CurrentZone);
                 ControlARZoneObjectsBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
+                SetUIObjectsFromCurrentMode(databaseManager.ProjectZones.CurrentZone);
                 instantiateObjects.SetZoneOnlyCurrentZoneVisible(databaseManager.ProjectZones.CurrentZone);
 
                 Debug.Log($"SetCurrentZoneFromDropdown: Attempting to push data to database {CurrentZone}");
@@ -1736,8 +1736,6 @@ namespace CompasXR.UI
                     {
                         instantiateObjects.MimicMirroredGeometryManagerImplementation.UpdateAllComponentStates(instantiateObjects.MimicGoalsManager.GoalStatusObserver.ComponentStates);
                     }
-
-
                     if (trajectoryVisualizer.ActiveRobot != null)
                     {
                         if (trajectoryVisualizer.humanZoneMimicReachibility == null)
@@ -2334,7 +2332,7 @@ namespace CompasXR.UI
                 case ProjectZones.MimicZoneMode.UserInitiated:
                     SetUserInitiatedMimicControlsActivity(true, true, true, false, false);
                     SetRealtimeMimicControlsActivity(false, false);
-
+                    AdaptObjectCollidersForMimicMode(ProjectZones.MimicZoneMode.UserInitiated, instantiateObjects.MimicGoalsManager, instantiateObjects.MimicMirroredGeometryManagerImplementation);
                     //TODO: Line Testing
                     if (instantiateObjects.MimicHumanLine != null)
                     {
@@ -2359,6 +2357,7 @@ namespace CompasXR.UI
                 case ProjectZones.MimicZoneMode.RealtimeMimic:
                     SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
                     SetRealtimeMimicControlsActivity(true, true);
+                    AdaptObjectCollidersForMimicMode(ProjectZones.MimicZoneMode.RealtimeMimic, instantiateObjects.MimicGoalsManager, instantiateObjects.MimicMirroredGeometryManagerImplementation);
 
                     //TODO: Line Testing
                     if (instantiateObjects.MimicHumanLine != null)
@@ -2382,6 +2381,7 @@ namespace CompasXR.UI
                     Debug.Log("SetMimicControlsBasedOnCurrentMimicMode: Setting UI Objects for SetPoints Mode.");
                     break;
                 default:
+                    AdaptObjectCollidersForMimicMode(ProjectZones.MimicZoneMode.UserInitiated, instantiateObjects.MimicGoalsManager, instantiateObjects.MimicMirroredGeometryManagerImplementation);
                     SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
                     SetRealtimeMimicControlsActivity(false, false);
                     Debug.LogWarning("SetMimicControlsBasedOnCurrentMimicMode: Current Mimic Mode is not set.");
@@ -2735,6 +2735,69 @@ namespace CompasXR.UI
                 Debug.LogWarning("Reachability Toggle is not on.");
             }
         }
+
+        public void AdaptObjectCollidersForMimicMode(ProjectZones.MimicZoneMode mimicMode, GoalManager mimicGoalManager, MimicMirroredGeometryManager mimicMirroredGeometryManager)
+        {
+            List<GoalObject> allGoalObjects = mimicGoalManager.Goals;
+            GameObject mirroredGoalsParent = mimicMirroredGeometryManager.GoalsParent;
+            Dictionary<string, ObservedGeometry> currentObservedGeometryDict = databaseManager.observedGeometriesDict;
+            Dictionary<string, ObservedGeometry> mimicMirroredObservedGeometries = mimicMirroredGeometryManager.MimicObservedGeometriesDict;
+
+            if (allGoalObjects == null || allGoalObjects.Count == 0)
+            {
+                Debug.LogWarning("AdaptObjectCollidersForMimicMode: No Goal Objects found in Mimic Goal Manager.");
+                return;
+            }
+            if (mirroredGoalsParent == null || mirroredGoalsParent.transform.childCount == 0)
+            {
+                Debug.LogWarning("AdaptObjectCollidersForMimicMode: No Mirrored Goals found in Mimic Mirrored Geometry Manager.");
+                return;
+            }
+            if (currentObservedGeometryDict == null || currentObservedGeometryDict.Count == 0)
+            {
+                Debug.LogWarning("AdaptObjectCollidersForMimicMode: No Observed Geometries found in Database Manager.");
+                return;
+            }
+            if (mimicMirroredObservedGeometries == null || mimicMirroredObservedGeometries.Count == 0)
+            {
+                Debug.LogWarning("AdaptObjectCollidersForMimicMode: No Mimic Mirrored Observed Geometries found in Mimic Mirrored Geometry Manager.");
+                return;
+            }
+
+            switch (mimicMode)
+            {
+                case ProjectZones.MimicZoneMode.UserInitiated:
+                    {
+                        Debug.Log("AdaptObjectCollidersForMimicMode: Setting Colliders for User Initiated Mimic Mode.");
+                        // float yScale = 0.3f;
+                        // float yCenterValue = 0.0f;
+                        float yScale = 1.0f;
+                        float yCenterValue = 0.0f;
+                        instantiateObjects.ModifyCollidersForMimicModes(allGoalObjects, mirroredGoalsParent, currentObservedGeometryDict, mimicMirroredObservedGeometries, yScale, yCenterValue);
+                        break;
+                    }
+
+                case ProjectZones.MimicZoneMode.RealtimeMimic:
+                    {
+                        Debug.Log("AdaptObjectCollidersForMimicMode: Setting Colliders for Realtime Mimic Mode.");
+                        float yScale = 2.33f;
+                        float yCenterValue = 0.35f;
+                        instantiateObjects.ModifyCollidersForMimicModes(allGoalObjects, mirroredGoalsParent, currentObservedGeometryDict, mimicMirroredObservedGeometries, yScale, yCenterValue);
+                        break;
+                    }
+
+                default:
+                    {
+                        Debug.LogWarning("AdaptObjectCollidersForMimicMode: Current Mimic Mode is not set.");
+                        float yScale = 1.0f;
+                        float yCenterValue = 0.0f;
+                        instantiateObjects.ModifyCollidersForMimicModes(allGoalObjects, mirroredGoalsParent, currentObservedGeometryDict, mimicMirroredObservedGeometries, yScale, yCenterValue);
+                        break;
+                    }
+            }
+        }
+
+
 
         //TODO: RoboticTerritories Testing ///////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()

@@ -1400,7 +1400,7 @@ namespace CompasXR.Core
         }
 
         //TODO: Double check that this works.....
-        public void DestroyUserInstatiatedMimicZoneObjects(bool visibility=false)
+        public void DestroyUserInstatiatedMimicZoneObjects(bool visibility = false)
         {
             /*
             * Method is used to destroy the mimic zone objects in the AR space
@@ -1456,6 +1456,164 @@ namespace CompasXR.Core
                 Debug.Log("DestroyMimicZoneObjects: Mimic Points are empty");
             }
         }
+
+        //TODO: collider adjustment....
+        public void ModifyCollidersForMimicModes(List<GoalObject> allGoalObjects, GameObject mirroredGoalsParent, Dictionary<string, ObservedGeometry> currentObservedGeometryDict, Dictionary<string, ObservedGeometry> mimicMirroredObservedGeometryDict, float yScale, float yCenterValue)
+        {
+            /*
+            * Method is used to modify the colliders for the mimic modes in the AR space
+            */
+            if (allGoalObjects == null || allGoalObjects.Count == 0)
+            {
+                Debug.LogWarning("ModifyCollidersForMimicModes: All Goal Objects list is null or empty.");
+                return;
+            }
+            if (mirroredGoalsParent == null)
+            {
+                Debug.LogWarning("ModifyCollidersForMimicModes: Mirrored Goals Parent is null.");
+                return;
+            }
+            if (currentObservedGeometryDict == null || currentObservedGeometryDict.Count == 0)
+            {
+                Debug.LogWarning("ModifyCollidersForMimicModes: Current Observed Geometry Dictionary is null or empty.");
+                return;
+            }
+            if (mimicMirroredObservedGeometryDict == null || mimicMirroredObservedGeometryDict.Count == 0)
+            {
+                Debug.LogWarning("ModifyCollidersForMimicModes: Mimic Current Selected Goal Index Dictionary is null or empty.");
+                return;
+            }
+
+            foreach (GoalObject goal in allGoalObjects)
+            {
+                foreach (KeyValuePair<string, GoalObjectComponent> goalItem in goal.GoalObjectComponentsDict)
+                {
+                    string componentId = goalItem.Key;
+                    GameObject componentGameObject = goalItem.Value.ComponentGameObject;
+                    if (componentGameObject != null)
+                    {
+                        BoxCollider boxCollider = componentGameObject.GetComponentInChildren<BoxCollider>();
+                        if (boxCollider != null)
+                        {
+                            if (boxCollider.size.y == yScale && boxCollider.center.y == yCenterValue)
+                            {
+                                Debug.LogWarning($"ModifyCollidersForMimicModes: Collider for {componentGameObject.name} already has the desired size and center.");
+                                continue;
+                            }
+                            boxCollider.size = new Vector3(boxCollider.size.x, yScale, boxCollider.size.z);
+                            boxCollider.center = new Vector3(boxCollider.center.x, yCenterValue, boxCollider.center.z);
+                            Debug.Log($"ModifyCollidersForMimicModes: Modified Collider for {componentGameObject.name} to size {boxCollider.size} and center {boxCollider.center}");
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"ModifyCollidersForMimicModes: BoxCollider is null for {componentGameObject.name}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"ModifyCollidersForMimicModes: Mirrored Component not found for {goalItem.Value.Name} in {goal.Name}");
+                    }
+                }
+            }
+
+            Debug.Log("ModifyCollidersForMimicModes: Completed modifying colliders for all goal objects.");
+
+            foreach (KeyValuePair<string, ObservedGeometry> entry in currentObservedGeometryDict)
+            {
+                string geometryId = entry.Key;
+                ObservedGeometry observedGeometry = entry.Value;
+                GameObject geometryGameObject = observedGeometry.GeometryObject;
+                if (geometryGameObject != null)
+                {
+                    BoxCollider boxCollider = geometryGameObject.GetComponentInChildren<BoxCollider>();
+                    if (boxCollider != null)
+                    {
+                        if (boxCollider.size.y == yScale && boxCollider.center.y == yCenterValue)
+                        {
+                            Debug.LogWarning($"ModifyCollidersForMimicModes: Collider for {geometryGameObject.name} already has the desired size and center.");
+                            continue;
+                        }
+                        boxCollider.size = new Vector3(boxCollider.size.x, yScale, boxCollider.size.z);
+                        boxCollider.center = new Vector3(boxCollider.center.x, yCenterValue, boxCollider.center.z);
+                        Debug.Log($"ModifyCollidersForMimicModes: Modified Collider for {geometryGameObject.name} to size {boxCollider.size} and center {boxCollider.center}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"ModifyCollidersForMimicModes: BoxCollider is null for {geometryGameObject.name}");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"ModifyCollidersForMimicModes: Geometry GameObject is null for ID {geometryId}");
+                }
+            }
+            Debug.Log("ModifyCollidersForMimicModes: Completed modifying colliders for all OBSERVED GEOMETRY.");
+
+            foreach (KeyValuePair<string, ObservedGeometry> entry in mimicMirroredObservedGeometryDict)
+            {
+                string geometryId = entry.Key;
+                ObservedGeometry observedGeometry = entry.Value;
+                GameObject geometryGameObject = observedGeometry.GeometryObject;
+                if (geometryGameObject != null)
+                {
+                    BoxCollider boxCollider = geometryGameObject.GetComponentInChildren<BoxCollider>();
+                    if (boxCollider != null)
+                    {
+                        if (boxCollider.size.y == yScale && boxCollider.center.y == yCenterValue)
+                        {
+                            Debug.LogWarning($"ModifyCollidersForMimicModes: Collider for {geometryGameObject.name} already has the desired size and center.");
+                            continue;
+                        }
+                        boxCollider.size = new Vector3(boxCollider.size.x, yScale, boxCollider.size.z);
+                        boxCollider.center = new Vector3(boxCollider.center.x, yCenterValue, boxCollider.center.z);
+                        Debug.Log($"ModifyCollidersForMimicModes: Modified Collider for {geometryGameObject.name} to size {boxCollider.size} and center {boxCollider.center}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"ModifyCollidersForMimicModes: BoxCollider is null for {geometryGameObject.name}");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"ModifyCollidersForMimicModes: Geometry GameObject is null for ID {geometryId}");
+                }
+            }
+            Debug.Log("ModifyCollidersForMimicModes: Completed modifying colliders for all MIRRORED OBSERVED GEOMETRY.");
+
+            foreach (Transform child in mirroredGoalsParent.transform)
+            {
+                GameObject mirroredGoal = child.gameObject;
+                if (mirroredGoal == null)
+                {
+                    Debug.LogWarning("ModifyCollidersForMimicModes: Mirrored Goal GameObject is null.");
+                    continue;
+                }
+
+                foreach (Transform grandChild in mirroredGoal.transform)
+                {
+                    GameObject mirroredGoalComponet = grandChild.gameObject;
+                    BoxCollider boxCollider = mirroredGoalComponet.GetComponentInChildren<BoxCollider>();
+                    if (boxCollider != null)
+                    {
+                        if (boxCollider.size.y == yScale && boxCollider.center.y == yCenterValue)
+                        {
+                            Debug.LogWarning($"ModifyCollidersForMimicModes: Collider for {mirroredGoalComponet.name} already has the desired size and center.");
+                            continue;
+                        }
+                        boxCollider.size = new Vector3(boxCollider.size.x, yScale, boxCollider.size.z);
+                        boxCollider.center = new Vector3(boxCollider.center.x, yCenterValue, boxCollider.center.z);
+                        Debug.Log($"ModifyCollidersForMimicModes: Modified Collider for {mirroredGoalComponet.name} to size {boxCollider.size} and center {boxCollider.center}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"ModifyCollidersForMimicModes: BoxCollider is null for {mirroredGoal.name}");
+                    }
+                }
+            }
+
+            Debug.Log("ModifyCollidersForMimicModes: Completed modifying colliders for MIRRORED GOAL COMPONENTS.");
+        }
+
 
         //TODO: Move to CLASS MADE FOR THIS........
         public void CreateDuplicatGeometriesForMimic(ref GameObject GeometriesParentObject, ref GameObject MirroredGeometriesParentObject) //, Zone HumanZone, Zone RobotZone, GameObject ObservedGeoemtriesParent, GameObject MimicGeometriesParent, ref Dictionary<string, ObservedGeometry> sourceObservedGeometriesDict, ref Dictionary<string, ObservedGeometry> targetObservedGeometriesDict)
