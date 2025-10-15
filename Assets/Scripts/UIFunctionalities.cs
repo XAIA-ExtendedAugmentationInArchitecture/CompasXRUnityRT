@@ -297,6 +297,9 @@ namespace CompasXR.UI
         public GameObject RealtimeMimicActiveRobotNull;
         public GameObject MimicPointsTooFewMessage;
 
+        //TODO: Mimic Pick and Place OnScreen Messages
+        public GameObject MimicPickAndPlaceNotInReachabilityMessage;
+
         // Pick and Place Mimic Helpers...
         public GameObject MimicObjectPickedButNotPlaced;
         public GameObject MimicObjectPlacedButNotPicked;
@@ -2472,9 +2475,11 @@ namespace CompasXR.UI
                 UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref ActiveRobotIsNullWarningMessageObject, "ActiveRobotNullWarningMessage", MessagesParent, message, "MimicRequestTrajectoryButtonMethod: Active Robot is null.");
                 return;
             }
-            //TODO: This should check if it is just the pick and the place that do not have reachability, and signal onscreen message for these two specifically...
-            //TODO: OOOORRRRRRRRRRRRRRRRRRRRRRRRRR.... make it not check them, and have another one that checks them and returns message (this might be the easiest... but we will see...)
-            else if (!ObjectInstantiaion.AllGameObjectsInListsPositionsAreWithinAnotherObject(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility))
+            //TOD This should check if it is just the pick and the place that do not have reachability, and signal onscreen message for these two specifically...
+            // TOD OOOORRRRRRRRRRRRRRRRRRRRRRRRRR.... make it not check them, and have another one that checks them and returns message (this might be the easiest... but we will see...)
+            //TODO: I think this will work only because the pick and place are -1 if not set, so they will be ignored in the check... But this is not super clear....
+            // else if (!ObjectInstantiaion.AllGameObjectsInListsPositionsAreWithinAnotherObject(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility))
+            else if (!ObjectInstantiaion.AllGameObjectsInListsPositionsAreWithinAnotherObjectButIgnoreIndexs(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility, new List<int> { instantiateObjects.userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex, instantiateObjects.userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex }))
             {
 
                 var mimicZones = databaseManager.ProjectZones.MimicZones;
@@ -2500,6 +2505,14 @@ namespace CompasXR.UI
                 {
                     Debug.LogError("MimicRequestTrajectoryButton: 'human_zone' key not found in MimicZones.");
                 }
+            }
+            else if (!instantiateObjects.PickAndPlaceTargetsAreWithinReachability(instantiateObjects.userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex, instantiateObjects.userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex, trajectoryVisualizer.humanZoneMimicReachibility))
+            {
+                //TODO: SIGNAL ONSCREEN MESSAGE THAT PICK AND PLACE ARE NOT WITHIN REACHABILITY...
+                Debug.Log("MimicRequestTrajectoryButton: Pick and Place Points are not within reachability of the active robot.");
+                string message = "WARNING: The pick and/or place points are not within the reachability of the active robot. Please adjust the points or the robot.";
+                UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref MimicPickAndPlaceNotInReachabilityMessage, "MimicPickAndPlaceNotInReachabilityMessage", MessagesParent, message, "MimicRequestTrajectoryButtonMethod: Pick and/or Place Points are not within reachability of the active robot.");
+                return;
             }
             else
             {

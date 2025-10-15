@@ -18,6 +18,7 @@ using RosSharp.RosBridgeClient.MessageTypes.ObjectRecognition;
 using System.Linq;
 using CompasXR.Robots.Model;
 using System.Text.RegularExpressions;
+using Unity.VisualScripting;
 
 
 namespace CompasXR.Core
@@ -706,10 +707,10 @@ namespace CompasXR.Core
                 Debug.LogWarning("CreateMimicPoints: Human or Robot Positions are empty");
             }
         }
-        public void CreateSystemProposalPoints(GameObject humanZone, GameObject robotZone, GameObject reachabilitySphere, ref List<GameObject> userSetHumanPointsList, 
+        public void CreateSystemProposalPoints(GameObject humanZone, GameObject robotZone, GameObject reachabilitySphere, ref List<GameObject> userSetHumanPointsList,
         ref List<GameObject> systemProposedHumanPointsList, ref List<GameObject> systemProposedRobotPointsList,
-        GameObject systemProposedHumanLine, GameObject systemProposedHumanPointsParent, GameObject systemProposedRobotLine, 
-        GameObject systemProposedRobotPointsParent, bool Mirror=false)
+        GameObject systemProposedHumanLine, GameObject systemProposedHumanPointsParent, GameObject systemProposedRobotLine,
+        GameObject systemProposedRobotPointsParent, bool Mirror = false)
         {
             /*
             * Method is used to create the mimic points in the AR space
@@ -736,13 +737,29 @@ namespace CompasXR.Core
             systemProposedRobotPointsParent.SetActive(true);
 
             List<GameObject> pointsToCheck = new List<GameObject>(userSetHumanPointsList);
+            Debug.Log($"CreateSystemProposalPoints: Checking {pointsToCheck.Count} Points for Reachability and Remapping if needed.");
 
             float radius = 0.1f;
 
-            for (int i = 0; i < pointsToCheck.Count; i++)
+            for (int i = 0; i < pointsToCheck.Count; i++) //TODO: This should work.... but I do not know why it is not.....
             {
-                //TODO: Testing remap including logic for the pick and place objects...
-                // I think it can just skip them..... if the index matches....
+                //TODO: Testing remap including logic for the pick and place objects... I am not sure if this is right... I might want to add another one that just doesn't create the sphere for this point...
+                if (userIniatedMimicPickandPlaceManager.ObjectPicked)
+                {
+                    if (userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex == i)
+                    {
+                        Debug.Log("CreateSystemProposalPoints: Skipping Pick Point Index because this should not be remapped....");
+                        continue;
+                    }
+                }
+                if (userIniatedMimicPickandPlaceManager.ObjectPlaced)
+                {
+                    if (userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex == i)
+                    {
+                        Debug.Log("CreateSystemProposalPoints: Skipping Place Point Index because this should not be remapped....");
+                        continue;
+                    }
+                }
 
                 GameObject point = pointsToCheck[i];
                 Vector3 position = point.transform.position;
@@ -757,9 +774,9 @@ namespace CompasXR.Core
                     Debug.LogWarning($"CreateSystemProposalPoints: Point {position} is inside the reachability sphere.");
                 }
 
-                //TODO: THIS IS HUGE, DOUBLE CHECK ROTATION ON THE PHONE.
-                CreateSpheresForMimic(humanZone, robotZone, ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints, 
-                systemProposedHumanPointsParent, systemProposedRobotPointsParent, 
+                //TODO: THIS IS HUGE, DOUBLE CHECK ROTATION ON THE PHONE. Double check if there is a way to add the remap here.....
+                CreateSpheresForMimic(humanZone, robotZone, ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints,
+                systemProposedHumanPointsParent, systemProposedRobotPointsParent,
                 position, rotation, radius, Color.red, Color.red, $"{i}_MimicPoint", $"{i}_MimicPoint", true, Mirror);
             }
 
@@ -771,11 +788,41 @@ namespace CompasXR.Core
             }
             else
             {
-                Debug.LogWarning("CreateSystemTrajectoryProposal: Human or Robot Positions are empty");
+                Debug.LogWarning("CreateSystemTrajectoryProposal: Human or Robot Positions are not greater then 1");
             }
 
             UIFunctionalities.SignalMimicPointsRemaptoRobotReachabilityMessage();
+            Debug.Log($"CreateSystemProposalPoints: Finished Creating System Proposed Points Mimic Human Point Count {MimicHumanSystemProposedPoints.Count} Mimic Robot Point Count {MimicRobotSystemProposedPoints.Count}");
         }
+
+        //TODO: Testing this for the pick and place system propoed points...
+        public bool PickAndPlaceTargetsAreWithinReachability(int pickPointTrajectoryIndex, int placePointTrajectoryIndex, GameObject reachabilitySphere)
+        {
+            //TODO: This is also counter intuative, but will make sense.... it says if they are both -1 then to return true, because there are none....
+            if (pickPointTrajectoryIndex == -1 && placePointTrajectoryIndex == -1)
+            {
+                Debug.Log("PickAndPlaceTargetsAreWithinReachability: No Pick and Place Points Set, returning true.");
+                return true;
+            }
+
+            GameObject pickObject = MimicHumanPoints[pickPointTrajectoryIndex];
+            GameObject placeObject = MimicHumanPoints[placePointTrajectoryIndex];
+
+            if (pickObject == null || placeObject == null)
+            {
+                Debug.LogWarning("PickAndPlaceTargetsAreWithinReachability: Pick or Place Object is null.");
+                return false;
+            }
+
+            if (ObjectInstantiaion.IsPositionWithinObject(reachabilitySphere, pickObject.transform.position) &&
+            ObjectInstantiaion.IsPositionWithinObject(reachabilitySphere, placeObject.transform.position))
+            {
+                return true;
+            }
+            return false;
+        }
+
+
 
         //TODO: The pick and place point indexes just need to be added here so that they are not lost. Then they cannot be destroyed in the process.
         public void MakeMimicPointsFromSystemProposedPoints(ref List<GameObject> humanPoints, ref List<GameObject> robotPoints, ref List<GameObject> systemProposedHumanPoints, ref List<GameObject> systemProposedRobotPoints,
@@ -796,24 +843,278 @@ namespace CompasXR.Core
             }
             else
             {
-                Debug.Log("MakeMimicPointsFromSystemProposedPoints: Creating Mimic Points from System Proposed Points");
-                MigrateSystemProposedMimicPointsToCurrentSelection(ref humanPoints, ref systemProposedHumanPoints, humanPointsParent, humanLine, systemProposedHumanLine, HumanBuiltMaterial, Color.yellow);
-                MigrateSystemProposedMimicPointsToCurrentSelection(ref robotPoints, ref systemProposedRobotPoints, robotPointsParent, robotLine, systemProposedRobotLine, RobotBuiltMaterial, Color.cyan);
 
-                if (systemProposedHumanPoints.Count > 0)
+                //TODO: THIS IS SUPER CONFUSING.... BUT I THINK SHOULD WORK.....
+                Debug.Log("MakeMimicPointsFromSystemProposedPoints: Creating Mimic Points from System Proposed Points");
+                int? pickIndex = null;
+                int? placeIndex = null;
+                if (userIniatedMimicPickandPlaceManager.ObjectPicked || userIniatedMimicPickandPlaceManager.ObjectPlaced)
                 {
-                    ObjectInstantiaion.DestroyChildrenOfGameObject(systemProposedHumanParent);
+                    if (userIniatedMimicPickandPlaceManager.ObjectPicked)
+                    {
+                        pickIndex = userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex;
+                    }
+                    if (userIniatedMimicPickandPlaceManager.ObjectPlaced)
+                    {
+                        placeIndex = userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex;
+                    }
                 }
-                if (systemProposedRobotPoints.Count > 0)
-                {
-                    ObjectInstantiaion.DestroyChildrenOfGameObject(systemProposedRobotParent);
-                }
+
+                Debug.Log($"MakeMimicPointsFromSystemProposedPoints: Pick Index {pickIndex}, Place Index {placeIndex}, object picked {userIniatedMimicPickandPlaceManager.ObjectPicked}, object placed {userIniatedMimicPickandPlaceManager.ObjectPlaced}");
+                MigrateSystemProposedMimicPointsToCurrentSelectionExceptPickandPlaceIndex(ref humanPoints, ref systemProposedHumanPoints, humanPointsParent, humanLine, systemProposedHumanLine, HumanBuiltMaterial, Color.yellow, pickIndex, placeIndex);
+                MigrateSystemProposedMimicPointsToCurrentSelectionExceptPickandPlaceIndex(ref robotPoints, ref systemProposedRobotPoints, robotPointsParent, robotLine, systemProposedRobotLine, RobotBuiltMaterial, Color.cyan, pickIndex, placeIndex);
+
+                // MigrateSystemProposedMimicPointsToCurrentSelection(ref humanPoints, ref systemProposedHumanPoints, humanPointsParent, humanLine, systemProposedHumanLine, HumanBuiltMaterial, Color.yellow);
+                // MigrateSystemProposedMimicPointsToCurrentSelection(ref robotPoints, ref systemProposedRobotPoints, robotPointsParent, robotLine, systemProposedRobotLine, RobotBuiltMaterial, Color.cyan);
+
+                // if (systemProposedHumanPoints.Count > 0)
+                // {
+                //     ObjectInstantiaion.DestroyChildrenOfGameObject(systemProposedHumanParent);
+                // }
+                // if (systemProposedRobotPoints.Count > 0)
+                // {
+                //     ObjectInstantiaion.DestroyChildrenOfGameObject(systemProposedRobotParent);
+                // }
             }
 
         }
-        
+
         //TODO: The pick and place point indexes just need to be added here so that they are not lost. Then they cannot be destroyed in the process.
-        public void MigrateSystemProposedMimicPointsToCurrentSelection(ref List<GameObject> pointListReferenceToSet, ref List<GameObject> systemProposedPointsList, 
+        public void MigrateSystemProposedMimicPointsToCurrentSelectionExceptPickandPlaceIndex(ref List<GameObject> pointListReferenceToSet, ref List<GameObject> systemProposedPointsList, 
+        GameObject currentListParent, GameObject currentLine, GameObject systemProposedLine, Material materialToAssignSystemPoints, Color currentLineColor, int? pickPointTrajectoryIndex = null, int? placePointTrajectoryIndex = null)
+        // {
+        //     /*
+        //     * Method is used to migrate the mimic points list by the system proposed points in the AR space
+        //     */
+
+        //     Dictionary<string, GameObject> indicesToIgnoreDict = new Dictionary<string, GameObject>();
+        //     Debug.Log($"MigrateSystemProposedMimicPointsToCurrentSelection: Pick Index {pickPointTrajectoryIndex}, Place Index {placePointTrajectoryIndex}");
+        //     if (pointListReferenceToSet != null)
+        //     {
+        //         // Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: Destroying Previous System Proposed Points");
+
+        //         //TODO: This is also wrong.... I cannot delete them all if I need to keep the pick and place indexes....
+        //         // if (pointListReferenceToSet != null)
+        //         // {
+        //         //     Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: Destroying Previous System Proposed Points");
+        //         //     ObjectInstantiaion.DestroyChildrenOfGameObject(currentListParent);
+        //         //     pointListReferenceToSet.Clear();
+        //         // }
+        //         // else
+        //         // {
+        //         //     Debug.LogWarning("MigrateSystemProposedMimicPointsToCurrentSelection: Point List Reference to Set is null.");
+        //         // }
+        //     // if (pointListReferenceToSet != null && pickPointTrajectoryIndex == null && placePointTrajectoryIndex == null)
+        //     // {
+        //     //     ObjectInstantiaion.DestroyChildrenOfGameObject(currentListParent);
+        //     //     pointListReferenceToSet.Clear();
+        //     //     Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: No Pick and Place Indexes to ignore, clearing all previous points.");
+        //     // }
+        //         if (pickPointTrajectoryIndex != null || placePointTrajectoryIndex != null)
+        //         {
+        //             Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: Pick and Place Indexes to ignore, clearing all previous points except those indexes.");
+        //             for (int i = pointListReferenceToSet.Count - 1; i >= 0; i--)
+        //             {
+        //                 if (i == pickPointTrajectoryIndex || i == placePointTrajectoryIndex)
+        //                 {
+        //                     Debug.Log($"MigrateSystemProposedMimicPointsToCurrentSelection: Ignoring index {i} from deletion.");
+        //                     indicesToIgnoreDict.Add(i.ToString(), pointListReferenceToSet[i]);
+        //                     continue;
+        //                 }
+        //                 else
+        //                 {
+        //                     Destroy(pointListReferenceToSet[i]); //TODO: I am not sure if this is correct....
+        //                 }
+        //             }
+        //             pointListReferenceToSet.Clear();
+        //         }
+        //         else
+        //         {
+        //             Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: No Pick and Place Indexes to ignore, clearing all previous points.");
+        //             // Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: Destroying Previous System Proposed Points");
+        //             ObjectInstantiaion.DestroyChildrenOfGameObject(currentListParent);
+        //             pointListReferenceToSet.Clear();
+        //         }
+        //     }
+        //     else
+        //     {
+        //         Debug.LogWarning("MigrateSystemProposedMimicPointsToCurrentSelection: Point List Reference to Set is null.");
+        //     }
+        //     Debug.Log($"MigrateSystemProposedMimicPointsToCurrentSelection: Ignoring {indicesToIgnoreDict.Count} Indexes from deletion.");
+        //     Debug.Log($"JOSEEEEEPPPPHHHHHH : len of systemProposedPointsList {systemProposedPointsList.Count}, len of indicesToIgnoreDict {indicesToIgnoreDict.Count}");
+
+        //     if (systemProposedPointsList.Count > 0)
+        //     {
+        //         Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: Migrating System Proposed Points to Current Selection");
+
+        //         // foreach (GameObject point in systemProposedPointsList)
+        //         // int countWithIgnoredIndexes = systemProposedPointsList.Count + indicesToIgnoreDict.Count;
+
+        //         Debug.Log($"JOSEEEEEPPPPHHHHHH : len of systemProposedPointsList before inserting pick and place {systemProposedPointsList.Count}");
+        //         //TODO: Try new strategy here... add them to the list in the correct indexes....
+        //         if (indicesToIgnoreDict.Count > 0)
+        //         {
+        //             // foreach (var item in indicesToIgnoreDict)
+        //             // {
+        //             //     // Debug.Log($"MigrateSystemProposedMimicPointsToCurrentSelection: Ignoring index {item.Key} from addition.");
+        //             //     // pointListReferenceToSet.Add(item.Value);
+        //             //     int index = int.Parse(item.Key);
+        //             //     systemProposedPointsList.Insert(index, item.Value);
+        //             //     Debug.Log($"MigrateSystemProposedMimicPointsToCurrentSelection: Inserting index {index} from the pick and place objects back into the system proposed list.");
+        //             // }
+        //             var preservedIdxDesc = indicesToIgnoreDict.Keys
+        //                 .Select(int.Parse)
+        //                 .OrderByDescending(x => x);
+
+        //             foreach (var idx in preservedIdxDesc)
+        //                 systemProposedPointsList.Insert(idx, indicesToIgnoreDict[idx.ToString()]);
+
+        //         }
+
+        //         Debug.Log($"JOSEEEEEPPPPHHHHHH : len of systemProposedPointsList after inserting pick and place {systemProposedPointsList.Count}");
+        //         for (int i = 0; i < systemProposedPointsList.Count; i++)
+        //         {
+
+        //             if (!indicesToIgnoreDict.ContainsKey(i.ToString()))
+        //             {
+        //                 Debug.Log($"MigrateSystemProposedMimicPointsToCurrentSelection: Adding index {i} from system proposed points.");
+        //                 GameObject point = systemProposedPointsList[i];
+        //                 if (point == null)
+        //                 {
+        //                     Debug.Log($"JOSSSSEEEEEPPPPHHHHHH : MigrateSystemProposedMimicPointsToCurrentSelection: Point at index {i} is null.");
+        //                 }
+        //                 Renderer renderer = point.GetComponentInChildren<Renderer>();
+        //                 if (renderer == null)
+        //                 {
+        //                     Debug.Log($"JOSSSSEEEEEPPPPHHHHHH : MigrateSystemProposedMimicPointsToCurrentSelection: Renderer at index {i} is null. Froom GameObject named {point.name}.");
+        //                 }
+        //                 else
+        //                 {
+        //                     renderer.material = materialToAssignSystemPoints;
+        //                 }
+        //                 point.GetComponentInChildren<Renderer>().material = materialToAssignSystemPoints;
+        //                 point.transform.SetParent(currentListParent.transform, true);
+        //                 pointListReferenceToSet.Add(point);
+        //             }
+        //             else
+        //             {
+        //                 Debug.Log($"MigrateSystemProposedMimicPointsToCurrentSelection: Ignoring index {i} from addition.");
+        //                 pointListReferenceToSet.Add(indicesToIgnoreDict[i.ToString()]);
+        //             }
+        //         }
+
+        //         DrawLineFromGameObjectList(pointListReferenceToSet, currentLine, currentLineColor, 0.01f);
+        //         systemProposedLine.SetActive(false);
+
+        //         // //TODO: CHECK THIS.... MAYBE THE OTHER CODE IS EXECUTING TOO FAST??????
+        //         // foreach (var point in systemProposedPointsList)
+        //         // {
+        //         //     Destroy(point);
+        //         // }
+        //         systemProposedPointsList.Clear();
+        //     }
+        //     else
+        //     {
+        //         Debug.LogWarning("MigrateSystemProposedMimicPointsToCurrentSelection: System Proposed Points are empty for some reason.");
+        //     } 
+        // }
+        {
+        // Collect preserved (ignored) indices as ints
+        var preserved = new Dictionary<int, GameObject>();
+        if (pointListReferenceToSet != null && (pickPointTrajectoryIndex.HasValue || placePointTrajectoryIndex.HasValue))
+        {
+            for (int i = pointListReferenceToSet.Count - 1; i >= 0; i--)
+            {
+                if (i == pickPointTrajectoryIndex || i == placePointTrajectoryIndex)
+                {
+                    preserved[i] = pointListReferenceToSet[i];
+                    // keep these alive
+                }
+                else
+                {
+                    // remove the others
+                    if (pointListReferenceToSet[i] != null) Destroy(pointListReferenceToSet[i]);
+                }
+            }
+            pointListReferenceToSet.Clear();
+        }
+        else
+        {
+            // No preserved indices → wipe all
+            ObjectInstantiaion.DestroyChildrenOfGameObject(currentListParent);
+            pointListReferenceToSet?.Clear();
+        }
+
+        // Determine final size and compose result without in-place inserts
+        int finalCount = systemProposedPointsList.Count + preserved.Count;
+        var result = new List<GameObject>(finalCount);
+        result.AddRange(new GameObject[finalCount]); // pre-size with nulls
+
+        // Place preserved objects at their exact indices
+        foreach (var kvp in preserved)
+        {
+            int idx = kvp.Key;
+            if (idx >= 0 && idx < finalCount)
+                result[idx] = kvp.Value;
+            else
+                Debug.LogWarning($"Preserved index {idx} out of range for finalCount {finalCount}.");
+        }
+
+        // Fill remaining slots in order with system-proposed points
+        int sp = 0;
+        for (int i = 0; i < finalCount; i++)
+        {
+            if (result[i] == null)
+            {
+                if (sp >= systemProposedPointsList.Count)
+                {
+                    Debug.LogWarning("Ran out of system proposed points while filling.");
+                    break;
+                }
+                result[i] = systemProposedPointsList[sp++];
+            }
+        }
+
+        // Parent, material, and push into pointListReferenceToSet
+        for (int i = 0; i < result.Count; i++)
+        {
+            var point = result[i];
+            if (point == null)
+            {
+                Debug.LogWarning($"Final list has null at index {i}.");
+                continue;
+            }
+
+            // Only recolor non-preserved (i.e., system-proposed) points
+            bool isPreserved = preserved.ContainsKey(i);
+            if (!isPreserved)
+            {
+                var renderer = point.GetComponentInChildren<Renderer>();
+                if (renderer != null)
+                {
+                    renderer.material = materialToAssignSystemPoints;
+                }
+                else
+                {
+                    Debug.Log($"Renderer is null at index {i}. From GameObject named {point.name}.");
+                }
+                point.transform.SetParent(currentListParent.transform, true);
+
+            }
+            pointListReferenceToSet.Add(point);
+        }
+
+        // Draw and clean up
+        DrawLineFromGameObjectList(pointListReferenceToSet, currentLine, currentLineColor, 0.01f);
+        if (systemProposedLine != null) systemProposedLine.SetActive(false);
+        systemProposedPointsList.Clear();
+
+        // Optional: debug dump to verify positions
+        for (int i = 0; i < pointListReferenceToSet.Count; i++)
+            Debug.Log($"Final[{i}]: {pointListReferenceToSet[i]?.name}");
+    }
+
+        public void MigrateSystemProposedMimicPointsToCurrentSelection(ref List<GameObject> pointListReferenceToSet, ref List<GameObject> systemProposedPointsList,
         GameObject currentListParent, GameObject currentLine, GameObject systemProposedLine, Material materialToAssignSystemPoints, Color currentLineColor)
         {
             /*
@@ -850,7 +1151,6 @@ namespace CompasXR.Core
             {
                 Debug.LogWarning("MigrateSystemProposedMimicPointsToCurrentSelection: System Proposed Points are empty for some reason.");
             }
-            
         }
         public void DestroySystemProposedMimicPoints(ref List<GameObject> systemProposedHumanPoints, ref List<GameObject> systemProposedRobotPoints, GameObject systemProposedHumanParent, GameObject systemProposedRobotParent, GameObject systemProposedHumanLine, GameObject systemProposedRobotLine)
         {
@@ -3960,6 +4260,31 @@ namespace CompasXR.Core
 
             foreach (GameObject gameObject in gameObjects)
             {
+                if (!IsPositionWithinObject(targetObject, gameObject.transform.position))
+                {
+                    return false; // If any object is not within the target object, return false
+                }
+            }
+            return true; // All objects are within the target object
+        }
+
+        public static bool AllGameObjectsInListsPositionsAreWithinAnotherObjectButIgnoreIndexs(List<GameObject> gameObjects, GameObject targetObject, List<int> indiciesToIgnore)
+        {
+            if (gameObjects == null || gameObjects.Count == 0)
+            {
+                Debug.LogError("AllGameObjectsInListsPositionsAreWithinAnotherObject: The list of game objects is null or empty.");
+                return false;
+            }
+
+            // foreach (GameObject gameObject in gameObjects)
+            for (int i= 0; i< gameObjects.Count; i++)
+            {
+                if(indiciesToIgnore.Contains(i))
+                {
+                    continue;
+                }
+                GameObject gameObject = gameObjects[i];
+
                 if (!IsPositionWithinObject(targetObject, gameObject.transform.position))
                 {
                     return false; // If any object is not within the target object, return false

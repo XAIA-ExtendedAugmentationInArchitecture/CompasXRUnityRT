@@ -1033,8 +1033,8 @@ namespace CompasXR.RoboticTerritories.Data
             TargetPositionVisualizationHuman = null;
             TargetPositionVisualizationRobot = null;
             ReverseConfigurations = false;
-            PickPointTrajectoryIndex = -1;
-            PlacePointTrajectoryIndex = -1;
+            PickPointTrajectoryIndex = -1; //TODO: -1 means no pick point is selected: Could lead to an annyoing bug, but for now it is ok I think...
+            PlacePointTrajectoryIndex = -1; //TODO: -1 means no pick point is selected: Could lead to an annyoing bug, but for now it is ok I think...
         }
         public void Reset()
         {
