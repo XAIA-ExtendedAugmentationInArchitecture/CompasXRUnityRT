@@ -2451,8 +2451,8 @@ namespace CompasXR.UI
                 }
                 else if (!instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPicked && instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPlaced)
                 {
-                    Debug.LogError("MimicRequestTrajectoryButton: There is a no pick but a place which makes no sense, and shouldn't happen.");
-                    string message = "WARNING: There is a place but not a pick, and the system should be reset.";
+                    Debug.Log("MimicRequestTrajectoryButton: There is a no pick but a place which makes no sense, You need to request with both a pick and a place.");
+                    string message = "WARNING: There is a place but not a pick, you are unable to request without a pick and a place specified.";
                     UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref MimicObjectPlacedButNotPicked, "MimicObjectPlacedButNotPicked", MessagesParent, message, "MimicRequestTrajectoryButtonMethod: An object has been specified to be placed, but not to be picked.");
                     return;
                 }
