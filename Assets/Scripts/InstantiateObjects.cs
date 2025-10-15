@@ -651,6 +651,8 @@ namespace CompasXR.Core
             */
             InitialTrackedGeometryPlaced(this, EventArgs.Empty);
         }
+
+        //TODO: Joe if you want to add the line for the system proposed points, then you have to do it here....
         public void CreateMimicPoints(GameObject humanZone, GameObject robotZone, ref List<GameObject> humanPoints, ref List<GameObject> robotPoints, GameObject humanLine, GameObject robotLine, GameObject humanParent, GameObject robotParent, bool Mirror = false)
         {
             /*
@@ -688,6 +690,7 @@ namespace CompasXR.Core
                 // MimicSystemProposedLineHuman, MimicSystemProposedLineRobot, MimicHumanSystemProposedPointsParent, MimicRobotSystemProposedPointsParent, 
                 // closestReachablePoint, rotation, radius, Color.red, Color.grey, $"{humanPoints.Count}_MimicPointProposal", $"{robotPoints.Count}_MimicPointProposal", false, Mirror);
                 //TODO: TESTING...
+                //TODO: JOOOOOEEEEEEEE........ FIXXXXXX MEEEEEE..... (add the line for the target pick location)
                 CreateSystemProposalPoints(humanZone, robotZone, trajectoryVisualizer.humanZoneMimicReachibility, ref humanPoints,
                 ref MimicHumanSystemProposedPoints, ref MimicRobotSystemProposedPoints,
                 MimicSystemProposedLineHuman, MimicHumanSystemProposedPointsParent, MimicSystemProposedLineRobot,
@@ -822,8 +825,6 @@ namespace CompasXR.Core
             return false;
         }
 
-
-
         //TODO: The pick and place point indexes just need to be added here so that they are not lost. Then they cannot be destroyed in the process.
         public void MakeMimicPointsFromSystemProposedPoints(ref List<GameObject> humanPoints, ref List<GameObject> robotPoints, ref List<GameObject> systemProposedHumanPoints, ref List<GameObject> systemProposedRobotPoints,
         GameObject humanPointsParent, GameObject robotPointsParent, GameObject systemProposedHumanParent, GameObject systemProposedRobotParent,
@@ -864,6 +865,7 @@ namespace CompasXR.Core
                 MigrateSystemProposedMimicPointsToCurrentSelectionExceptPickandPlaceIndex(ref humanPoints, ref systemProposedHumanPoints, humanPointsParent, humanLine, systemProposedHumanLine, HumanBuiltMaterial, Color.yellow, pickIndex, placeIndex);
                 MigrateSystemProposedMimicPointsToCurrentSelectionExceptPickandPlaceIndex(ref robotPoints, ref systemProposedRobotPoints, robotPointsParent, robotLine, systemProposedRobotLine, RobotBuiltMaterial, Color.cyan, pickIndex, placeIndex);
 
+                //TODO: This is old code... 
                 // MigrateSystemProposedMimicPointsToCurrentSelection(ref humanPoints, ref systemProposedHumanPoints, humanPointsParent, humanLine, systemProposedHumanLine, HumanBuiltMaterial, Color.yellow);
                 // MigrateSystemProposedMimicPointsToCurrentSelection(ref robotPoints, ref systemProposedRobotPoints, robotPointsParent, robotLine, systemProposedRobotLine, RobotBuiltMaterial, Color.cyan);
 
@@ -882,142 +884,6 @@ namespace CompasXR.Core
         //TODO: The pick and place point indexes just need to be added here so that they are not lost. Then they cannot be destroyed in the process.
         public void MigrateSystemProposedMimicPointsToCurrentSelectionExceptPickandPlaceIndex(ref List<GameObject> pointListReferenceToSet, ref List<GameObject> systemProposedPointsList, 
         GameObject currentListParent, GameObject currentLine, GameObject systemProposedLine, Material materialToAssignSystemPoints, Color currentLineColor, int? pickPointTrajectoryIndex = null, int? placePointTrajectoryIndex = null)
-        // {
-        //     /*
-        //     * Method is used to migrate the mimic points list by the system proposed points in the AR space
-        //     */
-
-        //     Dictionary<string, GameObject> indicesToIgnoreDict = new Dictionary<string, GameObject>();
-        //     Debug.Log($"MigrateSystemProposedMimicPointsToCurrentSelection: Pick Index {pickPointTrajectoryIndex}, Place Index {placePointTrajectoryIndex}");
-        //     if (pointListReferenceToSet != null)
-        //     {
-        //         // Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: Destroying Previous System Proposed Points");
-
-        //         //TODO: This is also wrong.... I cannot delete them all if I need to keep the pick and place indexes....
-        //         // if (pointListReferenceToSet != null)
-        //         // {
-        //         //     Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: Destroying Previous System Proposed Points");
-        //         //     ObjectInstantiaion.DestroyChildrenOfGameObject(currentListParent);
-        //         //     pointListReferenceToSet.Clear();
-        //         // }
-        //         // else
-        //         // {
-        //         //     Debug.LogWarning("MigrateSystemProposedMimicPointsToCurrentSelection: Point List Reference to Set is null.");
-        //         // }
-        //     // if (pointListReferenceToSet != null && pickPointTrajectoryIndex == null && placePointTrajectoryIndex == null)
-        //     // {
-        //     //     ObjectInstantiaion.DestroyChildrenOfGameObject(currentListParent);
-        //     //     pointListReferenceToSet.Clear();
-        //     //     Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: No Pick and Place Indexes to ignore, clearing all previous points.");
-        //     // }
-        //         if (pickPointTrajectoryIndex != null || placePointTrajectoryIndex != null)
-        //         {
-        //             Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: Pick and Place Indexes to ignore, clearing all previous points except those indexes.");
-        //             for (int i = pointListReferenceToSet.Count - 1; i >= 0; i--)
-        //             {
-        //                 if (i == pickPointTrajectoryIndex || i == placePointTrajectoryIndex)
-        //                 {
-        //                     Debug.Log($"MigrateSystemProposedMimicPointsToCurrentSelection: Ignoring index {i} from deletion.");
-        //                     indicesToIgnoreDict.Add(i.ToString(), pointListReferenceToSet[i]);
-        //                     continue;
-        //                 }
-        //                 else
-        //                 {
-        //                     Destroy(pointListReferenceToSet[i]); //TODO: I am not sure if this is correct....
-        //                 }
-        //             }
-        //             pointListReferenceToSet.Clear();
-        //         }
-        //         else
-        //         {
-        //             Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: No Pick and Place Indexes to ignore, clearing all previous points.");
-        //             // Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: Destroying Previous System Proposed Points");
-        //             ObjectInstantiaion.DestroyChildrenOfGameObject(currentListParent);
-        //             pointListReferenceToSet.Clear();
-        //         }
-        //     }
-        //     else
-        //     {
-        //         Debug.LogWarning("MigrateSystemProposedMimicPointsToCurrentSelection: Point List Reference to Set is null.");
-        //     }
-        //     Debug.Log($"MigrateSystemProposedMimicPointsToCurrentSelection: Ignoring {indicesToIgnoreDict.Count} Indexes from deletion.");
-        //     Debug.Log($"JOSEEEEEPPPPHHHHHH : len of systemProposedPointsList {systemProposedPointsList.Count}, len of indicesToIgnoreDict {indicesToIgnoreDict.Count}");
-
-        //     if (systemProposedPointsList.Count > 0)
-        //     {
-        //         Debug.Log("MigrateSystemProposedMimicPointsToCurrentSelection: Migrating System Proposed Points to Current Selection");
-
-        //         // foreach (GameObject point in systemProposedPointsList)
-        //         // int countWithIgnoredIndexes = systemProposedPointsList.Count + indicesToIgnoreDict.Count;
-
-        //         Debug.Log($"JOSEEEEEPPPPHHHHHH : len of systemProposedPointsList before inserting pick and place {systemProposedPointsList.Count}");
-        //         //TODO: Try new strategy here... add them to the list in the correct indexes....
-        //         if (indicesToIgnoreDict.Count > 0)
-        //         {
-        //             // foreach (var item in indicesToIgnoreDict)
-        //             // {
-        //             //     // Debug.Log($"MigrateSystemProposedMimicPointsToCurrentSelection: Ignoring index {item.Key} from addition.");
-        //             //     // pointListReferenceToSet.Add(item.Value);
-        //             //     int index = int.Parse(item.Key);
-        //             //     systemProposedPointsList.Insert(index, item.Value);
-        //             //     Debug.Log($"MigrateSystemProposedMimicPointsToCurrentSelection: Inserting index {index} from the pick and place objects back into the system proposed list.");
-        //             // }
-        //             var preservedIdxDesc = indicesToIgnoreDict.Keys
-        //                 .Select(int.Parse)
-        //                 .OrderByDescending(x => x);
-
-        //             foreach (var idx in preservedIdxDesc)
-        //                 systemProposedPointsList.Insert(idx, indicesToIgnoreDict[idx.ToString()]);
-
-        //         }
-
-        //         Debug.Log($"JOSEEEEEPPPPHHHHHH : len of systemProposedPointsList after inserting pick and place {systemProposedPointsList.Count}");
-        //         for (int i = 0; i < systemProposedPointsList.Count; i++)
-        //         {
-
-        //             if (!indicesToIgnoreDict.ContainsKey(i.ToString()))
-        //             {
-        //                 Debug.Log($"MigrateSystemProposedMimicPointsToCurrentSelection: Adding index {i} from system proposed points.");
-        //                 GameObject point = systemProposedPointsList[i];
-        //                 if (point == null)
-        //                 {
-        //                     Debug.Log($"JOSSSSEEEEEPPPPHHHHHH : MigrateSystemProposedMimicPointsToCurrentSelection: Point at index {i} is null.");
-        //                 }
-        //                 Renderer renderer = point.GetComponentInChildren<Renderer>();
-        //                 if (renderer == null)
-        //                 {
-        //                     Debug.Log($"JOSSSSEEEEEPPPPHHHHHH : MigrateSystemProposedMimicPointsToCurrentSelection: Renderer at index {i} is null. Froom GameObject named {point.name}.");
-        //                 }
-        //                 else
-        //                 {
-        //                     renderer.material = materialToAssignSystemPoints;
-        //                 }
-        //                 point.GetComponentInChildren<Renderer>().material = materialToAssignSystemPoints;
-        //                 point.transform.SetParent(currentListParent.transform, true);
-        //                 pointListReferenceToSet.Add(point);
-        //             }
-        //             else
-        //             {
-        //                 Debug.Log($"MigrateSystemProposedMimicPointsToCurrentSelection: Ignoring index {i} from addition.");
-        //                 pointListReferenceToSet.Add(indicesToIgnoreDict[i.ToString()]);
-        //             }
-        //         }
-
-        //         DrawLineFromGameObjectList(pointListReferenceToSet, currentLine, currentLineColor, 0.01f);
-        //         systemProposedLine.SetActive(false);
-
-        //         // //TODO: CHECK THIS.... MAYBE THE OTHER CODE IS EXECUTING TOO FAST??????
-        //         // foreach (var point in systemProposedPointsList)
-        //         // {
-        //         //     Destroy(point);
-        //         // }
-        //         systemProposedPointsList.Clear();
-        //     }
-        //     else
-        //     {
-        //         Debug.LogWarning("MigrateSystemProposedMimicPointsToCurrentSelection: System Proposed Points are empty for some reason.");
-        //     } 
-        // }
         {
         // Collect preserved (ignored) indices as ints
         var preserved = new Dictionary<int, GameObject>();
@@ -1113,7 +979,6 @@ namespace CompasXR.Core
         for (int i = 0; i < pointListReferenceToSet.Count; i++)
             Debug.Log($"Final[{i}]: {pointListReferenceToSet[i]?.name}");
     }
-
         public void MigrateSystemProposedMimicPointsToCurrentSelection(ref List<GameObject> pointListReferenceToSet, ref List<GameObject> systemProposedPointsList,
         GameObject currentListParent, GameObject currentLine, GameObject systemProposedLine, Material materialToAssignSystemPoints, Color currentLineColor)
         {
@@ -1864,8 +1729,6 @@ namespace CompasXR.Core
         }
 
         //TODO: Double check that this works in all scenarios........
-        //TODO: A Big question should the code be able to establish the sequence in reverse order?
-
         public (int returnIntOption, string itemName) DeterminePickAndPlaceStateFromColliderHitsPickThenPlace(List<string> collidedWithGameObjectNamesList) //TODO: The Pick & Place State Needs to be updated after this function.
         {
             // TODO: Return codes:
@@ -1985,7 +1848,9 @@ namespace CompasXR.Core
                 {
                     Debug.LogWarning("CameraIsWithinTargetOrObservedGeometry: Camera is within the Anchor Cube.");
                     potentialSetOptions.Add(1);
-                    //TODO: Signal Onscreen Message.
+                    Debug.Log("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Set Target is within the Anchor block, so it cannot be set.");
+                    string message = "WARNING: This point cannot be set as it is within the Anchor Block location.";
+                    UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.UserInitiatedMimicCannotBeSetInAnchorOnScreenMsg, "UIMimicPointCannotBeSetAnchor", UIFunctionalities.MessagesParent, message, "DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Point is within the Anchor block, so it cannot be set.");
                     continue;
                 }
 
@@ -2008,6 +1873,9 @@ namespace CompasXR.Core
                     {
                         Debug.Log("CameraIsWithinTargetOrObservedGeometry: Object is already picked, cannot pick another.");
                         //TODO: Signal Onscreen Message. This target cannot be picked because it is already holding an object.
+                        Debug.Log("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Set Target is within the within another know observed block, so it cannot be set.");
+                        string message = "WARNING: This point cannot be set, a pick is already set and there cannot be duplicates.";
+                        UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab,ref UIFunctionalities.UserInitiatedMimicCannotSetDuplicatePickOnScreenMsg, "UIMimicPointCannotBeSetDuplicatePick", UIFunctionalities.MessagesParent, message, "DeterminePickAndPlaceStateFromColliderHitsPickorPlace: A pick point is already set, so another pick cannot be set.");
                         potentialSetOptions.Add(1);
                     }
                     continue;
@@ -2021,6 +1889,9 @@ namespace CompasXR.Core
                     {
                         Debug.LogError($"CameraIsWithinTargetOrObservedGeometry: Current Target Class for '{name}' is null.");
                         //TODO: Signal Onscreen Error. Fatal Error..... restart please.
+                        Debug.Log("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Cannot find target this is a fatal error, please reset the application.");
+                        string message = "WARNING: This is a fatal error, because the target is not found please reset the application.";
+                        UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab,ref UIFunctionalities.UserInitiatedMimicCannotFindTargetOnScreenMsg, "UIMimicPointCannotFindSpecifiedTarget", UIFunctionalities.MessagesParent, message, "DeterminePickAndPlaceStateFromColliderHitsPickorPlace: The place target cannot be found, THIS IS A FATAL ERROR.");
                     }
                     else
                     {
@@ -2029,6 +1900,9 @@ namespace CompasXR.Core
                             Debug.LogWarning($"CameraIsWithinTargetOrObservedGeometry: Current Target '{name}' is already satisfied, cannot place another object here.");
                             potentialSetOptions.Add(1);
                             //TODO: Signal Onscreen Message. This target cannot be placed because it is already satisfied.
+                            Debug.Log("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: The target cannot be set because this target is already satisfied.");
+                            string message = "WARNING: This point cannot be set as there its is already a satisfied target.";
+                            UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.UserInitiatedMimicCannotBeSetInSatisfiedTargetOnScreenMsg, "UIMimicPointCannotBeSetDuplicatePick", UIFunctionalities.MessagesParent, message, "DeterminePickAndPlaceStateFromColliderHitsPickorPlace: The target cannot be set within an already satisfied target.");
                             break;
                         }
                     }

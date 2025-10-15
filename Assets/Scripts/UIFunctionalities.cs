@@ -242,6 +242,12 @@ namespace CompasXR.UI
         public GameObject InferenceUnableToInferGoalMessage;
         public GameObject InferenceTrajectoryNullWarningMessageObject;
 
+        //TODO: User Initiated Mimic Target On Screen Messages
+        public GameObject UserInitiatedMimicCannotBeSetInAnchorOnScreenMsg;
+        public GameObject UserInitiatedMimicCannotSetDuplicatePickOnScreenMsg;
+        public GameObject UserInitiatedMimicCannotFindTargetOnScreenMsg;
+        public GameObject UserInitiatedMimicCannotBeSetInSatisfiedTargetOnScreenMsg;
+
         //TODO: Updating Canvas to the new one..........................................................
 
 
@@ -2429,7 +2435,7 @@ namespace CompasXR.UI
             {
                 Debug.LogWarning("SetMimicPoint: User has already executed a trajectory, cannot set more points.");
                 instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();
-                //TODO: Needs to reset the PickandPlaceStateManager
+                //TODO: Needs to reset the PickandPlaceStateManager : JOEEEEE I THINK THIS NEEDS TO BE DONE....
 
                 USERINSTIANTEDTRAJECTORYEXECUTED = false;
                 if (trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
@@ -2438,8 +2444,6 @@ namespace CompasXR.UI
                 }
                 return;
             }
-
-            //TODO: Should I allow for reversable pick and place? Where the place is set first, and the pick second?
             if (instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPicked || instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPlaced)
             {
                 if (instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPicked && !instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPlaced)
@@ -2475,10 +2479,7 @@ namespace CompasXR.UI
                 UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref ActiveRobotIsNullWarningMessageObject, "ActiveRobotNullWarningMessage", MessagesParent, message, "MimicRequestTrajectoryButtonMethod: Active Robot is null.");
                 return;
             }
-            //TOD This should check if it is just the pick and the place that do not have reachability, and signal onscreen message for these two specifically...
-            // TOD OOOORRRRRRRRRRRRRRRRRRRRRRRRRR.... make it not check them, and have another one that checks them and returns message (this might be the easiest... but we will see...)
-            //TODO: I think this will work only because the pick and place are -1 if not set, so they will be ignored in the check... But this is not super clear....
-            // else if (!ObjectInstantiaion.AllGameObjectsInListsPositionsAreWithinAnotherObject(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility))
+            //TODO: This was the old one : else if (!ObjectInstantiaion.AllGameObjectsInListsPositionsAreWithinAnotherObject(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility))
             else if (!ObjectInstantiaion.AllGameObjectsInListsPositionsAreWithinAnotherObjectButIgnoreIndexs(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility, new List<int> { instantiateObjects.userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex, instantiateObjects.userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex }))
             {
 
@@ -2490,7 +2491,6 @@ namespace CompasXR.UI
                     {
                         GameObject humanZoneObject = humanZone.ZoneObject;
                         GameObject robotZoneObject = robotZone.ZoneObject;
-                        //TODO: Update to ignore the pick and place indexes.......
                         instantiateObjects.CreateSystemProposalPoints(humanZoneObject, robotZoneObject, trajectoryVisualizer.humanZoneMimicReachibility, ref instantiateObjects.MimicHumanPoints,
                         ref instantiateObjects.MimicHumanSystemProposedPoints, ref instantiateObjects.MimicRobotSystemProposedPoints,
                         instantiateObjects.MimicSystemProposedLineHuman, instantiateObjects.MimicHumanSystemProposedPointsParent, instantiateObjects.MimicSystemProposedLineRobot,
@@ -2508,7 +2508,6 @@ namespace CompasXR.UI
             }
             else if (!instantiateObjects.PickAndPlaceTargetsAreWithinReachability(instantiateObjects.userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex, instantiateObjects.userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex, trajectoryVisualizer.humanZoneMimicReachibility))
             {
-                //TODO: SIGNAL ONSCREEN MESSAGE THAT PICK AND PLACE ARE NOT WITHIN REACHABILITY...
                 Debug.Log("MimicRequestTrajectoryButton: Pick and Place Points are not within reachability of the active robot.");
                 string message = "WARNING: The pick and/or place points are not within the reachability of the active robot. Please adjust the points or the robot.";
                 UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref MimicPickAndPlaceNotInReachabilityMessage, "MimicPickAndPlaceNotInReachabilityMessage", MessagesParent, message, "MimicRequestTrajectoryButtonMethod: Pick and/or Place Points are not within reachability of the active robot.");
@@ -2520,7 +2519,6 @@ namespace CompasXR.UI
                 List<Frame> robotFrames = ObjectTransformations.ConvertGameObjectListToRightHandFrameDataRoboticTerritories(instantiateObjects.MimicRobotPoints, instantiateObjects.ZonesARPrefabObjects);
                 List<int> ioControlIndexes = instantiateObjects.userIniatedMimicPickandPlaceManager.CreateIOControlIndeciesFromMimicPointCount(instantiateObjects.MimicHumanPoints.Count);
 
-                //TODO: CHECK IF THIS WORKS....
                 if (humanFrames == null || robotFrames == null || ioControlIndexes == null)
                 {
                     Debug.LogError("MimicRequestTrajectoryButton: Human or Robot Frames or IO Control Indexes are null.");
@@ -2533,8 +2531,6 @@ namespace CompasXR.UI
                     ioControlIndexes.Reverse();
                     Debug.Log("MimicRequestTrajectoryButton: Reversing Configurations as specified by the user.");
                 }
-
-                //TODO: IF WE WANT THINGS TO GO IN REVERSE AS WELL THEN ALL THAT NEEDS TO BE DONE IS... REVERSE ALL LISTS HERE BEFORE SENDING THEM...
 
                 if (humanFrames.Count != robotFrames.Count || humanFrames.Count != ioControlIndexes.Count)
                 {
