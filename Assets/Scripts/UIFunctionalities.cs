@@ -317,6 +317,8 @@ namespace CompasXR.UI
         public float MimicSetandUndoFlashDuration = 0.1f;
 
         public GameObject FollowMeButton;
+        public GameObject FollowMeButtonCover; //TODO: Set Active False when request is sent, and reactive based on controls...
+
         public CompasXRButtonHeldEvent FollowMeButtonHeldEventComponent;
         public GameObject RealtimeMimicControlsParent;
         public GameObject RealtimeMimicEditorTestToggleObject;
@@ -347,6 +349,12 @@ namespace CompasXR.UI
         //TODO : REALTIME MIMCIC PICK AND ONSCREEN MESSAGES
         public GameObject RealtimeMimicCannotFindTargetOnScreenMsg;
 
+        // public bool REALTIMEMIMICIGNOREISHELDEVENT = false;
+        public GameObject RealtimeMimicAcceptPickMessage;
+        public GameObject RealtimeMimicAcceptPlaceMessage;
+        public GameObject RealTimeMimicPickRequestedWithNoMessage;
+        public GameObject RealTimeMimicPlaceRequestedWithNoMessage;
+
         /////////////////////////////////// Monobehaviour Methods ///////////////////////////////////////////////////////////        
         void Start()
         {
@@ -373,6 +381,12 @@ namespace CompasXR.UI
         {
             if (FollowMeButtonHeldEventComponent.isHeld)
             {
+                // if (REALTIMEMIMICIGNOREISHELDEVENT)
+                if (FollowMeButtonHeldEventComponent.ignore)
+                {
+                    Debug.Log("RealtimeMimicFollowMeEventWatcher: Ignoring isHeld event.");
+                    return;
+                }
                 SetRealtimeMimicPointBasicTEMPORARY();
             }
             else
@@ -454,6 +468,9 @@ namespace CompasXR.UI
 
             //Set Realtime Mimic Controls
             SetRealtimeMimicControlsOnStart();
+
+            //Set Realtime Mimic Accept pick or place message contorols
+            SetRealtimeMimicPickAndPlaceOnscreenMessageOnStart();
 
             //Set Mimic Goal Selection UI
             SetMimicGoalSelectionUIOnStart();
@@ -1045,6 +1062,7 @@ namespace CompasXR.UI
         {
             //Find FollowMe Button and then add event trigger componnet to it.
             RealtimeMimicControlsParent = MimicControlsParent.FindObject("RealtimeMimicControls");
+            FollowMeButtonCover = RealtimeMimicControlsParent.FindObject("FollowMeButtonCover");
             FollowMeButton = RealtimeMimicControlsParent.FindObject("FollowMeButton");
             FollowMeButton.AddComponent<CompasXRButtonHeldEvent>();
             FollowMeButtonHeldEventComponent = FollowMeButton.GetComponent<CompasXRButtonHeldEvent>();
@@ -1917,7 +1935,7 @@ namespace CompasXR.UI
                         //TODO: ADD METHOD TO RETURN IF THRESHOLD IS NOT MET.
                         float DRAWINGTHRESHOLD = instantiateObjects.REALTIMEMIMICDRAWRINGTHRESHOLD; //TODO: TESTING....
                         float ROTTHRESHOLD = 3.0f; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
-                        if(REALTIMEMIMICINDEXCOUNTER >= 1)
+                        if (REALTIMEMIMICINDEXCOUNTER >= 1)
                         {
                             Vector3 lastRealtimeMimicPointPosition = instantiateObjects.RealtimeMimicHumanPoints[instantiateObjects.RealtimeMimicHumanPoints.Count - 1].transform.position;
                             if (lastRealtimeMimicPointPosition == null)
@@ -1948,6 +1966,12 @@ namespace CompasXR.UI
                                 instantiateObjects.RealtimeMimicHumanPointsParent, instantiateObjects.RealtimeMimicRobotPointsParent,
                                 instantiateObjects.RealtimeMimicHumanLine, instantiateObjects.RealtimeMimicRobotLine, REALTIMEMIMICINDEXCOUNTER, RealtimeMimicMirrorToggle.isOn);
 
+                                //TODO: CONVERT TO FRAME FROM LAST GAMEOBJECT IN ROBOT POINTS LIST.
+                                GameObject lastRealtimeMimicPointTest = instantiateObjects.RealtimeMimicRobotPoints[instantiateObjects.RealtimeMimicRobotPoints.Count - 1];
+                                Frame lastMimicPointFrame = ObjectTransformations.ConvertGameObjectToRightHandFrameDataRoboticTerritories(lastRealtimeMimicPointTest, instantiateObjects.ZonesARPrefabObjects);
+                                int pointIndex = REALTIMEMIMICINDEXCOUNTER; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
+                                string robotName = RobotSelectionDropdown.options[RobotSelectionDropdown.value].text;
+
                                 //TODO: Testing ADD here.....
                                 List<string> colliderObjectHits = instantiateObjects.GetAllCollidersNamesAtPoint(devicePosePosition);
                                 (int pickState, string pickOrPlaceItemName) = instantiateObjects.DetermineOrAndPlaceObjectFromColliderHitsRTMimic(colliderObjectHits);
@@ -1959,6 +1983,7 @@ namespace CompasXR.UI
                                 else if (pickState == 1)
                                 {
                                     Debug.LogWarning($"CreateRealtimeMimicPointsBasicTEMPORARY: This point should not be made..... for some reason {pickOrPlaceItemName}");
+                                    //TODO: Signal On screen message that point cannot be made.
                                     return;
                                 }
                                 else if (pickState == 2)
@@ -1966,33 +1991,65 @@ namespace CompasXR.UI
                                     Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: This point should be a pick point {pickOrPlaceItemName}");
                                     //TODO: Signal On screen message that pick could be made. The only thing is that I need to be sure the published value has correct index.
                                     string currentGoalName = instantiateObjects.MimicMirroredGeometryManagerImplementation.CurrentMimicGoalName;
-                                    //TODO: CHECKKKKKK MEEEEEEE HERE JOEEEEEEE
                                     GameObject pickFrameGameObject = instantiateObjects.FindHumanandRobotTargetInformationRTMimic(pickOrPlaceItemName, instantiateObjects.TrackedGeometriesParentObject, instantiateObjects.MimicGoalsManager.CurrentGoal.GoalGameObject, instantiateObjects.MimicMirroredGeometryManagerImplementation.TrackedGeometriesParent, instantiateObjects.MimicMirroredGeometryManagerImplementation.GoalsParent.FindObject(currentGoalName));
-                                    if (pickFrameGameObject == null)
+                                    Frame pickFrame = ObjectTransformations.ConvertGameObjectToRightHandFrameDataRoboticTerritories(pickFrameGameObject, instantiateObjects.ZonesARPrefabObjects);
+                                    if (pickFrameGameObject == null || pickFrame == null) //TODO: This should return a big Error Onscreen... I think....
                                     {
-                                        Debug.LogWarning("JOOOEEEEE : Cannot find PICK frame game object.");
+                                        Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY : Cannot find PICK frame game object.");
                                     }
                                     else
                                     {
                                         Debug.LogWarning($"CreateRealtimeMimicPointsBasicTEMPORARY: Found PICK frame game object {pickFrameGameObject.name}.");
                                     }
+
+                                    RealtimeMimicRequestMessage realtimeMimicRequestPickMessage = new RealtimeMimicRequestMessage
+                                    (
+                                        lastMimicPointFrame,
+                                        robotName,
+                                        pointIndex,
+                                        isPick: true,
+                                        isPlace: false,
+                                        geometryFrame: pickFrame
+                                    );
+                                    //TODO: This is storing to publish later based on the user interaction.....
+                                    mqttTrajectoryManager.RealtimeMimicPickMessageToPublish = realtimeMimicRequestPickMessage;
+                                    Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Storing RT Mimic Pick for {robotName} with pointIndex {pointIndex} and {JsonConvert.SerializeObject(realtimeMimicRequestPickMessage.GetData())} : Awaiting user confirmation to publish.");
+                                    //TODO: Signal On screen message that place could be made.
+                                    RealtimeMimicSignalOnscreenMessageForPick();
+                                    REALTIMEMIMICLASTSENTINDEX = pointIndex;
                                     return;
                                 }
                                 else if (pickState == 3)
                                 {
                                     Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: This point should be a place point {pickOrPlaceItemName}.");
                                     string currentGoalName = instantiateObjects.MimicMirroredGeometryManagerImplementation.CurrentMimicGoalName;
-                                    //TODO: CHECKKKKKK MEEEEEEE HERE JOEEEEEEE
                                     GameObject placeFrameGameObject = instantiateObjects.FindHumanandRobotTargetInformationRTMimic(pickOrPlaceItemName, instantiateObjects.TrackedGeometriesParentObject, instantiateObjects.MimicGoalsManager.CurrentGoal.GoalGameObject, instantiateObjects.MimicMirroredGeometryManagerImplementation.TrackedGeometriesParent, instantiateObjects.MimicMirroredGeometryManagerImplementation.GoalsParent.FindObject(currentGoalName));
-                                    //TODO: signal on screen message that place could be made. The only thing is that I need to be sure the published value has correct index.
-                                    if (placeFrameGameObject == null)
+                                    Frame placeFrame = ObjectTransformations.ConvertGameObjectToRightHandFrameDataRoboticTerritories(placeFrameGameObject, instantiateObjects.ZonesARPrefabObjects);
+
+                                    if (placeFrameGameObject == null || placeFrame == null) //TODO: This should return a big Error Onscreen... I think....
                                     {
-                                        Debug.LogWarning("JOOOEEEEE : Cannot find PLACE frame game object.");
+                                        Debug.LogWarning("CreateRealtimeMimicPointsBasicTEMPORARY : Cannot find PLACE frame game object.");
                                     }
                                     else
                                     {
                                         Debug.LogWarning($"CreateRealtimeMimicPointsBasicTEMPORARY: Found PLACE frame game object {placeFrameGameObject.name}.");
                                     }
+
+                                    RealtimeMimicRequestMessage realtimeMimicRequestPlaceMessage = new RealtimeMimicRequestMessage
+                                    (
+                                        lastMimicPointFrame,
+                                        robotName,
+                                        pointIndex,
+                                        isPick: false,
+                                        isPlace: true,
+                                        geometryFrame: placeFrame
+                                    );
+                                    //TODO: This is storing to publish later based on the user interaction.....
+                                    mqttTrajectoryManager.RealtimeMimicPlaceMessageToPublish = realtimeMimicRequestPlaceMessage;
+                                    Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Storing RT Mimic Place for {robotName} with pointIndex {pointIndex} and {JsonConvert.SerializeObject(realtimeMimicRequestPlaceMessage.GetData())} : Awaiting user confirmation to publish.");
+                                    //TODO: Signal On screen message that place could be made.
+                                    // REALTIMEMIMICLASTSENTINDEX = pointIndex; //TODO: This is important and needs to be added to the yes or no pick and place.
+                                    RealtimeMimicSignalOnscreenMessageForPlace();
                                     return;
                                 }
                                 else
@@ -2001,12 +2058,6 @@ namespace CompasXR.UI
                                     return;
                                 }
 
-                                //TODO: CONVERT TO FRAME FROM LAST GAMEOBJECT IN ROBOT POINTS LIST.
-                                GameObject lastRealtimeMimicPointTest = instantiateObjects.RealtimeMimicRobotPoints[instantiateObjects.RealtimeMimicRobotPoints.Count - 1];
-                                Frame lastMimicPointFrame = ObjectTransformations.ConvertGameObjectToRightHandFrameDataRoboticTerritories(lastRealtimeMimicPointTest, instantiateObjects.ZonesARPrefabObjects);
-                                int pointIndex = REALTIMEMIMICINDEXCOUNTER; //TODO: THIS IS TEMPORARY AND NEEDS TO BE CHANGED.
-
-                                string robotName = RobotSelectionDropdown.options[RobotSelectionDropdown.value].text;
                                 RealtimeMimicRequestMessage realtimeMimicRequestMessage = new RealtimeMimicRequestMessage
                                 (
                                     lastMimicPointFrame,
@@ -2015,7 +2066,7 @@ namespace CompasXR.UI
                                 );
                                 Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Sending message to {robotName} with pointIndex {pointIndex} with structure {JsonConvert.SerializeObject(realtimeMimicRequestMessage.GetData())} to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic}");
                                 mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic, realtimeMimicRequestMessage.GetData());
-                                REALTIMEMIMICLASTSENTINDEX = pointIndex;
+                                // REALTIMEMIMICLASTSENTINDEX = pointIndex; //TODO: This is important and needs to be added to the yes or no pick and place.
                                 REALTIMEMIMICINDEXCOUNTER++;
 
                             }
@@ -2025,6 +2076,9 @@ namespace CompasXR.UI
                             Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Camera Position is Outside of the Threshold and Point Will Be Set for Index {REALTIMEMIMICINDEXCOUNTER}");
                             //Set Lines active and Points active
                             instantiateObjects.RealtimeMimicObjects.SetActive(true);
+                            //TODO: Set the the last two sent pick and place messages to null just to be safe.
+                            mqttTrajectoryManager.RealtimeMimicPickMessageToPublish = null;
+                            mqttTrajectoryManager.RealtimeMimicPlaceMessageToPublish = null;
 
                             //TODO: This needs to have an index as and input.
                             instantiateObjects.CreateRealtimeMimicPointsBasicTEMPORARY(humanZoneObject, robotZoneObject,
@@ -2047,10 +2101,23 @@ namespace CompasXR.UI
                             );
                             Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Sending message to {robotName} with point Index {pointIndex} with structure {JsonConvert.SerializeObject(realtimeMimicRequestMessage.GetData())} to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic}");
                             mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic, realtimeMimicRequestMessage.GetData());
+                            if (instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONROBOT != null || instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN != null)
+                            {
+                                if (instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONROBOT.activeSelf)
+                                {
+                                    instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONROBOT.SetActive(false);
+                                }
+                                instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONROBOT = null;
+
+                                if (instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN.activeSelf)
+                                {
+                                    instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN.SetActive(false);
+                                }
+                                instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN = null;
+                            }
                             REALTIMEMIMICLASTSENTINDEX = pointIndex;
                             REALTIMEMIMICINDEXCOUNTER++;
                         }
-
                     }
                     else
                     {
@@ -2295,6 +2362,136 @@ namespace CompasXR.UI
             }
         }
 
+        //TODO: Realtime Mimic Execute Pick and Execute Place Onscreen Message Methods
+
+        public void SetRealtimeMimicPickAndPlaceOnscreenMessageOnStart()
+        {
+            //TODO: Setup message structures and button methods for realtime mimic pick and place.
+            RealtimeMimicAcceptPickMessage = MessagesParent.FindObject("Prefabs").FindObject("RealtimeMimicPickObjectMessage");
+            Button YesPickButton = RealtimeMimicAcceptPickMessage.FindObject("YesButton").GetComponent<Button>();
+            Button NoPickButton = RealtimeMimicAcceptPickMessage.FindObject("NoButton").GetComponent<Button>();
+            YesPickButton.GetComponent<Button>().onClick.AddListener(RealtimeMimicPublishAcceptPickButtonMethod);
+            NoPickButton.GetComponent<Button>().onClick.AddListener(RealtimeMimicDeclinePickButtonMethod);
+
+            RealtimeMimicAcceptPlaceMessage = MessagesParent.FindObject("Prefabs").FindObject("RealtimeMimicPlaceObjectMessage");
+            Button YesPlaceButton = RealtimeMimicAcceptPlaceMessage.FindObject("YesButton").GetComponent<Button>();
+            Button NoPlaceButton = RealtimeMimicAcceptPlaceMessage.FindObject("NoButton").GetComponent<Button>();
+            YesPlaceButton.GetComponent<Button>().onClick.AddListener(RealtimeMimicPublishAcceptPlaceButtonMethod);
+            NoPlaceButton.GetComponent<Button>().onClick.AddListener(RealtimeMimicDeclinePlaceButtonMethod);
+        }
+
+        public void RealtimeMimicPublishAcceptPickButtonMethod()
+        {
+            Debug.Log("RealtimeMimicPublishAcceptPickButtonMethod: User ACCEPTED Pick Point, Publishing Pick Message.");
+            RealtimeMimicAcceptPickMessage.SetActive(false);
+        }
+        public void RealtimeMimicDeclinePickButtonMethod()
+        {
+            Debug.Log("RealtimeMimicPublishAcceptPickButtonMethod: User DECLINED Pick Point, Publishing Pick Message.");
+            ControlFollowMeButtonInteractability(true);
+            if (mqttTrajectoryManager.RealtimeMimicPickMessageToPublish != null)
+            {
+                mqttTrajectoryManager.RealtimeMimicPickMessageToPublish = null;
+            }
+            if (instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN.activeSelf)
+            {
+                instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN.SetActive(false);
+            }
+            instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN = null;
+            if (instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONROBOT.activeSelf)
+            {
+                instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONROBOT.SetActive(false);
+            }
+            instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONROBOT = null;
+            instantiateObjects.DestroyRealtimeMimicZoneObjects();
+            RealtimeMimicAcceptPickMessage.SetActive(false);
+        }
+        public void RealtimeMimicPublishAcceptPlaceButtonMethod()
+        {
+            Debug.Log("RealtimeMimicPublishAcceptPlaceButtonMethod: User ACCEPTED Place Point, Publishing Place Message.");
+            RealtimeMimicAcceptPlaceMessage.SetActive(false);
+        }
+        public void RealtimeMimicDeclinePlaceButtonMethod()
+        {
+            Debug.Log("RealtimeMimicDeclinePlaceButtonMethod: User DECLINED Place Point, Publishing Place Message.");
+            ControlFollowMeButtonInteractability(true);
+            if (mqttTrajectoryManager.RealtimeMimicPlaceMessageToPublish != null)
+            {
+                mqttTrajectoryManager.RealtimeMimicPickMessageToPublish = null;
+            }
+            if (instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN.activeSelf)
+            {
+                instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN.SetActive(false);
+            }
+            instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN = null;
+            if (instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONROBOT.activeSelf)
+            {
+                instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONROBOT.SetActive(false);
+            }
+            instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONROBOT = null;
+            instantiateObjects.DestroyRealtimeMimicZoneObjects();
+            RealtimeMimicAcceptPlaceMessage.SetActive(false);
+        }
+
+        public void RealtimeMimicSignalOnscreenMessageForPick()
+        {
+            if (mqttTrajectoryManager.RealtimeMimicPickMessageToPublish != null)
+            {
+                Debug.Log("SignalOnscreenMessageForPick: Signaling Onscreen Message for Pick Point.");
+
+                ControlFollowMeButtonInteractability(false);
+
+                if (RealtimeMimicEditorTestToggleObject.GetComponentInChildren<Toggle>().isOn)
+                {
+                    RealtimeMimicEditorTestToggleObject.GetComponentInChildren<Toggle>().isOn = false;
+                }
+                RealtimeMimicAcceptPickMessage.SetActive(true);
+            }
+            else
+            {
+                Debug.LogWarning("SignalOnscreenMessageForPick: No Pick Message to Publish.");
+                string message = "WARNING: A pick was requested, however there is nothing to publish to the planner please try this again.";
+                UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref RealTimeMimicPickRequestedWithNoMessage, "RealtimeMimicPickRequestedWithNoMessage", MessagesParent, message, "RealtimeMimicSignalOnscreenMessageForPick: Realtime Mimic Pick was requested with no message.");
+            }
+        }
+        public void RealtimeMimicSignalOnscreenMessageForPlace()
+        {
+            if (mqttTrajectoryManager.RealtimeMimicPlaceMessageToPublish != null)
+            {
+                Debug.Log("RealtimeMimicSignalOnscreenMessageForPlace: Signaling Onscreen Message for Pick Point.");
+                ControlFollowMeButtonInteractability(false);
+                if (RealtimeMimicEditorTestToggleObject.GetComponentInChildren<Toggle>().isOn)
+                {
+                    RealtimeMimicEditorTestToggleObject.GetComponentInChildren<Toggle>().isOn = false;
+                }
+
+                RealtimeMimicAcceptPlaceMessage.SetActive(true);
+            }
+            else
+            {
+                Debug.LogWarning("RealtimeMimicSignalOnscreenMessageForPlace: No Pick Message to Publish.");
+                string message = "WARNING: A place was requested, however there is nothing to publish to the planner please try this again.";
+                UserInterface.SignalOnScreenMessageFromPrefab(ref OnScreenErrorMessagePrefab, ref RealTimeMimicPlaceRequestedWithNoMessage, "RealtimeMimicPlaceRequestedWithNoMessage", MessagesParent, message, "RealtimeMimicSignalOnscreenMessageForPlace: Realtime Mimic Pick was requested with no message.");
+            }
+        }
+
+        public void ControlFollowMeButtonInteractability(bool interactable)
+        {
+            /*
+            * Method is used to control the interactability of the Follow Me Button.
+            */
+            if (!interactable)
+            {
+                FollowMeButton.GetComponentInChildren<Button>().interactable = false;
+                FollowMeButtonHeldEventComponent.isHeld = false;
+                FollowMeButtonHeldEventComponent.ignore = true; //TODO: Make this false when the message replys or the informatoin is cleared.
+            }
+            else
+            {
+                FollowMeButtonHeldEventComponent.ignore = false;
+                FollowMeButton.GetComponentInChildren<Button>().interactable = true;
+            }
+        }
         //UI Control Methods //TODO: I think that all of the updated methods for Mimic are working, but needs to be tested.
         public void SetUIObjectsFromCurrentMode(ProjectZones.CurrentZoneMode mode)
         {

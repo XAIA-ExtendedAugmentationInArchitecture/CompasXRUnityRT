@@ -550,15 +550,24 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public string RobotName { get; private set; }
         public int PointIndex { get; private set; }
         public bool InitialRequest { get; private set; }
-        public RealtimeMimicRequestMessage(Frame requestedRobotFrame, string robotName, int pointIndex, Header header = null, bool initialRequest = false)
+
+        //TODO: Testing the these properties to be the pick and place objects and frames.
+        public bool IsPick { get; set; } = false;
+        public bool IsPlace { get; set; } = false;
+        public Frame GeometryFrame { get; set; } = null;
+
+        public RealtimeMimicRequestMessage(Frame requestedRobotFrame, string robotName, int pointIndex, Header header = null, bool initialRequest = false, bool isPick = false, bool isPlace = false, Frame geometryFrame = null)
         {
             Header = header ?? new Header();
             RequestedRobotFrame = requestedRobotFrame;
-            // HumanFrames = humanFrames;
-            // RobotFrames = robotFrames;
             RobotName = robotName;
             PointIndex = pointIndex;
             InitialRequest = initialRequest;
+
+            //TODO: Testing the these properties to be the pick and place objects and frames.
+            IsPick = isPick;
+            IsPlace = isPlace;
+            GeometryFrame = geometryFrame;
         }
         public Dictionary<string, object> GetData()
         {
@@ -569,11 +578,12 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             {
                 { "header", Header.GetData() },
                 { "requested_robot_frame", RequestedRobotFrame.GetData() },
-                // { "human_frames", MessageHandelingExtensions._getDataFromFramesList(HumanFrames) },
-                // { "robot_frames", MessageHandelingExtensions._getDataFromFramesList(RobotFrames) },
                 { "robot_name", RobotName },
                 { "point_index", PointIndex },
-                { "initial_request", InitialRequest }
+                { "initial_request", InitialRequest },
+                { "is_pick", IsPick },
+                { "is_place", IsPlace },
+                { "geometry_frame", GeometryFrame != null ? GeometryFrame.GetData() : null }
             };
         }
         public static RealtimeMimicRequestMessage Parse(string jsonString)
@@ -587,17 +597,23 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
 
             Dictionary<string, object> requestedRobotFrameDict = jsonObject["requested_robot_frame"] as Dictionary<string, object>;
             Frame requestedFrame = Frame.FromData(requestedRobotFrameDict);
-            // var humanFramesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["human_frames"].ToString());
-            // List<Frame> humanFrames = Frame._parseFramesData(humanFramesData);
-
-            // var robotFramesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonObject["robot_frames"].ToString());
-            // List<Frame> robotFrames = Frame._parseFramesData(robotFramesData);
-
             var robotName = jsonObject["robot_name"].ToString();
-            // var message = jsonObject["message"].ToString();
             var pointIndex = Convert.ToInt32(jsonObject["point_index"]);
             var initialRequest = Convert.ToBoolean(jsonObject["initial_request"]);
-            return new RealtimeMimicRequestMessage(requestedFrame, robotName, pointIndex, header, initialRequest);
+
+            //TODO: Testing the these properties to be the pick and place objects and frames.
+            var isPick = jsonObject.ContainsKey("is_pick") ? Convert.ToBoolean(jsonObject["is_pick"]) : false;
+            var isPlace = jsonObject.ContainsKey("is_place") ? Convert.ToBoolean(jsonObject["is_place"]) : false;
+            Frame geometryFrame = null;
+            if (jsonObject.ContainsKey("geometry_frame") && jsonObject["geometry_frame"] != null)
+            {
+                Dictionary<string, object> geometryFrameDict = jsonObject["geometry_frame"] as Dictionary<string, object>;
+                if (geometryFrameDict != null)
+                {
+                    geometryFrame = Frame.FromData(geometryFrameDict);
+                }
+            }
+            return new RealtimeMimicRequestMessage(requestedFrame, robotName, pointIndex, header, initialRequest, isPick, isPlace, geometryFrame);
         }
     }
 

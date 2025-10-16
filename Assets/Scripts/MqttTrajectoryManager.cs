@@ -58,6 +58,10 @@ namespace CompasXR.Robots
         public RoboticTerritoriesTopics roboticTerritoriesTopics;
         public GameObject mqttConnectionMessagePannel;
         public GameObject mqttConnectionFailedTextObjects;
+        
+        //TODO: Realtime mimic testing Pick or Place Message....
+        public RealtimeMimicRequestMessage RealtimeMimicPlaceMessageToPublish;
+        public RealtimeMimicRequestMessage RealtimeMimicPickMessageToPublish;
 
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////
 

@@ -12,6 +12,7 @@ namespace CompasXR.UI
         private float timer = 0f;
 
         public bool vibrate = true;
+        public bool ignore = false;
 
         public void OnPointerDown(PointerEventData eventData)
         {
@@ -29,12 +30,15 @@ namespace CompasXR.UI
         {
             if (isHeld && vibrate)
             {
-                timer += Time.deltaTime;
-
-                if (timer >= vibrationInterval)
+                if (!ignore)
                 {
-                    Vibrate();
-                    timer = 0f;
+                    timer += Time.deltaTime;
+
+                    if (timer >= vibrationInterval)
+                    {
+                        Vibrate();
+                        timer = 0f;
+                    }
                 }
             }
         }

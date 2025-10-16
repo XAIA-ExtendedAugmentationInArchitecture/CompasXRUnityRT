@@ -179,6 +179,9 @@ namespace CompasXR.Core
 
         public Quaternion LASTSENTCAMERAROTATIONFORREALTIMEMIMIC = Quaternion.identity;
 
+        public GameObject REALTIMEMIMICPICKORPLACEINFORMATIONROBOT = null;
+        public GameObject REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN = null;
+
         //TODO: ROBOTIC TERRITORIES TESTING ////////////////////////////////////////////////////////////////////////////////////////
         public GameObject MirroredGeometriesParentObject;
         public MimicMirroredGeometryManager MimicMirroredGeometryManagerImplementation;
@@ -335,9 +338,7 @@ namespace CompasXR.Core
                         Debug.LogWarning($"ColorObservedGeometries: Geometry Object for {observedGeometry.Name} is null");
                     }
                 }
-
                 OnInitialTrackedGeometryPlaced();
-
             }
             else
             {
@@ -1907,9 +1908,7 @@ namespace CompasXR.Core
                 return null;
             }
 
-            if (name.StartsWith("Cube") && name.Length == 6 && char.IsDigit(name[4]) && char.IsDigit(name[5]))
-            // Search in observed geometries
-            // if (Regex.IsMatch(objectName, @"^Cube\d{2}$"))
+            if (objectName.StartsWith("Cube") && objectName.Length == 6 && char.IsDigit(objectName[4]) && char.IsDigit(objectName[5]))
             {
                 GameObject foundObservedGeometry = observedObjectsParent.FindObject(objectName);
                 GameObject mirrorredFoundObservedGeometry = mirroredObservedGeometriesParent.FindObject(objectName);
@@ -1921,18 +1920,17 @@ namespace CompasXR.Core
                         mirroredTargetInformation != null && mirroredPlaceFrameGeometry != null && mirroredPlaceFrameVisibility != null)
                     {
                         Debug.Log($"FindHumanandRobotTargetInformationRTMimic: Found Observed Geometry '{objectName}' with PlaceFrame and Visibility.");
-                        // targetInformation.SetActive(true);
-                        // mirroredTargetInformation.SetActive(true);
+                        targetInformation.SetActive(true);
+                        mirroredTargetInformation.SetActive(true);
+
+                        REALTIMEMIMICPICKORPLACEINFORMATIONROBOT = targetInformation;
+                        REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN = mirroredTargetInformation;
+
+                        ObjectInstantiaion.ColorObjectbyInputMaterial(placeFrameVisibility, RobotBuiltMaterial);
+                        ObjectInstantiaion.ColorObjectbyInputMaterial(mirroredPlaceFrameVisibility, HumanBuiltMaterial);
 
                         GameObject foundPlaceFrameGeometry = placeFrameGeometry;
                         return foundPlaceFrameGeometry;
-                        //TODO: These objects need to be added to the mirrored geometry list.
-                        // ObjectInstantiaion.ColorObjectbyInputMaterial(placeFrameVisibility, RobotBuiltMaterial);
-                        // ObjectInstantiaion.ColorObjectbyInputMaterial(mirroredPlaceFrameVisibility, HumanBuiltMaterial);
-                        //TODO: NEED TO CREATE AN IO LIST FOR ADDING AND REMOVING GEOMETRIES.... DOUBLE CHECK PYLIB
-                        // DrawLineFromGameObjectList(MimicHumanPoints, MimicHumanLine, humanColor, 0.01f);
-                        // DrawLineFromGameObjectList(MimicRobotPoints, MimicRobotLine, robotColor, 0.01f);
-                        // userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex = MimicHumanPoints.Count - 1;
                     }
                     else
                     {
@@ -1947,8 +1945,7 @@ namespace CompasXR.Core
                 }
             }
 
-            else if (name.Length == 2 && name[0] == 'G' && name[1] >= '0' && name[1] <= '8')
-            // else if (Regex.IsMatch(objectName, @"^G[0-8]$")) // TODO: MAY NEED TO CHANGE THIS TO MAX INDEX AND MAKE IT AN INPUT LATER...
+            else if (objectName.Length == 2 && objectName[0] == 'G' && objectName[1] >= '0' && objectName[1] <= '8') //TODO: MAY NEED TO CHANGE THIS TO MAX INDEX AND MAKE IT AN INPUT LATER...
             {
                 GameObject foundTargetObject = goalGeometryParent.FindObject(objectName);
                 GameObject mirrorredFoundTarget = mirroredGoalGeometryParent.FindObject(objectName);
@@ -1959,18 +1956,18 @@ namespace CompasXR.Core
                     if (targetInformation != null && placeFrameGeometry != null && placeFrameVisibility != null &&
                         mirroredTargetInformation != null && mirroredPlaceFrameGeometry != null && mirroredPlaceFrameVisibility != null)
                     {
+                        //TODO: FIND A WAY TO SHUT THIS OFF ON THE RETURN MESSAGE........
+                        targetInformation.SetActive(true);
+                        mirroredTargetInformation.SetActive(true);
+                        ObjectInstantiaion.ColorObjectbyInputMaterial(placeFrameVisibility, RobotBuiltMaterial);
+                        ObjectInstantiaion.ColorObjectbyInputMaterial(mirroredPlaceFrameVisibility, HumanBuiltMaterial);
+
+                        REALTIMEMIMICPICKORPLACEINFORMATIONROBOT = targetInformation;
+                        REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN = mirroredTargetInformation;
+
                         Debug.Log($"FindHumanandRobotTargetInformationRTMimic: Found Target Geometry '{objectName}' with PlaceFrame and Visibility.");
                         GameObject foundPlaceFrameGeometry = placeFrameGeometry;
                         return foundPlaceFrameGeometry;
-                        // targetInformation.SetActive(true);
-                        // mirroredTargetInformation.SetActive(true);
-
-                        //TODO: These objects need to be added to the mirrored geometry list.
-                        // ObjectInstantiaion.ColorObjectbyInputMaterial(placeFrameVisibility, RobotBuiltMaterial);
-                        // ObjectInstantiaion.ColorObjectbyInputMaterial(mirroredPlaceFrameVisibility, HumanBuiltMaterial);
-
-                        // DrawLineFromGameObjectList(MimicHumanPoints, MimicHumanLine, humanColor, 0.01f);
-                        // DrawLineFromGameObjectList(MimicRobotPoints, MimicRobotLine, robotColor, 0.01f);
                     }
                     else
                     {
@@ -2226,7 +2223,6 @@ namespace CompasXR.Core
 
             return (returnIntOption, itemIndex);
         }
-
         public (int returnIntOption, string itemName) DetermineOrAndPlaceObjectFromColliderHitsRTMimic(List<string> collidedWithGameObjectNamesList) //TODO: The Pick & Place State Needs to be updated after this function.
         {
             // 0 = PointShouldBeMade
@@ -2366,121 +2362,6 @@ namespace CompasXR.Core
             Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: No matching colliders. Proceed as normal.");
             return (0, "None");
         }
-        // {
-        //     // TODO: Return codes:
-        //     // 0 = PointShouldBeMade      : Camera not within pick/place; proceed as normal.
-        //     // 1 = PointShouldNotBeMade   : Camera within restricted zone; do not make a point.
-        //     // 2 = ObjectShouldBePicked   : Camera within pickable observed Geometry (CubeXX).
-        //     // 3 = ObjectShouldBePlaced   : Camera within placeable target Geometry (G0..G8).
-
-        //     if (collidedWithGameObjectNamesList == null || collidedWithGameObjectNamesList.Count == 0)
-        //     {
-        //         Debug.LogWarning("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Collided With GameObject Names List is null or empty.");
-        //         return (0, "None");
-        //     }
-
-        //     string itemIndex = "None";
-        //     List<int> potentialSetOptions = new List<int>();
-        //     string satisfyingComponentName = "None";
-
-        //     for (int i = 0; i < collidedWithGameObjectNamesList.Count; i++)
-        //     {
-        //         string name = collidedWithGameObjectNamesList[i];
-
-        //         if (string.IsNullOrEmpty(name))
-        //         {
-        //             Debug.LogWarning("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: GameObject name is null or empty.");
-        //             continue;
-        //         }
-
-        //         if (name == "AnchorCube")
-        //         {
-        //             Debug.LogWarning("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Camera is within the Anchor Cube Collider Set Point Anyway.");
-        //             potentialSetOptions.Add(0);
-        //             continue;
-        //         }
-
-        //         if (Regex.IsMatch(name, @"^G[0-8]$")) // TODO: MAY NEED TO CHANGE THIS TO MAX INDEX AND MAKE IT AN INPUT LATER...
-        //         {
-        //             Debug.Log($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: '{name}' matches G0..G8 (Target Geometry).");
-        //             GoalObjectComponent currentTargetClass = MimicGoalsManager.GoalStatusObserver.ComponentStates[name];
-        //             if (currentTargetClass == null)
-        //             {
-        //                 Debug.LogError($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Current Target Class for '{name}' is null.");
-        //                 //TODO: Signal Onscreen Error. Fatal Error..... restart please.
-        //                 Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Cannot find target this is a fatal error, please reset the application.");
-        //                 string message = "WARNING: This is a fatal error, because the target is not found please reset the application.";
-        //                 UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.RealtimeMimicCannotFindTargetOnScreenMsg, "UIMimicPointCannotFindSpecifiedTarget", UIFunctionalities.MessagesParent, message, "DeterminePickAndPlaceStateFromColliderHitsPickorPlace: The place target cannot be found, THIS IS A FATAL ERROR.");
-        //                 return (1, "None");
-        //             }
-        //             else
-        //             {
-        //                 if (currentTargetClass.IsSatisfied)
-        //                 {
-
-        //                     Debug.LogWarning($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Current Target '{name}' is already satisfied, might not want to place here.");
-        //                     potentialSetOptions.Add(3); // This means that the point should look for a pick.
-        //                     // potentialSetOptions.Add(0); // This means that the point can be made as normal.
-        //                     //TODO: Add flag to check if there is something that should be satisfied??????
-        //                     satisfyingComponentName = currentTargetClass.SatisfyingObservedGeometry.Name;
-        //                 }
-        //                 else
-        //                 {
-        //                     //TODO: Return place here.... The next component should signal an onscreen message to ask if they want to place.
-        //                     Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: The target is not satisfied, proceeding to request place prompt.");
-        //                     potentialSetOptions.Add(3);
-        //                     itemIndex = name;
-        //                 }
-        //             }
-        //             continue;
-        //         }
-
-        //         if (Regex.IsMatch(name, @"^Cube\d{2}$"))
-        //         {
-        //             //This does not check if the object satifies a target or not... I could try to add this, but ultimately it is not needed. It only means that people can pick up objects that are already placed....
-        //             Debug.Log($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: '{name}' matches CubeXX (Observed Geometry).");
-        //             if (satisfyingComponentName != "None")
-        //             {
-        //                 if (name == satisfyingComponentName)
-        //                 {
-        //                     Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: The potential pick object satisfies the target, this should be ignored.");
-        //                     potentialSetOptions.Add(0);
-        //                 }
-        //                 else
-        //                 {
-        //                     Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: The potential pick object does NOT satisfy the target, proceeding to request pick.");
-        //                     potentialSetOptions.Add(2);
-        //                     itemIndex = name;
-        //                     // satisfyingComponentName = "None"; // reset the satisfying component name
-        //                 }
-        //             }
-        //             else
-        //             {
-
-        //                 Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: The potential pick object does NOT satisfy the target, proceeding to request pick.");
-        //                 potentialSetOptions.Add(2);
-        //                 itemIndex = name;
-        //             }
-        //             continue;
-        //         }
-        //         Debug.LogWarning($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: '{name}' does not match pick/place patterns.");
-        //         potentialSetOptions.Add(0);
-        //     }
-
-        //     int returnIntOption = 0;
-
-        //     // Priority: 2 > 3 > 1 > 0
-        //     if (potentialSetOptions.Contains(2))
-        //         returnIntOption = 2;
-        //     else if (potentialSetOptions.Contains(3))
-        //         returnIntOption = 3;
-        //     else if (potentialSetOptions.Contains(1))
-        //         returnIntOption = 1;
-        //     else
-        //         returnIntOption = 0;
-
-        //     return (returnIntOption, itemIndex);
-        // }
 
         //TODO: Finding targets and information for pick and place in mimic User Initiated mode.
         public void DestroyRealtimeMimicZoneObjects()
