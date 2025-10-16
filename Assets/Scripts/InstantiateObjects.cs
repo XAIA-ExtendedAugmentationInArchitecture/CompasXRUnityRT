@@ -1886,6 +1886,111 @@ namespace CompasXR.Core
             return (targetInformation, placeFrameGeometry, placeFrameVisibility);
         }
 
+        public GameObject FindHumanandRobotTargetInformationRTMimic(string objectName, GameObject observedObjectsParent, GameObject goalGeometryParent, GameObject mirroredObservedGeometriesParent, GameObject mirroredGoalGeometryParent)
+        {
+            Debug.Log("FindHumanandRobotTargetInformationRTMimic: Finding Target Information for " + objectName);
+            if (string.IsNullOrEmpty(objectName))
+            {
+                Debug.LogError("FindHumanandRobotTargetInformationRTMimic: Object Name is null or empty.");
+                return null;
+            }
+
+            if (observedObjectsParent == null || goalGeometryParent == null)
+            {
+                Debug.LogError("FindHumanandRobotTargetInformationRTMimic: Observed Objects Parent or Goal Geometry Parent is null.");
+                return null;
+            }
+
+            if (mirroredObservedGeometriesParent == null || mirroredGoalGeometryParent == null)
+            {
+                Debug.LogError("FindHumanandRobotTargetInformationRTMimic: Mirrored Observed Geometries Parent or Mirrored Goal Geometry Parent is null.");
+                return null;
+            }
+
+            if (name.StartsWith("Cube") && name.Length == 6 && char.IsDigit(name[4]) && char.IsDigit(name[5]))
+            // Search in observed geometries
+            // if (Regex.IsMatch(objectName, @"^Cube\d{2}$"))
+            {
+                GameObject foundObservedGeometry = observedObjectsParent.FindObject(objectName);
+                GameObject mirrorredFoundObservedGeometry = mirroredObservedGeometriesParent.FindObject(objectName);
+                if (foundObservedGeometry != null && mirrorredFoundObservedGeometry != null)
+                {
+                    var (targetInformation, placeFrameGeometry, placeFrameVisibility) = FindPlaceFrameGeometryAndVisibility(foundObservedGeometry);
+                    var (mirroredTargetInformation, mirroredPlaceFrameGeometry, mirroredPlaceFrameVisibility) = FindPlaceFrameGeometryAndVisibility(mirrorredFoundObservedGeometry);
+                    if (targetInformation != null && placeFrameGeometry != null && placeFrameVisibility != null &&
+                        mirroredTargetInformation != null && mirroredPlaceFrameGeometry != null && mirroredPlaceFrameVisibility != null)
+                    {
+                        Debug.Log($"FindHumanandRobotTargetInformationRTMimic: Found Observed Geometry '{objectName}' with PlaceFrame and Visibility.");
+                        // targetInformation.SetActive(true);
+                        // mirroredTargetInformation.SetActive(true);
+
+                        GameObject foundPlaceFrameGeometry = placeFrameGeometry;
+                        return foundPlaceFrameGeometry;
+                        //TODO: These objects need to be added to the mirrored geometry list.
+                        // ObjectInstantiaion.ColorObjectbyInputMaterial(placeFrameVisibility, RobotBuiltMaterial);
+                        // ObjectInstantiaion.ColorObjectbyInputMaterial(mirroredPlaceFrameVisibility, HumanBuiltMaterial);
+                        //TODO: NEED TO CREATE AN IO LIST FOR ADDING AND REMOVING GEOMETRIES.... DOUBLE CHECK PYLIB
+                        // DrawLineFromGameObjectList(MimicHumanPoints, MimicHumanLine, humanColor, 0.01f);
+                        // DrawLineFromGameObjectList(MimicRobotPoints, MimicRobotLine, robotColor, 0.01f);
+                        // userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex = MimicHumanPoints.Count - 1;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"FindHumanandRobotTargetInformationRTMimic: Observed Geometry '{objectName}' is missing PlaceFrame or Visibility.");
+                        return null;
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"FindHumanandRobotTargetInformationRTMimic: Observed Geometry '{objectName}' not found under Observed Objects Parent.");
+                    return null;
+                }
+            }
+
+            else if (name.Length == 2 && name[0] == 'G' && name[1] >= '0' && name[1] <= '8')
+            // else if (Regex.IsMatch(objectName, @"^G[0-8]$")) // TODO: MAY NEED TO CHANGE THIS TO MAX INDEX AND MAKE IT AN INPUT LATER...
+            {
+                GameObject foundTargetObject = goalGeometryParent.FindObject(objectName);
+                GameObject mirrorredFoundTarget = mirroredGoalGeometryParent.FindObject(objectName);
+                if (foundTargetObject != null && mirrorredFoundTarget != null)
+                {
+                    var (targetInformation, placeFrameGeometry, placeFrameVisibility) = FindPlaceFrameGeometryAndVisibility(foundTargetObject);
+                    var (mirroredTargetInformation, mirroredPlaceFrameGeometry, mirroredPlaceFrameVisibility) = FindPlaceFrameGeometryAndVisibility(mirrorredFoundTarget);
+                    if (targetInformation != null && placeFrameGeometry != null && placeFrameVisibility != null &&
+                        mirroredTargetInformation != null && mirroredPlaceFrameGeometry != null && mirroredPlaceFrameVisibility != null)
+                    {
+                        Debug.Log($"FindHumanandRobotTargetInformationRTMimic: Found Target Geometry '{objectName}' with PlaceFrame and Visibility.");
+                        GameObject foundPlaceFrameGeometry = placeFrameGeometry;
+                        return foundPlaceFrameGeometry;
+                        // targetInformation.SetActive(true);
+                        // mirroredTargetInformation.SetActive(true);
+
+                        //TODO: These objects need to be added to the mirrored geometry list.
+                        // ObjectInstantiaion.ColorObjectbyInputMaterial(placeFrameVisibility, RobotBuiltMaterial);
+                        // ObjectInstantiaion.ColorObjectbyInputMaterial(mirroredPlaceFrameVisibility, HumanBuiltMaterial);
+
+                        // DrawLineFromGameObjectList(MimicHumanPoints, MimicHumanLine, humanColor, 0.01f);
+                        // DrawLineFromGameObjectList(MimicRobotPoints, MimicRobotLine, robotColor, 0.01f);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"FindHumanandRobotTargetInformationRTMimic: Observed Geometry '{objectName}' is missing PlaceFrame or Visibility.");
+                        return null;
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"FindHumanandRobotTargetInformationRTMimic: Observed Geometry '{objectName}' not found under Observed Objects Parent.");
+                    return null;
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"FindHumanandRobotTargetInformationRTMimic: Object Name '{objectName}' does not match expected patterns.");
+                return null;
+            }
+        }
+
         //TODO: Double check that this works in all scenarios........
         public (int returnIntOption, string itemName) DeterminePickAndPlaceStateFromColliderHitsPickThenPlace(List<string> collidedWithGameObjectNamesList) //TODO: The Pick & Place State Needs to be updated after this function.
         {
@@ -2159,7 +2264,7 @@ namespace CompasXR.Core
                 }
 
                 // G0..G8 (Target Geometry)
-                if (name.Length == 2 && name[0] == 'G' && name[1] >= '0' && name[1] <= '8')
+                if (name.Length == 2 && name[0] == 'G' && name[1] >= '0' && name[1] <= '8') //TODO: MAY NEED TO CHANGE THIS TO MAX INDEX AND MAKE IT AN INPUT LATER...
                 {
                     Debug.Log($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: '{name}' matches G0..G8 (Target Geometry).");
 

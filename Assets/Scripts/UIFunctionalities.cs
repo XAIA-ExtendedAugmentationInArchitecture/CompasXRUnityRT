@@ -1965,12 +1965,34 @@ namespace CompasXR.UI
                                 {
                                     Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: This point should be a pick point {pickOrPlaceItemName}");
                                     //TODO: Signal On screen message that pick could be made. The only thing is that I need to be sure the published value has correct index.
+                                    string currentGoalName = instantiateObjects.MimicMirroredGeometryManagerImplementation.CurrentMimicGoalName;
+                                    //TODO: CHECKKKKKK MEEEEEEE HERE JOEEEEEEE
+                                    GameObject pickFrameGameObject = instantiateObjects.FindHumanandRobotTargetInformationRTMimic(pickOrPlaceItemName, instantiateObjects.TrackedGeometriesParentObject, instantiateObjects.MimicGoalsManager.CurrentGoal.GoalGameObject, instantiateObjects.MimicMirroredGeometryManagerImplementation.TrackedGeometriesParent, instantiateObjects.MimicMirroredGeometryManagerImplementation.GoalsParent.FindObject(currentGoalName));
+                                    if (pickFrameGameObject == null)
+                                    {
+                                        Debug.LogWarning("JOOOEEEEE : Cannot find PICK frame game object.");
+                                    }
+                                    else
+                                    {
+                                        Debug.LogWarning($"CreateRealtimeMimicPointsBasicTEMPORARY: Found PICK frame game object {pickFrameGameObject.name}.");
+                                    }
                                     return;
                                 }
                                 else if (pickState == 3)
                                 {
                                     Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: This point should be a place point {pickOrPlaceItemName}.");
+                                    string currentGoalName = instantiateObjects.MimicMirroredGeometryManagerImplementation.CurrentMimicGoalName;
+                                    //TODO: CHECKKKKKK MEEEEEEE HERE JOEEEEEEE
+                                    GameObject placeFrameGameObject = instantiateObjects.FindHumanandRobotTargetInformationRTMimic(pickOrPlaceItemName, instantiateObjects.TrackedGeometriesParentObject, instantiateObjects.MimicGoalsManager.CurrentGoal.GoalGameObject, instantiateObjects.MimicMirroredGeometryManagerImplementation.TrackedGeometriesParent, instantiateObjects.MimicMirroredGeometryManagerImplementation.GoalsParent.FindObject(currentGoalName));
                                     //TODO: signal on screen message that place could be made. The only thing is that I need to be sure the published value has correct index.
+                                    if (placeFrameGameObject == null)
+                                    {
+                                        Debug.LogWarning("JOOOEEEEE : Cannot find PLACE frame game object.");
+                                    }
+                                    else
+                                    {
+                                        Debug.LogWarning($"CreateRealtimeMimicPointsBasicTEMPORARY: Found PLACE frame game object {placeFrameGameObject.name}.");
+                                    }
                                     return;
                                 }
                                 else
