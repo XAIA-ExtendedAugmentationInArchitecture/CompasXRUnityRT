@@ -196,26 +196,7 @@ namespace CompasXR.Robots
                 //TODO: Implement Realtime Mimic Result Message Handler (Needs to find the object and delete it if it existis in the scene)
                 Debug.Log("MQTT: RealtimeMimicResult Message Handeling");
                 RealtimeMimicResultMessage realtimeMimicResultMessage = RealtimeMimicResultMessage.Parse(message);
-                if (realtimeMimicResultMessage.CorrectBackend == false)
-                {
-                    Debug.LogWarning("MQTT: RealtimeMimicHandler: No Trajectories in the Mimic Result Message.");
-                    string warningMessage = "WARNING: The robotic controler is set to the incorrect backend. Please restart it to mimic in realtime.";
-                    UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.RealtimeMimicIncorrectBackendOnScreenMessage, "RealtimeMimicIncorrectBackendOnScreenMessage", UIFunctionalities.MessagesParent, warningMessage, "RealtimeMimicIncorrectBackend: Realtime Mimic Cannot be used because the backend is incorrect.");
-                    return;
-                }
-                if (realtimeMimicResultMessage.PointIndex == null)
-                {
-                    Debug.LogError("MQTT: RealtimeMimicResult Message Handeling: Point Index is null in the Realtime Mimic Result Message. No action taken.");
-                }
-                else if (realtimeMimicResultMessage.Configuration == null)
-                {
-                    Debug.LogWarning("MQTT: RealtimeMimicResult Message Handeling: Configuration is null in the Realtime Mimic Result Message. THe Point will be deleted, but the Action will not be completed.");
-                }
-                else
-                {
-                    // UIFunctionalities.UpdateRealtimeMimicPointFromMessage(pointIndex, trajectoryVisualizer.RealtimeMimicPoints, trajectoryVisualizer.RealtimeMimicLines);
-                    UIFunctionalities.UpdateLastCompletedIndexForRealtimeMimicPoint(realtimeMimicResultMessage.PointIndex);
-                }
+                RealtimeMimicResultHandler(realtimeMimicResultMessage);
             }
             else if (topic == roboticTerritoriesTopics.subscribers.inferenceResultTopic)
             {
@@ -234,6 +215,48 @@ namespace CompasXR.Robots
             else
             {
                 Debug.LogWarning("MQTT: No message handler for topic: " + topic);
+            }
+        }
+
+        public void RealtimeMimicResultHandler(RealtimeMimicResultMessage realtimeMimicResultMessage)
+        {
+            Debug.Log($"MQTT: RealtimeMimicResultHandler: Realtime Mimic Result Message Received pickORplace : {realtimeMimicResultMessage.WasPickOrPlace}, PTIdx : {realtimeMimicResultMessage.PointIndex}, PlanningSuccess: {realtimeMimicResultMessage.PickOrPlacePlanningSucceeded}");
+            if (realtimeMimicResultMessage.CorrectBackend == false)
+            {
+                Debug.LogWarning("MQTT: RealtimeMimicHandler: No Trajectories in the Mimic Result Message.");
+                string warningMessage = "WARNING: The robotic controler is set to the incorrect backend. Please restart it to mimic in realtime.";
+                UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.RealtimeMimicIncorrectBackendOnScreenMessage, "RealtimeMimicIncorrectBackendOnScreenMessage", UIFunctionalities.MessagesParent, warningMessage, "RealtimeMimicIncorrectBackend: Realtime Mimic Cannot be used because the backend is incorrect.");
+                return;
+            }
+            if (realtimeMimicResultMessage.PointIndex == null)
+            {
+                Debug.LogError("MQTT: RealtimeMimicResult Message Handeling: Point Index is null in the Realtime Mimic Result Message. No action taken.");
+            }
+            else if(realtimeMimicResultMessage.WasPickOrPlace)
+            {
+                Debug.Log("MQTT: RealtimeMimicResult Message Handeling: This was a Pick or Place Action.");
+                if (realtimeMimicResultMessage.PickOrPlacePlanningSucceeded)
+                {
+                    Debug.Log("MQTT: RealtimeMimicResult Message Handeling: The Pick or Place Planning Succeeded.");
+                    UIFunctionalities.UpdateLastCompletedIndexForRealtimeMimicPoint(realtimeMimicResultMessage.PointIndex);
+                    UIFunctionalities.RealtimeMimicResetSceneFromPlanningSuccess();
+                }
+                else
+                {
+                    Debug.LogWarning("MQTT: RealtimeMimicResult Message Handeling: The Pick or Place Planning Failed. The Point will be deleted, but the Action will not be completed.");
+                    string warningMessage = "WARNING: The robotic controler was unable to plan the pick or place action. Please adjust the robot and try again.";
+                    UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.RealtimeMimicPickOrPlacePlanningFailedOnScreenMessage, "RealtimeMimicPickOrPlacePlanningFailedOnScreenMessage", UIFunctionalities.MessagesParent, warningMessage, "RealtimeMimicResultHandler: Realtime Mimic Pick or Place Planning Failed.");
+                    UIFunctionalities.RealtimeMimicResetSceneFromPlanningFailure();
+                }
+            }
+            else if (realtimeMimicResultMessage.Configuration == null)
+            {
+                Debug.LogWarning("MQTT: RealtimeMimicResult Message Handeling: Configuration is null in the Realtime Mimic Result Message. THe Point will be deleted, but the Action will not be completed.");
+            }
+            else
+            {
+                // UIFunctionalities.UpdateRealtimeMimicPointFromMessage(pointIndex, trajectoryVisualizer.RealtimeMimicPoints, trajectoryVisualizer.RealtimeMimicLines);
+                UIFunctionalities.UpdateLastCompletedIndexForRealtimeMimicPoint(realtimeMimicResultMessage.PointIndex);
             }
         }
         public void MimicResultReceivedMessageHandler(MimicTrajectoryResultMessage mimicResultMessage)
