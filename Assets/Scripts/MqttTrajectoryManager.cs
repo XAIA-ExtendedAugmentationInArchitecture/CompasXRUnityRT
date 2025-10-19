@@ -83,10 +83,6 @@ namespace CompasXR.Robots
             UnsubscribeFromRoboticTerritoriesTopics();
             RemoveConnectionEventListnersRoboticTerritories();
             Disconnect();
-
-            // UnsubscribeFromCompasXRTopics();
-            // RemoveConnectionEventListners();
-            // Disconnect();
         }
 
         //////////////////////////////////////////// General Methods ////////////////////////////////////////////
