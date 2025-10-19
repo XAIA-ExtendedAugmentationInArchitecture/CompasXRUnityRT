@@ -131107,7 +131107,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c4d8832d07fa36429d690d119e751f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  brokerAddress: localhost
+  brokerAddress: 172.20.10.5
   brokerPort: 1883
   isEncrypted: 0
   certificateName: 
@@ -140456,6 +140456,7 @@ MonoBehaviour:
   ConfigDoesNotMatchURDFStructureWarningMessageObject: {fileID: 0}
   TrajectoryNullWarningMessageObject: {fileID: 0}
   RealtimeMimicIncorrectBackendOnScreenMessage: {fileID: 0}
+  RealtimeMimicPickOrPlacePlanningFailedOnScreenMessage: {fileID: 0}
   IDToggleObject: {fileID: 0}
   RobotToggleObject: {fileID: 0}
   ObjectLengthsToggleObject: {fileID: 0}
@@ -140586,6 +140587,7 @@ MonoBehaviour:
   UserInitiatedMimicUndoPointRedScreen: {fileID: 0}
   MimicSetandUndoFlashDuration: 0.1
   FollowMeButton: {fileID: 0}
+  FollowMeButtonCover: {fileID: 0}
   FollowMeButtonHeldEventComponent: {fileID: 0}
   RealtimeMimicControlsParent: {fileID: 0}
   RealtimeMimicEditorTestToggleObject: {fileID: 0}
