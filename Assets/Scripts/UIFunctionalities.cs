@@ -97,7 +97,8 @@ namespace CompasXR.UI
         public GameObject TrajectoryNullWarningMessageObject;
 
         public GameObject RealtimeMimicIncorrectBackendOnScreenMessage;
-        public GameObject RealtimeMimicPickOrPlacePlanningFailedOnScreenMessage;
+        public GameObject RealtimeMimicPickPlanningFailedOnScreenMessage;
+        public GameObject RealtimeMimicPlacePlanningFailedOnScreenMessage;
 
         //Visualizer Menu Objects
         private GameObject VisualzierBackground;
@@ -1975,7 +1976,7 @@ namespace CompasXR.UI
 
                                 //TODO: Testing ADD here.....
                                 List<string> colliderObjectHits = instantiateObjects.GetAllCollidersNamesAtPoint(devicePosePosition);
-                                (int pickState, string pickOrPlaceItemName) = instantiateObjects.DetermineOrAndPlaceObjectFromColliderHitsRTMimic(colliderObjectHits);
+                                (int pickState, string pickOrPlaceItemName) = instantiateObjects.DetermineOrAndPlaceObjectFromColliderHitsRTMimic(colliderObjectHits, mqttTrajectoryManager.realtimeMimicPickandPlaceManager);
 
                                 if (pickState == 0)
                                 {
@@ -2013,7 +2014,7 @@ namespace CompasXR.UI
                                         geometryFrame: pickFrame
                                     );
                                     //TODO: This is storing to publish later based on the user interaction.....
-                                    mqttTrajectoryManager.RealtimeMimicPickMessageToPublish = realtimeMimicRequestPickMessage;
+                                    mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PickMessageToPublish = realtimeMimicRequestPickMessage;
                                     Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Storing RT Mimic Pick for {robotName} with pointIndex {pointIndex} and {JsonConvert.SerializeObject(realtimeMimicRequestPickMessage.GetData())} : Awaiting user confirmation to publish.");
                                     RealtimeMimicSignalOnscreenMessageForPick();
                                     // REALTIMEMIMICLASTSENTINDEX = pointIndex; //TODO: This is important and needs to be added to the yes or no pick and place.
@@ -2046,7 +2047,7 @@ namespace CompasXR.UI
                                         geometryFrame: placeFrame
                                     );
                                     //TODO: This is storing to publish later based on the user interaction.....
-                                    mqttTrajectoryManager.RealtimeMimicPlaceMessageToPublish = realtimeMimicRequestPlaceMessage;
+                                    mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PlaceMessageToPublish = realtimeMimicRequestPlaceMessage;
                                     Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Storing RT Mimic Place for {robotName} with pointIndex {pointIndex} and {JsonConvert.SerializeObject(realtimeMimicRequestPlaceMessage.GetData())} : Awaiting user confirmation to publish.");
                                     // REALTIMEMIMICLASTSENTINDEX = pointIndex; //TODO: This is important and needs to be added to the yes or no pick and place.
                                     RealtimeMimicSignalOnscreenMessageForPlace();
@@ -2077,8 +2078,8 @@ namespace CompasXR.UI
                             //Set Lines active and Points active
                             instantiateObjects.RealtimeMimicObjects.SetActive(true);
                             //TODO: Set the the last two sent pick and place messages to null just to be safe.
-                            mqttTrajectoryManager.RealtimeMimicPickMessageToPublish = null;
-                            mqttTrajectoryManager.RealtimeMimicPlaceMessageToPublish = null;
+                            mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PickMessageToPublish = null;
+                            mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PlaceMessageToPublish = null;
 
                             //TODO: This needs to have an index as and input.
                             instantiateObjects.CreateRealtimeMimicPointsBasicTEMPORARY(humanZoneObject, robotZoneObject,
@@ -2363,7 +2364,6 @@ namespace CompasXR.UI
         }
 
         //TODO: Realtime Mimic Execute Pick and Execute Place Onscreen Message Methods
-
         public void SetRealtimeMimicPickAndPlaceOnscreenMessageOnStart()
         {
             //TODO: Setup message structures and button methods for realtime mimic pick and place.
@@ -2381,7 +2381,7 @@ namespace CompasXR.UI
         }
         public void RealtimeMimicPublishAcceptPickButtonMethod()
         {
-            RealtimeMimicRequestMessage realtimeMimicPickRequestMessage = mqttTrajectoryManager.RealtimeMimicPickMessageToPublish;
+            RealtimeMimicRequestMessage realtimeMimicPickRequestMessage = mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PickMessageToPublish;
             if (realtimeMimicPickRequestMessage == null)
             {
                 Debug.LogError("RealtimeMimicPublishAcceptPickButtonMethod: Realtime Mimic PICK Message to Publish is null, cannot publish.");
@@ -2396,9 +2396,9 @@ namespace CompasXR.UI
         {
             Debug.Log("RealtimeMimicPublishAcceptPickButtonMethod: User DECLINED Pick Point, Publishing Pick Message.");
             ControlFollowMeButtonInteractability(true);
-            if (mqttTrajectoryManager.RealtimeMimicPickMessageToPublish != null)
+            if (mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PickMessageToPublish != null)
             {
-                mqttTrajectoryManager.RealtimeMimicPickMessageToPublish = null;
+                mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PickMessageToPublish = null;
             }
             if (instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN.activeSelf)
             {
@@ -2417,13 +2417,13 @@ namespace CompasXR.UI
         {
             Debug.Log("RealtimeMimicResetSceneFromPlanningFailure: Reset scene from planning failure (hiding objects and resetting everything).");
             ControlFollowMeButtonInteractability(true);
-            if (mqttTrajectoryManager.RealtimeMimicPickMessageToPublish != null)
+            if (mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PickMessageToPublish != null)
             {
-                mqttTrajectoryManager.RealtimeMimicPickMessageToPublish = null;
+                mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PickMessageToPublish = null;
             }
-            if(mqttTrajectoryManager.RealtimeMimicPlaceMessageToPublish != null)
+            if(mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PlaceMessageToPublish != null)
             {
-                mqttTrajectoryManager.RealtimeMimicPlaceMessageToPublish = null;
+                mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PlaceMessageToPublish = null;
             }
             if (instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN.activeSelf)
             {
@@ -2441,19 +2441,19 @@ namespace CompasXR.UI
         {
             Debug.Log("RealtimeMimicPublishAcceptPickButtonMethod: User DECLINED Pick Point, Publishing Pick Message.");
             ControlFollowMeButtonInteractability(true);
-            if (mqttTrajectoryManager.RealtimeMimicPickMessageToPublish != null)
+            if (mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PickMessageToPublish != null)
             {
-                mqttTrajectoryManager.RealtimeMimicPickMessageToPublish = null;
+                mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PickMessageToPublish = null;
             }
-            if(mqttTrajectoryManager.RealtimeMimicPlaceMessageToPublish != null)
+            if(mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PlaceMessageToPublish != null)
             {
-                mqttTrajectoryManager.RealtimeMimicPlaceMessageToPublish = null;
+                mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PlaceMessageToPublish = null;
             }
             instantiateObjects.DestroyRealtimeMimicZoneObjects();
         }
         public void RealtimeMimicPublishAcceptPlaceButtonMethod()
         {
-            RealtimeMimicRequestMessage realtimeMimicPlaceRequestMessage = mqttTrajectoryManager.RealtimeMimicPlaceMessageToPublish;
+            RealtimeMimicRequestMessage realtimeMimicPlaceRequestMessage = mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PlaceMessageToPublish;
             if (realtimeMimicPlaceRequestMessage == null)
             {
                 Debug.LogError("RealtimeMimicPublishAcceptPlaceButtonMethod: Realtime Mimic PICK Message to Publish is null, cannot publish.");
@@ -2468,9 +2468,9 @@ namespace CompasXR.UI
         {
             Debug.Log("RealtimeMimicDeclinePlaceButtonMethod: User DECLINED Place Point, Publishing Place Message.");
             ControlFollowMeButtonInteractability(true);
-            if (mqttTrajectoryManager.RealtimeMimicPlaceMessageToPublish != null)
+            if (mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PlaceMessageToPublish != null)
             {
-                mqttTrajectoryManager.RealtimeMimicPickMessageToPublish = null;
+                mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PickMessageToPublish = null;
             }
             if (instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONHUMAN.activeSelf)
             {
@@ -2487,7 +2487,7 @@ namespace CompasXR.UI
         }
         public void RealtimeMimicSignalOnscreenMessageForPick()
         {
-            if (mqttTrajectoryManager.RealtimeMimicPickMessageToPublish != null)
+            if (mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PickMessageToPublish != null)
             {
                 Debug.Log("SignalOnscreenMessageForPick: Signaling Onscreen Message for Pick Point.");
 
@@ -2508,7 +2508,7 @@ namespace CompasXR.UI
         }
         public void RealtimeMimicSignalOnscreenMessageForPlace()
         {
-            if (mqttTrajectoryManager.RealtimeMimicPlaceMessageToPublish != null)
+            if (mqttTrajectoryManager.realtimeMimicPickandPlaceManager.PlaceMessageToPublish != null)
             {
                 Debug.Log("RealtimeMimicSignalOnscreenMessageForPlace: Signaling Onscreen Message for Pick Point.");
                 ControlFollowMeButtonInteractability(false);
@@ -2653,6 +2653,9 @@ namespace CompasXR.UI
                     SetUserInitiatedMimicControlsActivity(false, false, false, false, false);
                     SetRealtimeMimicControlsActivity(true, true);
                     AdaptObjectCollidersForMimicMode(ProjectZones.MimicZoneMode.RealtimeMimic, instantiateObjects.MimicGoalsManager, instantiateObjects.MimicMirroredGeometryManagerImplementation);
+
+                    //TODO: RealtimeMimic Pick and Place Management Testing
+                    mqttTrajectoryManager.realtimeMimicPickandPlaceManager.Reset();
 
                     //TODO: Line Testing
                     if (instantiateObjects.MimicHumanLine != null)

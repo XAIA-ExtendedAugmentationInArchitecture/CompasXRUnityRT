@@ -2223,7 +2223,7 @@ namespace CompasXR.Core
 
             return (returnIntOption, itemIndex);
         }
-        public (int returnIntOption, string itemName) DetermineOrAndPlaceObjectFromColliderHitsRTMimic(List<string> collidedWithGameObjectNamesList) //TODO: The Pick & Place State Needs to be updated after this function.
+        public (int returnIntOption, string itemName) DetermineOrAndPlaceObjectFromColliderHitsRTMimic(List<string> collidedWithGameObjectNamesList, RealtimeMimicPickandPlaceManager rtmPickandPlaceManager) //TODO: The Pick & Place State Needs to be updated after this function.
         {
             // 0 = PointShouldBeMade
             // 1 = PointShouldNotBeMade
@@ -2313,9 +2313,9 @@ namespace CompasXR.Core
                 Debug.LogWarning($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: '{name}' does not match pick/place patterns.");
             }
 
-            // -------------------- RESOLUTION --------------------
+            // ---- Decision phase (post-scan) ----
 
-            // Conflict Rule: satisfied goal + cube ≠ satisfying cube ⇒ ignore (0)
+            // Conflict: satisfied goal present AND a cube present that is NOT the satisfying one → ignore & set normal point
             if (sawSatisfiedGoal && sawPickCube &&
                 !string.Equals(pickCubeName, satisfiedByCubeName, StringComparison.Ordinal))
             {
@@ -2323,7 +2323,7 @@ namespace CompasXR.Core
                 return (0, "None");
             }
 
-            // If satisfied goal alone or with its satisfying cube ⇒ ignore (return 0)
+            // If goal is satisfied at all → ignore placement, set normal point
             if (sawSatisfiedGoal)
             {
                 if (sawPickCube && string.Equals(pickCubeName, satisfiedByCubeName, StringComparison.Ordinal))
@@ -2337,28 +2337,42 @@ namespace CompasXR.Core
                 return (0, "None");
             }
 
-            // Pick first (higher priority)
-            if (sawPickCube)
+            // Candidate: PICK
+            if (sawPickCube && !sawUnsatisfiedGoal)
             {
+                // Apply ignore switch for observed geometries
+                if (rtmPickandPlaceManager.IgnoreObservedGeometries == true)
+                {
+                    Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: IgnoreObservedGeometries=true — overriding PICK to normal point.");
+                    return (0, "None");
+                }
+
                 Debug.Log($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Returning Pick action for '{pickCubeName}'.");
                 return (2, pickCubeName);
             }
 
-            // Place next
+            // Candidate: PLACE
             if (sawUnsatisfiedGoal)
             {
+                // Apply ignore switch for target geometries
+                if (rtmPickandPlaceManager.IgnoreTargetGeometries == true)
+                {
+                    Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: IgnoreTargetGeometries=true — overriding PLACE to normal point.");
+                    return (0, "None");
+                }
+
                 Debug.Log($"DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Returning Place action for '{unsatisfiedGoalName}'.");
                 return (3, unsatisfiedGoalName);
             }
 
-            // Restricted zones
+            // Restricted zone
             if (sawRestricted)
             {
                 Debug.LogWarning("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Restricted zone detected. Point should not be made.");
                 return (1, "None");
             }
 
-            // Default case
+            // Default: normal point
             Debug.Log("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: No matching colliders. Proceed as normal.");
             return (0, "None");
         }

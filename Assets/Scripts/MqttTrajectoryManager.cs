@@ -58,10 +58,10 @@ namespace CompasXR.Robots
         public RoboticTerritoriesTopics roboticTerritoriesTopics;
         public GameObject mqttConnectionMessagePannel;
         public GameObject mqttConnectionFailedTextObjects;
-        
-        //TODO: Realtime mimic testing Pick or Place Message....
-        public RealtimeMimicRequestMessage RealtimeMimicPlaceMessageToPublish;
-        public RealtimeMimicRequestMessage RealtimeMimicPickMessageToPublish;
+
+        //TODO: Realtime mimic testing Pick or Place Watching........
+
+        public RealtimeMimicPickandPlaceManager realtimeMimicPickandPlaceManager = new RealtimeMimicPickandPlaceManager();
 
         //TODO: Robotic Territories Testing //////////////////////////////////////////////////////////////////////////
 
@@ -220,7 +220,7 @@ namespace CompasXR.Robots
 
         public void RealtimeMimicResultHandler(RealtimeMimicResultMessage realtimeMimicResultMessage)
         {
-            Debug.Log($"MQTT: RealtimeMimicResultHandler: Realtime Mimic Result Message Received pickORplace : {realtimeMimicResultMessage.WasPickOrPlace}, PTIdx : {realtimeMimicResultMessage.PointIndex}, PlanningSuccess: {realtimeMimicResultMessage.PickOrPlacePlanningSucceeded}");
+            Debug.Log($"MQTT: RealtimeMimicResultHandler: Realtime Mimic Result Message Received Pick : {realtimeMimicResultMessage.WasPickRequest} Or Place : {realtimeMimicResultMessage.WasPlaceRequest}, PTIdx : {realtimeMimicResultMessage.PointIndex}, PlanningSuccess: {realtimeMimicResultMessage.PickOrPlacePlanningSucceeded}");
             if (realtimeMimicResultMessage.CorrectBackend == false)
             {
                 Debug.LogWarning("MQTT: RealtimeMimicHandler: No Trajectories in the Mimic Result Message.");
@@ -232,20 +232,45 @@ namespace CompasXR.Robots
             {
                 Debug.LogError("MQTT: RealtimeMimicResult Message Handeling: Point Index is null in the Realtime Mimic Result Message. No action taken.");
             }
-            else if(realtimeMimicResultMessage.WasPickOrPlace)
+            else if(realtimeMimicResultMessage.WasPickRequest)
             {
-                Debug.Log("MQTT: RealtimeMimicResult Message Handeling: This was a Pick or Place Action.");
+                Debug.Log("MQTT: RealtimeMimicResult Message Handeling: This was a Pick Action.");
                 if (realtimeMimicResultMessage.PickOrPlacePlanningSucceeded)
                 {
-                    Debug.Log("MQTT: RealtimeMimicResult Message Handeling: The Pick or Place Planning Succeeded.");
+                    realtimeMimicPickandPlaceManager.ObjectPicked = true;
+                    realtimeMimicPickandPlaceManager.IgnoreObservedGeometries = true;
+                    realtimeMimicPickandPlaceManager.IgnoreTargetGeometries = false;
+
+                    Debug.Log("MQTT: RealtimeMimicResult Message Handeling: The Pick Planning Succeeded.");
                     UIFunctionalities.UpdateLastCompletedIndexForRealtimeMimicPoint(realtimeMimicResultMessage.PointIndex);
                     UIFunctionalities.RealtimeMimicResetSceneFromPlanningSuccess();
                 }
                 else
                 {
-                    Debug.LogWarning("MQTT: RealtimeMimicResult Message Handeling: The Pick or Place Planning Failed. The Point will be deleted, but the Action will not be completed.");
-                    string warningMessage = "WARNING: The robotic controler was unable to plan the pick or place action. Please adjust the robot and try again.";
-                    UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.RealtimeMimicPickOrPlacePlanningFailedOnScreenMessage, "RealtimeMimicPickOrPlacePlanningFailedOnScreenMessage", UIFunctionalities.MessagesParent, warningMessage, "RealtimeMimicResultHandler: Realtime Mimic Pick or Place Planning Failed.");
+                    Debug.LogWarning("MQTT: RealtimeMimicResult Message Handeling: The Pick Planning Failed. The Point will be deleted, but the Action will not be completed.");
+                    string warningMessage = "WARNING: The robotic controler was unable to plan the pick action. Please adjust the robot and try again.";
+                    UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.RealtimeMimicPickPlanningFailedOnScreenMessage, "RealtimeMimicPickPlanningFailedOnScreenMessage", UIFunctionalities.MessagesParent, warningMessage, "RealtimeMimicResultHandler: Realtime Mimic Pick Planning Failed.");
+                    UIFunctionalities.RealtimeMimicResetSceneFromPlanningFailure();
+                }
+            }
+            else if(realtimeMimicResultMessage.WasPlaceRequest)
+            {
+                Debug.Log("MQTT: RealtimeMimicResult Message Handeling: This was a Pick Action.");
+                if (realtimeMimicResultMessage.PickOrPlacePlanningSucceeded)
+                {
+                    realtimeMimicPickandPlaceManager.ObjectPicked = false;
+                    realtimeMimicPickandPlaceManager.IgnoreObservedGeometries = false;
+                    realtimeMimicPickandPlaceManager.IgnoreTargetGeometries = true;
+
+                    Debug.Log("MQTT: RealtimeMimicResult Message Handeling: The Pick Planning Succeeded.");
+                    UIFunctionalities.UpdateLastCompletedIndexForRealtimeMimicPoint(realtimeMimicResultMessage.PointIndex);
+                    UIFunctionalities.RealtimeMimicResetSceneFromPlanningSuccess();
+                }
+                else
+                {
+                    Debug.LogWarning("MQTT: RealtimeMimicResult Message Handeling: The Pick Planning Failed. The Point will be deleted, but the Action will not be completed.");
+                    string warningMessage = "WARNING: The robotic controler was unable to plan the pick action. Please adjust the robot and try again.";
+                    UserInterface.SignalOnScreenMessageFromPrefab(ref UIFunctionalities.OnScreenErrorMessagePrefab, ref UIFunctionalities.RealtimeMimicPlacePlanningFailedOnScreenMessage, "RealtimeMimicPickPlanningFailedOnScreenMessage", UIFunctionalities.MessagesParent, warningMessage, "RealtimeMimicResultHandler: Realtime Mimic Pick Planning Failed.");
                     UIFunctionalities.RealtimeMimicResetSceneFromPlanningFailure();
                 }
             }

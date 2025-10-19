@@ -631,11 +631,12 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
         public int PointIndex { get; private set; }
         public bool CorrectBackend { get; private set; }
 
-        public bool WasPickOrPlace { get; set; } = false;
+        public bool WasPickRequest { get; set; } = false;
+        public bool WasPlaceRequest { get; set; } = false;
         public bool PickOrPlacePlanningSucceeded = false;
 
         public Configuration Configuration { get; private set; }
-        public RealtimeMimicResultMessage(string robotName, int pointIndex, string returnMessage, bool correctBackent, Configuration configuration = null, bool wasPickOrPlace = false, bool pickOrPlacePlanningSucceeded = false, Header header = null) //List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header=null)
+        public RealtimeMimicResultMessage(string robotName, int pointIndex, string returnMessage, bool correctBackent, Configuration configuration = null, bool wasPickRequest = false, bool wasPlaceRequest = false, bool pickOrPlacePlanningSucceeded = false, Header header = null) //List<Trajectory> trajectories, Frame robotBaseFrame, string robotName, Header header=null)
         {
             Header = header ?? new Header();
             PointIndex = pointIndex;
@@ -643,7 +644,8 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             RobotName = robotName;
             CorrectBackend = correctBackent;
             ReturnMessage = returnMessage;
-            WasPickOrPlace = wasPickOrPlace;
+            WasPickRequest = wasPickRequest;
+            WasPlaceRequest = wasPlaceRequest;
             PickOrPlacePlanningSucceeded = pickOrPlacePlanningSucceeded;
         }
         public Dictionary<string, object> GetData()
@@ -659,7 +661,8 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 { "configuration", Configuration != null ? Configuration.GetData() : null },
                 { "correct_backend", CorrectBackend },
                 { "return_message", ReturnMessage },
-                { "was_pick_or_place", WasPickOrPlace },
+                { "was_pick_request", WasPickRequest },
+                { "was_place_request", WasPlaceRequest },
                 { "pick_or_place_planning_succeeded", PickOrPlacePlanningSucceeded }
             };
         }
@@ -677,8 +680,8 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
             var correctBackend = Convert.ToBoolean(jsonObject["correct_backend"]);
             var pointIndex = Convert.ToInt32(jsonObject["point_index"]);
 
-            var wasPickOrPlace = Convert.ToBoolean(jsonObject["was_pick_or_place"]);
-            Debug.Log("RealtimeMimicResultMessageParse: wasPickOrPlace: " + wasPickOrPlace);
+            var wasPickRequestData = Convert.ToBoolean(jsonObject["was_pick_request"]);
+            var wasPlaceRequestData = Convert.ToBoolean(jsonObject["was_place_request"]);
             var pickOrPlacePlanningSucceeded = Convert.ToBoolean(jsonObject["pick_or_place_planning_succeeded"]);
 
             Dictionary<string, object> configuration = null;
@@ -691,7 +694,7 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 {
                     //TODO: This should return NULL message. But for now checking for errors.
                     Debug.LogWarning("RealtimeMimicResultMessageParse: 'configuration' field is empty.");
-                    return new RealtimeMimicResultMessage(robotName, pointIndex, message, correctBackend, null, wasPickOrPlace, pickOrPlacePlanningSucceeded, header);
+                    return new RealtimeMimicResultMessage(robotName, pointIndex, message, correctBackend, null, wasPickRequestData, wasPickRequestData, pickOrPlacePlanningSucceeded, header);
                 }
                 var configurationDataDict = DictionaryHelpers.GetAsDictionary(configurationDict, "data");
                 if (configurationDataDict != null)
@@ -702,18 +705,18 @@ namespace CompasXR.Robots.MqttData.RoboticTerritories
                 {
                     //TODO: This should return NULL message. But for now checking for errors.
                     Debug.LogWarning("RealtimeMimicResultMessageParse: 'data' field is missing in the 'configuration' field.");
-                    return new RealtimeMimicResultMessage(robotName, pointIndex, message, correctBackend, null, wasPickOrPlace, pickOrPlacePlanningSucceeded, header);
+                    return new RealtimeMimicResultMessage(robotName, pointIndex, message, correctBackend, null, wasPickRequestData, wasPlaceRequestData, pickOrPlacePlanningSucceeded, header);
                 }
             }
             if (configuration == null)
             {
                 //TODO: This needs to return a message with a null configuration. But for not checking for errors.
                 Debug.LogWarning("RealtimeMimicResultMessageParse: 'configuration' field is missing in the message for pt.");
-                return new RealtimeMimicResultMessage(robotName, pointIndex, message, correctBackend, null, wasPickOrPlace, pickOrPlacePlanningSucceeded, header);
+                return new RealtimeMimicResultMessage(robotName, pointIndex, message, correctBackend, null, wasPickRequestData, wasPlaceRequestData, pickOrPlacePlanningSucceeded, header);
             }
             Configuration ptConfiguration = Configuration.FromData(configuration);
 
-            return new RealtimeMimicResultMessage(robotName, pointIndex, message, correctBackend, ptConfiguration, wasPickOrPlace, pickOrPlacePlanningSucceeded, header);
+            return new RealtimeMimicResultMessage(robotName, pointIndex, message, correctBackend, ptConfiguration, wasPickRequestData, wasPlaceRequestData, pickOrPlacePlanningSucceeded, header);
         }
     }
 

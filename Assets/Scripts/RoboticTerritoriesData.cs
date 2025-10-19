@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using UnityEngine.InputSystem;
 using CompasXR.Core.Extentions;
 using Unity.VisualScripting;
+using CompasXR.Robots.MqttData.RoboticTerritories;
 
 namespace CompasXR.RoboticTerritories.Data
 {   
@@ -1088,7 +1089,7 @@ namespace CompasXR.RoboticTerritories.Data
 
             PickPointTrajectoryIndex = -1;
 
-            if(!ObjectPlaced && ReverseConfigurations)
+            if (!ObjectPlaced && ReverseConfigurations)
             {
                 ReverseConfigurations = false;
             }
@@ -1136,6 +1137,36 @@ namespace CompasXR.RoboticTerritories.Data
                 }
             }
             return ioControlIndecies;
+        }
+
+    }
+    
+    public class RealtimeMimicPickandPlaceManager
+    {
+        public RealtimeMimicRequestMessage PlaceMessageToPublish;
+        public RealtimeMimicRequestMessage PickMessageToPublish;
+
+        public bool IgnoreObservedGeometries;
+        public bool IgnoreTargetGeometries;
+
+        public bool ObjectPicked;
+
+        public RealtimeMimicPickandPlaceManager()
+        {
+            PlaceMessageToPublish = null;
+            PickMessageToPublish = null;
+            IgnoreObservedGeometries = false;
+            IgnoreTargetGeometries = true;
+            ObjectPicked = false;
+        }
+        public void Reset()
+        {
+            PlaceMessageToPublish = null;
+            PickMessageToPublish = null;
+            IgnoreObservedGeometries = false;
+            IgnoreTargetGeometries = true;
+            ObjectPicked = false;
+            Debug.Log("RealtimeMimicPickandPlaceManager has been reset. IgnoreObservedGeometries set to false and IgnoreTargetGeometries set to true, ObjectPicked set to false.");
         }
 
     }
