@@ -2778,7 +2778,7 @@ namespace CompasXR.UI
                 return;
             }
             //TODO: This was the old one : else if (!ObjectInstantiaion.AllGameObjectsInListsPositionsAreWithinAnotherObject(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility))
-            else if (!ObjectInstantiaion.AllGameObjectsInListsPositionsAreWithinAnotherObjectButIgnoreIndexs(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility, new List<int> { instantiateObjects.userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex, instantiateObjects.userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex }))
+            else if (!ObjectInstantiaion.AllGameObjectsInsideSphereButIgnoreIndexes(instantiateObjects.MimicHumanPoints, trajectoryVisualizer.humanZoneMimicReachibility, new List<int> { instantiateObjects.userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex, instantiateObjects.userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex })) //TODO: CHANGED THIS
             {
 
                 var mimicZones = databaseManager.ProjectZones.MimicZones;
@@ -3033,7 +3033,6 @@ namespace CompasXR.UI
                 Debug.LogWarning("Reachability Toggle is not on.");
             }
         }
-
         public void AdaptObjectCollidersForMimicMode(ProjectZones.MimicZoneMode mimicMode, GoalManager mimicGoalManager, MimicMirroredGeometryManager mimicMirroredGeometryManager)
         {
             List<GoalObject> allGoalObjects = mimicGoalManager.Goals;
@@ -3094,8 +3093,6 @@ namespace CompasXR.UI
                     }
             }
         }
-
-
 
         //TODO: RoboticTerritories Testing ///////////////////////////////////////////////////////////////////////////////////
         private void OnAwakeInitilization()

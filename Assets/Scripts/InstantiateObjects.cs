@@ -676,7 +676,7 @@ namespace CompasXR.Core
             Color robotColor = new Color(0.0f, 1.0f, 1.0f, 1.0f);
 
             if (trajectoryVisualizer.humanZoneMimicReachibility == null ||
-                ObjectInstantiaion.IsPositionWithinObject(trajectoryVisualizer.humanZoneMimicReachibility, position))
+                ObjectInstantiaion.IsPointInsideSphereEvenIfInactive(trajectoryVisualizer.humanZoneMimicReachibility.GetComponent<SphereCollider>(), position)) //TODO: CHANGED....
             {
                 CreateSpheresForMimic(humanZone, robotZone, ref humanPoints, ref robotPoints, humanParent, robotParent, position, rotation, radius, humanColor, robotColor, $"{humanPoints.Count}_MimicPoint", $"{robotPoints.Count}_MimicPoint", true, Mirror);
             }
@@ -769,9 +769,9 @@ namespace CompasXR.Core
                 Vector3 position = point.transform.position;
                 Quaternion rotation = point.transform.rotation;
 
-                if (!ObjectInstantiaion.IsPositionWithinObject(reachabilitySphere, position))
+                if (!ObjectInstantiaion.IsPointInsideSphereCollider(reachabilitySphere.GetComponent<SphereCollider>(), position)) //TODO: CHANGED.....
                 {
-                    position = FindClosestReachablePoint(reachabilitySphere, position);
+                    position = FindClosestReachablePointMoreAccurate(reachabilitySphere, position);
                 }
                 else
                 {
@@ -1167,6 +1167,58 @@ namespace CompasXR.Core
             }
 
             return center + direction.normalized * radius;
+        }
+
+        public static Vector3 FindClosestReachablePointMoreAccurate(GameObject sphereGO, Vector3 desiredWorldPos, float epsilon = 1e-4f)
+        {
+            if (!sphereGO) return Vector3.zero;
+
+            // Exact: SphereCollider
+            var sc = sphereGO.GetComponent<SphereCollider>();
+            if (sc)
+            {
+                Vector3 cW = sc.transform.TransformPoint(sc.center);
+                float rW = sc.radius * Mathf.Max(sc.transform.lossyScale.x,
+                                                sc.transform.lossyScale.y,
+                                                sc.transform.lossyScale.z);
+                Vector3 d = desiredWorldPos - cW;
+                float dist = d.magnitude;
+
+                if (dist <= rW - epsilon) return desiredWorldPos;
+                if (dist < 1e-12f)        return cW + Vector3.right * (rW - epsilon);
+                return cW + d / dist * (rW - epsilon);
+            }
+
+            // Generic: use mesh bounds in LOCAL space, then convert back to world
+            var mf = sphereGO.GetComponent<MeshFilter>();
+            if (!mf || !mf.sharedMesh) return desiredWorldPos;
+
+            var mesh = mf.sharedMesh;
+            Vector3 cL = mesh.bounds.center;
+            float  rL = mesh.bounds.extents.x;
+
+            var t = sphereGO.transform;
+            Vector3 pL = t.InverseTransformPoint(desiredWorldPos);
+            Vector3 vL = pL - cL;
+            float   dL = vL.magnitude;
+
+            if (dL <= rL - 1e-8f) return desiredWorldPos; // already inside
+
+            if (dL < 1e-12f) // degenerate: pick an arbitrary direction
+                return t.TransformPoint(cL + Vector3.right * (rL - 1e-4f));
+
+            // Project to sphere surface in LOCAL space, then nudge inward in WORLD space
+            Vector3 surfL = cL + vL / dL * rL;
+            Vector3 surfW = t.TransformPoint(surfL);
+
+            // World-space inward normal: inverse-transpose trick for correct non-uniform scales
+            Matrix4x4 M = t.localToWorldMatrix;
+            Matrix4x4 invT = M.inverse.transpose;
+            // Local normal for a sphere is just (vL). Use it (unit) and map to world:
+            Vector3 nL = (vL / dL);
+            Vector3 nW = invT.MultiplyVector(nL).normalized;
+
+            return surfW - nW * epsilon;
         }
         public static Vector3 MapPointBetweenBoxes(GameObject sourceBox, GameObject targetBox, Vector3 pointPosition)
         {
@@ -1614,7 +1666,6 @@ namespace CompasXR.Core
 
             Debug.Log("ModifyCollidersForMimicModes: Completed modifying colliders for MIRRORED GOAL COMPONENTS.");
         }
-
 
         //TODO: Move to CLASS MADE FOR THIS........
         public void CreateDuplicatGeometriesForMimic(ref GameObject GeometriesParentObject, ref GameObject MirroredGeometriesParentObject) //, Zone HumanZone, Zone RobotZone, GameObject ObservedGeoemtriesParent, GameObject MimicGeometriesParent, ref Dictionary<string, ObservedGeometry> sourceObservedGeometriesDict, ref Dictionary<string, ObservedGeometry> targetObservedGeometriesDict)
@@ -2087,7 +2138,7 @@ namespace CompasXR.Core
 
             if (collidedWithGameObjectNamesList == null || collidedWithGameObjectNamesList.Count == 0)
             {
-                Debug.LogWarning("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Collided With GameObject Names List is null or empty.");
+                Debug.LogWarning("DeterminePickAndPlaceStateFromColliderHitsPickorPlace: Collided With GameObject Names List is null or empty But this should be ok since the other checks before....");
                 return (0, "None");
             }
 
@@ -2232,7 +2283,7 @@ namespace CompasXR.Core
 
             if (collidedWithGameObjectNamesList == null || collidedWithGameObjectNamesList.Count == 0)
             {
-                Debug.LogWarning("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Collided With GameObject Names List is null or empty.");
+                Debug.LogWarning("DetermineOrAndPlaceObjectFromColliderHitsRTMimic: Collided With GameObject Names List is null or empty.... Setting Point, but this should be ok because of all the other checks.");
                 return (0, "None");
             }
 
@@ -4599,6 +4650,107 @@ namespace CompasXR.Core
             }
             float distance = Vector3.Distance(pointA, pointB);
             return distance < threshold;
+        }
+
+        public static bool IsPointInsideSphereEvenIfInactive(SphereCollider sc, Vector3 worldPoint)
+        {
+            if (!sc) return false;
+
+            // TransformPoint works even if the GameObject is inactive
+            Vector3 center = sc.transform.TransformPoint(sc.center);
+
+            // LossyScale also works while inactive
+            float scale = Mathf.Max(sc.transform.lossyScale.x,
+                                    sc.transform.lossyScale.y,
+                                    sc.transform.lossyScale.z);
+            float radius = sc.radius * scale;
+
+            return (worldPoint - center).sqrMagnitude <= radius * radius;
+        }
+
+        public static bool AllGameObjectsInsideSphere(List<GameObject> gameObjects, GameObject targetObject)
+        {
+            if (gameObjects == null || gameObjects.Count == 0)
+            {
+                Debug.LogError("AllGameObjectsInsideSphere: The list of game objects is null or empty.");
+                return false;
+            }
+
+            if (targetObject == null)
+            {
+                Debug.LogError("AllGameObjectsInsideSphere: Target object is null.");
+                return false;
+            }
+
+            SphereCollider sc = targetObject.GetComponent<SphereCollider>();
+            if (sc == null)
+            {
+                Debug.LogError($"AllGameObjectsInsideSphere: {targetObject.name} has no SphereCollider.");
+                return false;
+            }
+
+            foreach (GameObject go in gameObjects)
+            {
+                if (go == null) return false;
+
+                if (!IsPointInsideSphereEvenIfInactive(sc, go.transform.position))
+                {
+                    return false; // one object is outside
+                }
+            }
+
+            return true; // all objects are inside
+        }
+
+        public static bool AllGameObjectsInsideSphereButIgnoreIndexes(
+            List<GameObject> gameObjects,
+            GameObject targetObject,
+            List<int> indiciesToIgnore)
+        {
+            if (gameObjects == null || gameObjects.Count == 0)
+            {
+                Debug.LogError("AllGameObjectsInsideSphereButIgnoreIndexes: The list of game objects is null or empty.");
+                return false;
+            }
+
+            if (targetObject == null)
+            {
+                Debug.LogError("AllGameObjectsInsideSphereButIgnoreIndexes: Target object is null.");
+                return false;
+            }
+
+            SphereCollider sc = targetObject.GetComponent<SphereCollider>();
+            if (sc == null)
+            {
+                Debug.LogError($"AllGameObjectsInsideSphereButIgnoreIndexes: {targetObject.name} has no SphereCollider.");
+                return false;
+            }
+
+            var ignoreSet = new HashSet<int>(indiciesToIgnore ?? new List<int>());
+
+            for (int i = 0; i < gameObjects.Count; i++)
+            {
+                if (ignoreSet.Contains(i))
+                    continue;
+
+                GameObject go = gameObjects[i];
+                if (go == null)
+                    return false;
+
+                if (!IsPointInsideSphereEvenIfInactive(sc, go.transform.position))
+                    return false;
+            }
+
+            return true;
+        }
+
+        public static bool IsPointInsideSphereCollider(SphereCollider sc, Vector3 worldPoint)
+        {
+            if (!sc || !sc.enabled) return false;
+            Vector3 center = sc.transform.TransformPoint(sc.center);
+            float scale = Mathf.Max(sc.transform.lossyScale.x, sc.transform.lossyScale.y, sc.transform.lossyScale.z);
+            float r = sc.radius * scale;
+            return (worldPoint - center).sqrMagnitude <= r * r;
         }
 
         public static bool IsWithinPositionTolerance(GameObject gameObject1, GameObject gameObject2, float tolerance)
