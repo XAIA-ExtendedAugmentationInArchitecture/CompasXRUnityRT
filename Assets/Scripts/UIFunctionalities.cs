@@ -2610,7 +2610,7 @@ namespace CompasXR.UI
             MimicSetPointsButtonObject.GetComponentInChildren<Button>().interactable = setControlsInteractive;
             UserInitiatedMimicControlsUndoPointButtonObject.GetComponentInChildren<Button>().interactable = setControlsInteractive;
             UserInitiatedMimicRequestTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = requestInteractable;
-            UserInitiatedMimicMirrorToggleObject.GetComponentInChildren<Toggle>().interactable = setControlsInteractive;
+            // UserInitiatedMimicMirrorToggleObject.GetComponentInChildren<Toggle>().interactable = setControlsInteractive;
 
             UserInitiatedMimicControlsReviewAndExecuteTrajectoryUIObjects.SetActive(reviewActive);
             UserInitiatedMimicExecuteTrajectoryButtonObject.GetComponentInChildren<Button>().interactable = reviewInteractive;
@@ -2708,21 +2708,22 @@ namespace CompasXR.UI
             }
             else
             {
-                foreach (Transform child in RealtimeMimicControlsParent.transform)
-                {
-                    var go = child.gameObject;
+                //TODO: JOEEEEE CHEEECCCCCKKKKKK HEREEEEEEE..... 
+                // foreach (Transform child in RealtimeMimicControlsParent.transform)
+                // {
+                //     var go = child.gameObject;
 
-                    // Show/hide
-                    go.SetActive(setControlsActive);
+                //     // Show/hide
+                //     go.SetActive(setControlsActive);
 
-                    // If it's a Button
-                    if (go.TryGetComponent<Button>(out var button))
-                        button.interactable = setControlsInteractive;
+                //     // If it's a Button
+                //     if (go.TryGetComponent<Button>(out var button))
+                //         button.interactable = setControlsInteractive;
 
-                    // If it's a Toggle
-                    if (go.TryGetComponent<Toggle>(out var toggle))
-                        toggle.interactable = setControlsInteractive;
-                }
+                //     // If it's a Toggle
+                //     if (go.TryGetComponent<Toggle>(out var toggle))
+                //         toggle.interactable = setControlsInteractive;
+                // }
             }
         }
         public void UserInitiatedMimicRequestTrajectoryButtonMethod()
