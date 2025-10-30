@@ -115,7 +115,7 @@ namespace CompasXR.Database.FirebaseManagment
                             }
                             else if (t.IsCompleted)
                             {
-                                Debug.Log("User updated successfully.");
+                                Debug.Log("User updated successfully."); //TODO: Add name here, and number of times logging in.
                                 HelpersExtensions.ChangeScene("MainGame");
                             }
                         });
