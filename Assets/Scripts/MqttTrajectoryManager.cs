@@ -311,7 +311,8 @@ namespace CompasXR.Robots
                 //Update Last Mimic Trajectory Result Message in the Service Manager
                 if (UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value != 0)
                 {
-                    UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value = 0;
+                    // UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value = 0;
+                    UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.SetValueWithoutNotify(0);
                 }
 
                 UIFunctionalities.SignalActiveRobotUpdateFromPlannerRoboticTerritories(
@@ -335,7 +336,8 @@ namespace CompasXR.Robots
                 //Update Last Mimic Trajectory Result Message in the Service Manager
                 if (UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value != 0)
                 {
-                    UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value = 0;
+                    UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.SetValueWithoutNotify(0);
+                    // UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value = 0;
                 }
 
                 //Update Last Mimic Trajectory Result Message in the Service Manager
@@ -391,7 +393,8 @@ namespace CompasXR.Robots
                 //Update Last Mimic Trajectory Result Message in the Service Manager
                 if (UIFunctionalities.InferenceReviewSlider.value != 0)
                 {
-                    UIFunctionalities.InferenceReviewSlider.value = 0;
+                    UIFunctionalities.InferenceReviewSlider.SetValueWithoutNotify(0);
+                    // UIFunctionalities.InferenceReviewSlider.value = 0;
                 }
 
                 UIFunctionalities.SignalActiveRobotUpdateFromPlannerRoboticTerritories(
@@ -420,7 +423,8 @@ namespace CompasXR.Robots
                 //Update Last Inference Result Message in the Service Manager //TODO: Soemtimes I get an error from this.
                 if (UIFunctionalities.InferenceReviewSlider.value != 0)
                 {
-                    UIFunctionalities.InferenceReviewSlider.value = 0;
+                    UIFunctionalities.InferenceReviewSlider.SetValueWithoutNotify(0);
+                    // UIFunctionalities.InferenceReviewSlider.value = 0;
                 }
 
                 //Update Last Inference Result Message in the Service Manager
@@ -478,7 +482,8 @@ namespace CompasXR.Robots
                 //Update Last Mimic Trajectory Result Message in the Service Manager
                 if (UIFunctionalities.PostInferenceTrajectoryReviewSlider.value != 0)
                 {
-                    UIFunctionalities.PostInferenceTrajectoryReviewSlider.value = 0;
+                    UIFunctionalities.PostInferenceTrajectoryReviewSlider.SetValueWithoutNotify(0);
+                    // UIFunctionalities.PostInferenceTrajectoryReviewSlider.value = 0;
                 }
 
                 UIFunctionalities.SignalActiveRobotUpdateFromPlannerRoboticTerritories(
@@ -502,7 +507,8 @@ namespace CompasXR.Robots
                 //Update Last Inference Result Message in the Service Manager //TODO: Soemtimes I get an error from this.
                 if (UIFunctionalities.PostInferenceTrajectoryReviewSlider.value != 0)
                 {
-                    UIFunctionalities.PostInferenceTrajectoryReviewSlider.value = 0;
+                    UIFunctionalities.PostInferenceTrajectoryReviewSlider.SetValueWithoutNotify(0);
+                    // UIFunctionalities.PostInferenceTrajectoryReviewSlider.value = 0;
                 }
 
                 //Update Last Inference Result Message in the Service Manager
