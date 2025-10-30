@@ -311,8 +311,8 @@ namespace CompasXR.Robots
                 //Update Last Mimic Trajectory Result Message in the Service Manager
                 if (UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value != 0)
                 {
-                    // UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value = 0;
-                    UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.SetValueWithoutNotify(0);
+                    UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.value = 0;
+                    // UIFunctionalities.UserInitiatedMimicTrajectoryReviewSlider.SetValueWithoutNotify(0);
                 }
 
                 UIFunctionalities.SignalActiveRobotUpdateFromPlannerRoboticTerritories(

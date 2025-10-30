@@ -4124,7 +4124,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c93dd8acae1745f692045997c9ed2de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  brokerAddress: localhost
+  brokerAddress: 192.168.2.4
   brokerPort: 1883
   isEncrypted: 0
   certificateName: 

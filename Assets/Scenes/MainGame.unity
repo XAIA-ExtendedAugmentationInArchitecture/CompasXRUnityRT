@@ -83803,7 +83803,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &840568425
 RectTransform:
   m_ObjectHideFlags: 0
@@ -210174,7 +210174,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c4d8832d07fa36429d690d119e751f0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  brokerAddress: localhost
+  brokerAddress: 192.168.2.4
   brokerPort: 1883
   isEncrypted: 0
   certificateName: 
