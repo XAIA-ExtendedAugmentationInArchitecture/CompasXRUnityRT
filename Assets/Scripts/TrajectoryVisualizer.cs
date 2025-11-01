@@ -646,6 +646,16 @@ namespace CompasXR.Robots
                     Debug.Log("DestroyActiveTrajectoryandShowRobot: ActiveRobot child is already active.");
                 }
 
+                //TODO: Joe you are testing this....
+                if (previousConfigIndex.HasValue)
+                {
+                    previousConfigIndex = null;
+                }
+                if (previousTrajectoryIndex.HasValue)
+                {
+                    previousTrajectoryIndex = null;
+                }
+
                 if (databaseManager.ProjectZones.CurrentZone == ProjectZones.CurrentZoneMode.Mimic)
                 {
                     bool reachVisibiility = uiFunctionalities.ReachabilityToggleObject.GetComponent<Toggle>().isOn;

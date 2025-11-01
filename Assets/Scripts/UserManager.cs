@@ -58,11 +58,11 @@ namespace CompasXR.Database.FirebaseManagment
             
             if (dbReference_root == null)
             {
-                Debug.LogError("Firebase Database reference is null!");
+                Debug.LogError("UserManager : Firebase Database reference is null!");
             }
             else
             {
-                print("Firebase Database reference is initialized.");
+                print("UserManager : Firebase Database reference is initialized.");
             }
         }
 
@@ -71,7 +71,7 @@ namespace CompasXR.Database.FirebaseManagment
         {
             if (dbReference_root == null)
             {
-                Debug.LogError("dbReference_root is null! Make sure Firebase is initialized and the Start method is called.");
+                Debug.LogError("UserManager : dbReference_root is null! Make sure Firebase is initialized and the Start method is called.");
                 return;
             }
 
@@ -79,7 +79,7 @@ namespace CompasXR.Database.FirebaseManagment
             {
                 GameObject UsernameInputMessage = GameObject.Find("Canvas").FindObject("UsernameInputMessage");
                 UsernameInputMessage.SetActive(true);
-                Debug.Log("Username is not assigned or empty!");
+                Debug.Log("UserManager : Username is not assigned or empty!");
                 return;
             }
             
@@ -90,7 +90,7 @@ namespace CompasXR.Database.FirebaseManagment
             {
                 if (task.IsFaulted)
                 {
-                    Debug.LogError("Error occurred while reading data from the database.");
+                    Debug.LogError($"UserManager : Error occurred while reading data from the database for user log {playerName}.");
                     return;
                 }
 
@@ -111,11 +111,11 @@ namespace CompasXR.Database.FirebaseManagment
                         {
                             if (t.IsFaulted)
                             {
-                                Debug.LogError("Failed to update user.");
+                                Debug.LogError($"UserManager : Failed to update user for {playerName}.");
                             }
                             else if (t.IsCompleted)
                             {
-                                Debug.Log("User updated successfully."); //TODO: Add name here, and number of times logging in.
+                                Debug.Log($"UserManager : User updated successfully {playerName}."); //TODO: Add name here, and number of times logging in.
                                 HelpersExtensions.ChangeScene("MainGame");
                             }
                         });
@@ -126,11 +126,11 @@ namespace CompasXR.Database.FirebaseManagment
                         {
                             if (t.IsFaulted)
                             {
-                                Debug.LogError("Failed to create device.");
+                                Debug.LogError($"UserManager : Failed to create device for {playerName}.");
                             }
                             else if (t.IsCompleted)
                             {
-                                Debug.Log("Device created successfully.");
+                                Debug.Log($"UserManager : Added to Existing User : Device created successfully {playerName}.");
                                 HelpersExtensions.ChangeScene("MainGame");
                             }
                         });
@@ -147,11 +147,11 @@ namespace CompasXR.Database.FirebaseManagment
                     {
                         if (t.IsFaulted)
                         {
-                            Debug.LogError("Failed to create user.");
+                            Debug.LogError($"UserManager : Failed to create user for {playerName}.");
                         }
                         else if (t.IsCompleted)
                         {
-                            Debug.Log("User created successfully.");
+                            Debug.Log($"UserManager : User created successfully for {playerName}.");
                             HelpersExtensions.ChangeScene("MainGame");
                         }
                     });
