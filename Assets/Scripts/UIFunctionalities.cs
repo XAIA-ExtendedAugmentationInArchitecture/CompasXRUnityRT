@@ -441,41 +441,41 @@ namespace CompasXR.UI
 
             //TODO: Working updates
             RoboticTerritoriesUpdatedCanvas = CanvasObject.FindObject("RoboticTerritoriesUpdated");
-            SetModeSelectionItemsOnStart();
+            SetModeSelectionItemsOnStart(); //Logged
 
             RoboticTerritoriesInferenceControlsObject = RoboticTerritoriesUpdatedCanvas.FindObject("InferenceControls");
-            SetInferenceControlsOnStart();
+            SetInferenceControlsOnStart(); //Logged
 
             //TODO: Mimic remap testing : I think this can go away, but keep for now. ////////////////////////////////////////////////////////////////////////////////////////
             MimicRemapPointsToRobotReachabilityMessage = MessagesParent.FindObject("Prefabs").FindObject("RemapMimicPointsMessage");
-            Button RemapButton = MimicRemapPointsToRobotReachabilityMessage.FindObject("YesButton").GetComponent<Button>();
+            Button RemapButton = MimicRemapPointsToRobotReachabilityMessage.FindObject("YesButton").GetComponent<Button>(); 
             Button NoButton = MimicRemapPointsToRobotReachabilityMessage.FindObject("NoButton").GetComponent<Button>();
-            RemapButton.GetComponent<Button>().onClick.AddListener(RemapMimicPointsToRobotReachabilityButtonMethod);
-            NoButton.GetComponent<Button>().onClick.AddListener(DestroySystemProposedMimicPointsButtonMethod);
+            RemapButton.GetComponent<Button>().onClick.AddListener(RemapMimicPointsToRobotReachabilityButtonMethod); //Logged
+            NoButton.GetComponent<Button>().onClick.AddListener(DestroySystemProposedMimicPointsButtonMethod); //Logged
             //TODO: Mimic remap testing : I think this can go away, but keep for now. ////////////////////////////////////////////////////////////////////////////////////////
 
             DrawZonesAsLinesToggleObject = RoboticTerritoriesUpdatedCanvas.FindObject("DrawZoneLInes");
             DrawZonesAsLinesToggle = DrawZonesAsLinesToggleObject.GetComponentInChildren<Toggle>();
-            DrawZonesAsLinesToggle.onValueChanged.AddListener(DrawLinesToggleMethod);
+            DrawZonesAsLinesToggle.onValueChanged.AddListener(DrawLinesToggleMethod); //Logged
 
             //Set robotic items on start
-            SetRoboticMenuItemsOnStart();
+            SetRoboticMenuItemsOnStart(); //Logged
 
             //Set Mimic Mode Selection Items
             MimicControlsParent = RoboticTerritoriesUpdatedCanvas.FindObject("MimicControls");
-            SetMimicModeSelectionItemsOnStart();
+            SetMimicModeSelectionItemsOnStart(); //TODO: Logg
 
             //Set User Initiated Mimic Controls
-            SetMimicUserInitiatedMimicControlsOnStart();
+            SetMimicUserInitiatedMimicControlsOnStart(); //TODO: Logg
 
             //Set Realtime Mimic Controls
-            SetRealtimeMimicControlsOnStart();
+            SetRealtimeMimicControlsOnStart(); //TODO: Logg
 
             //Set Realtime Mimic Accept pick or place message contorols
-            SetRealtimeMimicPickAndPlaceOnscreenMessageOnStart();
+            SetRealtimeMimicPickAndPlaceOnscreenMessageOnStart(); //TODO: Logg
 
             //Set Mimic Goal Selection UI
-            SetMimicGoalSelectionUIOnStart();
+            SetMimicGoalSelectionUIOnStart(); //TODO: Logg
         }
         public void SetMimicModeSelectionItemsOnStart()
         {
@@ -507,6 +507,9 @@ namespace CompasXR.UI
             */
             Debug.Log($"DrawLinesToggleMethod: Toggling Draw Zone Lines to {toggle}");
             instantiateObjects.SetZoneOnlyCurrentZoneVisible(databaseManager.ProjectZones.CurrentZone);
+
+            //Add logging to the Log Service
+            LogService.Log($"DrawLinesToggleMethod: Toggled Draw Zone Lines to {toggle}");
         }
         //TODO: Mimic UI Mode and Goal Selecton Controls
         public void NextMimicModeButtonMethod()
@@ -937,6 +940,9 @@ namespace CompasXR.UI
 
             SetUserInitiatedMimicControlsActivity(true, true, true, false, false);
             MimicRemapPointsToRobotReachabilityMessage.SetActive(false);
+
+            //Add logging to the Log Service
+            LogService.Log($"RemapMimicPointsToRobotReachabilityButtonMethod: Remapped Mimic Points to Robot Reachability. Count : {instantiateObjects.MimicRobotPoints.Count} robot points, {instantiateObjects.MimicHumanPoints.Count} human points.");
         }
         public void DestroySystemProposedMimicPointsButtonMethod()
         {
@@ -950,6 +956,9 @@ namespace CompasXR.UI
 
             SetUserInitiatedMimicControlsActivity(true, true, true, false, false);
             MimicRemapPointsToRobotReachabilityMessage.SetActive(false);
+
+            //Add logging to the Log Service
+            LogService.Log("DestroySystemProposedMimicPointsButtonMethod: Destroyed System Proposed Mimic Points.");
         }
         public void RoboticTerritoriesSetActiveRobotToggleMethod(Toggle toggle)
         {
@@ -957,7 +966,7 @@ namespace CompasXR.UI
             * Method is used to set the active robot based on the toggle value.
             * Additionally it controls UI elements based on the toggle value.
             */
-            if(toggle!=null && toggle.isOn)
+            if (toggle != null && toggle.isOn)
             {
                 Debug.Log($"SettingActiveRobotButtonMethod: Setting Active Robot based on input {RobotSelectionDropdown.options[RobotSelectionDropdown.value].text}");
                 string robotName = RobotSelectionDropdown.options[RobotSelectionDropdown.value].text;
@@ -975,17 +984,18 @@ namespace CompasXR.UI
             else
             {
                 Debug.Log("SettingActiveRobotButtonMethod: Destroying Current Active Robot");
-                if(trajectoryVisualizer.ActiveRobotObjects.transform.childCount > 0)
+                if (trajectoryVisualizer.ActiveRobotObjects.transform.childCount > 0)
                 {
                     trajectoryVisualizer.DestroyActiveRobotObjects();
                 }
-                if(trajectoryVisualizer.humanZoneMimicReachibility != null)
+                if (trajectoryVisualizer.humanZoneMimicReachibility != null)
                 {
                     Destroy(trajectoryVisualizer.humanZoneMimicReachibility);
                 }
                 mqttTrajectoryManager.serviceManager.ActiveRobotName = null;  //TODO: THIS IS FROM COMPAS XR, BUT NEEDS TO BE THOUGHT ABOUT FOR ROBOT TERRITORIES
-                SetActiveRobotToggleObject.FindObject("Image").SetActive(false);           
+                SetActiveRobotToggleObject.FindObject("Image").SetActive(false);
             }
+            LogService.Log($"RoboticTerritoriesSetActiveRobotToggleMethod: Set Active Robot Toggle to {toggle.isOn}");
         }
         public void SetModeSelectionItemsOnStart()
         {
@@ -2382,6 +2392,9 @@ namespace CompasXR.UI
             if(trajectoryVisualizer.ActiveRobot != null)
             {
                 trajectoryVisualizer.SetReachabilityActive(trajectoryVisualizer.ActiveRobot.transform.GetChild(0).gameObject, visibility);
+
+                //Adding Logging
+                LogService.Log($"ReachabilityToggleMethod : Reachability is set to {visibility} for robot {trajectoryVisualizer.ActiveRobot.name}");
                 print("ReachabilityToggleMethod: Reachability is set to " + visibility);
             }
             else
@@ -3758,6 +3771,9 @@ namespace CompasXR.UI
             */
             Debug.Log($"RobotSelectionDropdownValueChanged: Robot Selection Dropdown Value Changed to {dropDownValue}. Setting Current Active Robot to False.");
             SetActiveRobotToggleObject.GetComponent<Toggle>().isOn = false;
+
+            //Add logging to indicate the change in robot selection
+            LogService.Log($"Robot Selection Changed: User changed active robot selection to {RobotSelectionDropdown.options[dropDownValue].text} from dropdown.");
         }
 
         /////////////////////////////////////// On Screen Message Functions //////////////////////////////////////////////
