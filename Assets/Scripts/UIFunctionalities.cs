@@ -1044,7 +1044,8 @@ namespace CompasXR.UI
 
                 CurrentZone = ZoneMenuItemsTest[CurrentZoneIndex];
                 databaseManager.ProjectZones.CurrentZone = (ProjectZones.CurrentZoneMode)CurrentZoneIndex; //TODO: THIS NEEDS TO REMAIN THE SAME AS THE OTHER ONE
-                
+                LogService.Log($"SetCurrentZoneFromDropdown: Setting Current Zone to {CurrentZone} at index {CurrentZoneIndex}");
+
                 //Control Zone Coloring, UI Objects, and AR Objects
                 ColorZonesBasedOnCurrentMode(databaseManager.ProjectZones.CurrentZone);
                 // SetUIObjectsFromCurrentMode(databaseManager.ProjectZones.CurrentZone);
@@ -1162,6 +1163,10 @@ namespace CompasXR.UI
                     INITIALINFERENCEREQUEST = false;
                     Debug.Log("RequestInferenceButtonMethod: Setting INITIALINFERENCEREQUEST to false because this should only happend on the first request.");
                 }
+
+                //Adding Logging Service for Inference Request
+                LogService.Log($"RequestInferenceButtonMethod: Published Inference Request Message to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceRequestTopic}");
+                LogService.LogDict(inferenceRequestMessage.GetData(), "Inference Request Message Data:");
             }
         }
         public void InferenceReviewSliderReviewCompoundTrajectories(float value)
@@ -1212,6 +1217,8 @@ namespace CompasXR.UI
                     Debug.Log($"Belongs to Trajectory #{selectedTrajectoryIndex}, Local Config #{localIndex}");
                     //TODO: CHECK THIS WITH UI MIMIC SLIDER IF THE PREVIOUS AND CURRENT INDEX ARE WORKING PROPERLY.
                     trajectoryVisualizer.ColorRobotConfigfromSliderInputCompoundTrajectories(selectedTrajectoryIndex, localIndex, trajectories, instantiateObjects.InactiveRobotMaterial, instantiateObjects.ActiveRobotMaterial, ref trajectoryVisualizer.previousConfigIndex, ref trajectoryVisualizer.previousTrajectoryIndex);
+
+                    LogService.Log($"InferenceReviewSliderReviewCompoundTrajectories: Reviewed Compound Trajectories at Global Config Index {targetGlobalIndex}, Trajectory Index {selectedTrajectoryIndex}, Local Config Index {localIndex}");
                 }
                 else
                 {
@@ -1243,7 +1250,7 @@ namespace CompasXR.UI
             SetInferenceRequestUIControlsVisibilityandInteractibility(true, true, false, false, false);
             instantiateObjects.ResetInferenceGoalsAndTargets();
 
-            if(trajectoryVisualizer.ActiveTrajectoryParentObject!= null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+            if (trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
             {
                 trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
             }
@@ -1252,6 +1259,10 @@ namespace CompasXR.UI
                 Debug.LogWarning("InferenceReviewRejectGoalAndTargetButtonMethod: Active Robot is null, cannot set interactable state.");
             }
             //TODO: Destroy Trajectory if it exists, and set active robot active again
+
+            //Adding Logging Service for Inference Reject Goal and Target
+            LogService.Log($"InferenceRejectGoalAndTargetButtonMethod: Published Inference Reject Goal and Target Message to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceUserReplyTopic}");
+            LogService.LogDict(inferenceReplyMessage.GetData(), "Inference Reject Goal and Target Message Data:");
         }
         public void InferenceAcceptTargetRejectGoalButtonMethod()
         {
@@ -1282,6 +1293,10 @@ namespace CompasXR.UI
                 Debug.LogWarning("InferenceReviewRejectGoalAndTargetButtonMethod: Active Robot is null, cannot set interactable state.");
             }
             //TODO: Destroy Trajectory if it exists, and set active robot active again???? Or Wait a bit???
+
+            //Adding Logging Service for Inference Reject Goal and Accept Target
+            LogService.Log($"InferenceAcceptTargetRejectGoalButtonMethod: Published Inference Reject Goal and Accept Target Message to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceUserReplyTopic}");
+            LogService.LogDict(inferenceReplyMessage.GetData(), "Inference Reject Goal and Accept Target Message Data:");
         }
         public void InferenceAcceptGoalButtonMethod()
         {
@@ -1310,6 +1325,10 @@ namespace CompasXR.UI
             instantiateObjects.PostInferenceSetFirstUnsatisfiedInferenceGoalAsCurrent(instantiateObjects.InferenceGoalsManager.GoalStatusObserver.ComponentStates, instantiateObjects.InferenceSelectedTargetMaterialUnbuilt, instantiateObjects.InferenceSelectedTargetMaterialBuilt);
             instantiateObjects.InferenceGoalsManager.GoalStatusObserver.DebugLogAllComponentStatesAsDictionary();
             SetInferenceUIPostInferenceSuccesState(true, true, false, false, false);
+
+            //Adding Logging Service for Inference Accept Goal and Target
+            LogService.Log($"InferenceAcceptGoalButtonMethod: Published Inference Accept Goal and Target Message to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferenceUserReplyTopic}");
+            LogService.LogDict(inferenceReplyMessage.GetData(), "Inference Accept Goal and Target Message Data:");
         }
 
         //TODO: Post Inference Button Methods
@@ -1362,6 +1381,10 @@ namespace CompasXR.UI
                     GoalObjectComponent nextGoalComponent = states[nextKey];
                     instantiateObjects.PostInferenceSetGoalComponentForSelection(nextGoalComponent, instantiateObjects.InferenceSelectedTargetMaterialUnbuilt, instantiateObjects.InferenceSelectedTargetMaterialBuilt);
                     Debug.Log($"PostInferenceNextTargetButtonMethod: Selecting Next Target {nextKey} in the Inference Targets List.");
+
+                    //Adding Logging Service for Post Inference Next Target Selection
+                    LogService.Log($"PostInferenceNextTargetButtonMethod: Selecting Next Target {nextKey} in the Inference Targets List.");
+
                     return;
                 }
             }
@@ -1424,6 +1447,9 @@ namespace CompasXR.UI
                     GoalObjectComponent prevGoalComponent = states[prevKey];
                     instantiateObjects.PostInferenceSetGoalComponentForSelection(prevGoalComponent, instantiateObjects.InferenceSelectedTargetMaterialUnbuilt, instantiateObjects.InferenceSelectedTargetMaterialBuilt);
                     Debug.Log($"PostInferenceNextTargetButtonMethod: Selecting Next Target {prevKey} in the Inference Targets List.");
+
+                    //Adding Logging Service for Post Inference Previous Target Selection
+                    LogService.Log($"PostInferenceNextTargetButtonMethod: Selecting Next Target {prevKey} in the Inference Targets List.");
                     return;
                 }
             }
@@ -1498,6 +1524,10 @@ namespace CompasXR.UI
             mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferencePostInferenceRequestTarget, postInferenceTargetRequestMessage.GetData());
 
             SetInferenceUIPostInferenceSuccesState(true, false, false, false, false);
+            //Adding Logging Service for Post Inference Request Target
+            LogService.Log($"PostInferenceRequestTargetButtonMethod: Published Post Inference Request Target Message to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferencePostInferenceRequestTarget}");
+            LogService.LogDict(postInferenceTargetRequestMessage.GetData(), "Post Inference Request Target Message Data:");
+
         }
         public void PostInferenceExecuteTrajectoryButtonMethod()
         {
@@ -1547,6 +1577,10 @@ namespace CompasXR.UI
             mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferencePostInferenceExecuteTargetTopic, postInferenceExecuteTrajectoryMessage.GetData());
             SetInferenceUIPostInferenceSuccesState(true, true, true, false, false);
 
+            //Adding Logging Service for Post Inference Execute Trajectory
+            LogService.Log($"PostInferenceExecuteTrajectoryButtonMethod: Published Post Inference Execute Trajectory Message to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.inferencePostInferenceExecuteTargetTopic}");
+            LogService.LogDict(postInferenceExecuteTrajectoryMessage.GetData(), "Post Inference Execute Trajectory Message Data:");
+
         }
         public void PostInferenceRejectTrajectoryButtonMethod()
         {
@@ -1564,6 +1598,9 @@ namespace CompasXR.UI
             }
             SetInferenceUIPostInferenceSuccesState(true, true, true, false, false);
             Debug.Log("PostInferenceRejectTrajectoryButtonMethod: Rejecting Current Trajectory.");
+
+            //Adding Logging Service for Post Inference Reject Trajectory
+            LogService.Log("PostInferenceRejectTrajectoryButtonMethod: Rejected Current Trajectory.");
         }
         public void PostInferenceTrajectoryReviewSliderMethod(float value)
         { 
@@ -1613,6 +1650,9 @@ namespace CompasXR.UI
                     Debug.Log($"Belongs to Trajectory #{selectedTrajectoryIndex}, Local Config #{localIndex}");
                     //TODO: CHECK THIS WITH UI MIMIC SLIDER IF THE PREVIOUS AND CURRENT INDEX ARE WORKING PROPERLY.
                     trajectoryVisualizer.ColorRobotConfigfromSliderInputCompoundTrajectories(selectedTrajectoryIndex, localIndex, trajectories, instantiateObjects.InactiveRobotMaterial, instantiateObjects.ActiveRobotMaterial, ref trajectoryVisualizer.previousConfigIndex, ref trajectoryVisualizer.previousTrajectoryIndex);
+
+                    //Adding Logging Service for Post Inference Trajectory Review
+                    LogService.Log($"PostInferenceTrajectoryReviewSliderMethod: Reviewed Compound Trajectories at Global Config Index {targetGlobalIndex}, Trajectory Index {selectedTrajectoryIndex}, Local Config Index {localIndex}");
                 }
                 else
                 {

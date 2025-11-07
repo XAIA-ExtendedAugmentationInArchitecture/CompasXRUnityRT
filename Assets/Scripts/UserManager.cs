@@ -5,6 +5,8 @@ using Firebase.Database;
 using Firebase.Extensions;
 using Newtonsoft.Json;
 using CompasXR.Core.Extentions;
+using CompasXR.Systems;
+using RosSharp.RosBridgeClient;
 
 namespace CompasXR.Database.FirebaseManagment
 {
@@ -72,6 +74,7 @@ namespace CompasXR.Database.FirebaseManagment
             if (dbReference_root == null)
             {
                 Debug.LogError("UserManager : dbReference_root is null! Make sure Firebase is initialized and the Start method is called.");
+                LogService.Log("UserManager : dbReference_root is null! Make sure Firebase is initialized and the Start method is called.");
                 return;
             }
 
@@ -80,6 +83,7 @@ namespace CompasXR.Database.FirebaseManagment
                 GameObject UsernameInputMessage = GameObject.Find("Canvas").FindObject("UsernameInputMessage");
                 UsernameInputMessage.SetActive(true);
                 Debug.Log("UserManager : Username is not assigned or empty!");
+                LogService.Log("UserManager : Username is not assigned or empty!");
                 return;
             }
             
@@ -91,6 +95,7 @@ namespace CompasXR.Database.FirebaseManagment
                 if (task.IsFaulted)
                 {
                     Debug.LogError($"UserManager : Error occurred while reading data from the database for user log {playerName}.");
+                    LogService.Log($"UserManager : Error occurred while reading data from the database for user log {playerName}.");
                     return;
                 }
 
@@ -112,10 +117,12 @@ namespace CompasXR.Database.FirebaseManagment
                             if (t.IsFaulted)
                             {
                                 Debug.LogError($"UserManager : Failed to update user for {playerName}.");
+                                LogService.Log($"UserManager : Failed to update user for {playerName}.");
                             }
                             else if (t.IsCompleted)
                             {
                                 Debug.Log($"UserManager : User updated successfully {playerName}."); //TODO: Add name here, and number of times logging in.
+                                LogService.Log($"UserManager : User updated successfully {playerName}.");
                                 HelpersExtensions.ChangeScene("MainGame");
                             }
                         });
@@ -127,10 +134,12 @@ namespace CompasXR.Database.FirebaseManagment
                             if (t.IsFaulted)
                             {
                                 Debug.LogError($"UserManager : Failed to create device for {playerName}.");
+                                LogService.Log($"UserManager : Failed to create device for {playerName}.");
                             }
                             else if (t.IsCompleted)
                             {
                                 Debug.Log($"UserManager : Added to Existing User : Device created successfully {playerName}.");
+                                LogService.Log($"UserManager : Added to Existing User : Device created successfully {playerName}.");
                                 HelpersExtensions.ChangeScene("MainGame");
                             }
                         });
@@ -148,10 +157,12 @@ namespace CompasXR.Database.FirebaseManagment
                         if (t.IsFaulted)
                         {
                             Debug.LogError($"UserManager : Failed to create user for {playerName}.");
+                            LogService.Log($"UserManager : Failed to create user for {playerName}.");
                         }
                         else if (t.IsCompleted)
                         {
                             Debug.Log($"UserManager : User created successfully for {playerName}.");
+                            LogService.Log($"UserManager : User created successfully for {playerName}.");
                             HelpersExtensions.ChangeScene("MainGame");
                         }
                     });

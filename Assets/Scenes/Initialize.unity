@@ -1065,7 +1065,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1951855830}
-  - component: {fileID: 1951855829}
+  - component: {fileID: 1951855831}
   m_Layer: 0
   m_Name: LogManagerSpecificLogger
   m_TagString: Untagged
@@ -1073,18 +1073,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1951855829
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1951855828}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 35ad3ab5b96dd2b419110b42bb28deb8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &1951855830
 Transform:
   m_ObjectHideFlags: 0
@@ -1100,6 +1088,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1951855831
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1951855828}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b5f1467b1a8065448507ba013ef268c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  folderName: RoboticTerritoriesLoggingSpecific
+  includeDeviceId: 1
 --- !u!1 &2069863833
 GameObject:
   m_ObjectHideFlags: 0
@@ -4168,7 +4170,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5c93dd8acae1745f692045997c9ed2de, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  brokerAddress: 192.168.2.4
+  brokerAddress: localhost
   brokerPort: 1883
   isEncrypted: 0
   certificateName: 
