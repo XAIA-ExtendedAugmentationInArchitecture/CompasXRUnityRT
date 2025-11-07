@@ -463,16 +463,16 @@ namespace CompasXR.UI
 
             //Set Mimic Mode Selection Items
             MimicControlsParent = RoboticTerritoriesUpdatedCanvas.FindObject("MimicControls");
-            SetMimicModeSelectionItemsOnStart(); //TODO: Logg
+            SetMimicModeSelectionItemsOnStart(); //Logged
 
             //Set User Initiated Mimic Controls
-            SetMimicUserInitiatedMimicControlsOnStart(); //TODO: Logg
+            SetMimicUserInitiatedMimicControlsOnStart(); //Logged
 
             //Set Realtime Mimic Controls
-            SetRealtimeMimicControlsOnStart(); //TODO: Logg
+            SetRealtimeMimicControlsOnStart(); //Logged
 
             //Set Realtime Mimic Accept pick or place message contorols
-            SetRealtimeMimicPickAndPlaceOnscreenMessageOnStart(); //TODO: Logg
+            SetRealtimeMimicPickAndPlaceOnscreenMessageOnStart(); //Logged
 
             //Set Mimic Goal Selection UI
             SetMimicGoalSelectionUIOnStart(); //TODO: Logg
@@ -536,6 +536,9 @@ namespace CompasXR.UI
                         trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
                     }
                     Debug.Log($"NextMimicModeButtonMethod: Changed Mimic Mode from {previousMimicMode} to {newMimicMode}");
+                    
+                    //Add logging to the Log Service
+                    LogService.Log($"NextMimicModeButtonMethod: Changed Mimic Mode from {previousMimicMode} to {newMimicMode}");
                 }
                 else
                 {
@@ -565,6 +568,9 @@ namespace CompasXR.UI
                     SetMimicControlsBasedOnCurrentMimicMode(databaseManager.ProjectZones.CurrentMimicMode);
                     instantiateObjects.DestroyRealtimeMimicZoneObjects();
                     Debug.Log($"PreviousMimicModeButtonMethod: Changed Mimic Mode from {previousMimicMode} to {newMimicMode}");
+
+                    //Add logging to the Log Service
+                    LogService.Log($"PreviousMimicModeButtonMethod: Changed Mimic Mode from {previousMimicMode} to {newMimicMode}");
                 }
                 else
                 {
@@ -608,6 +614,9 @@ namespace CompasXR.UI
                     SetMimicGoalFromIndex(mimicCurrentSelectedGoalIndex);
 
                     Debug.Log($"MimicSelectNextGoalButtonMethod: Changed Selected Goal to {CurrentSelectedGoalName}");
+
+                    //Add logging to the Log Service
+                    LogService.Log($"MimicSelectNextGoalButtonMethod: Changed Selected Goal to {CurrentSelectedGoalName}");
                 }
                 else
                 {
@@ -667,6 +676,9 @@ namespace CompasXR.UI
                     mimicCurrentSelectedGoalIndex -= 1;
                     SetMimicGoalFromIndex(mimicCurrentSelectedGoalIndex);
                     Debug.Log($"MimicSelectPreviousGoalButtonMethod: Changed Selected Goal to {CurrentSelectedGoalName}");
+
+                    //Add logging to the Log Service
+                    LogService.Log($"MimicSelectPreviousGoalButtonMethod: Changed Selected Goal to {CurrentSelectedGoalName}");
                 }
                 else
                 {
@@ -2040,7 +2052,7 @@ namespace CompasXR.UI
                                     //TODO: Signal On screen message that point cannot be made.
                                     return;
                                 }
-                                else if (pickState == 2)
+                                else if (pickState == 2) //TODO: JOEEEEEEEEEEEEEEEEEEEEEEEEEEEE
                                 {
                                     Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: This point should be a pick point {pickOrPlaceItemName}");
                                     //TODO: Signal On screen message that pick could be made. The only thing is that I need to be sure the published value has correct index.
@@ -2071,6 +2083,20 @@ namespace CompasXR.UI
                                     RealtimeMimicSignalOnscreenMessageForPick();
                                     // REALTIMEMIMICLASTSENTINDEX = pointIndex; //TODO: This is important and needs to be added to the yes or no pick and place.
                                     REALTIMEMIMICLASTSENTINDEX = pointIndex;
+
+                                    //Add Logging
+                                    LogService.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Pick Point {pointIndex} set by user at position {cameraPositionObjectPosition} for robot {robotName}. Stored Message to be published upon user confirmation.");
+                                    LogService.LogDict(realtimeMimicRequestPickMessage.GetData(), $"CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Pick Message {pointIndex} stored :");
+                                    Dictionary<string, object> logDataPick = new Dictionary<string, object>
+                                    {
+                                        { "point_index", pointIndex },
+                                        { "position", cameraPositionObjectPosition },
+                                        { "robot_name", robotName },
+                                        { "topic", mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic },
+                                        {"object_to_pick", pickOrPlaceItemName },
+                                        { "message_data", realtimeMimicRequestPickMessage.GetData() }
+                                    };
+                                    LogService.LogDict(logDataPick, "CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Pick Point Set Data:");
                                     return;
                                 }
                                 else if (pickState == 3)
@@ -2103,6 +2129,20 @@ namespace CompasXR.UI
                                     Debug.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Storing RT Mimic Place for {robotName} with pointIndex {pointIndex} and {JsonConvert.SerializeObject(realtimeMimicRequestPlaceMessage.GetData())} : Awaiting user confirmation to publish.");
                                     // REALTIMEMIMICLASTSENTINDEX = pointIndex; //TODO: This is important and needs to be added to the yes or no pick and place.
                                     RealtimeMimicSignalOnscreenMessageForPlace();
+
+                                    //Add Logging
+                                    LogService.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Place Point {pointIndex} set by user at position {cameraPositionObjectPosition} for robot {robotName}. Stored Message to be published upon user confirmation.");
+                                    LogService.LogDict(realtimeMimicRequestPlaceMessage.GetData(), $"CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Place Message {pointIndex} stored :");
+                                    Dictionary<string, object> logDataPlace = new Dictionary<string, object>
+                                    {
+                                        { "point_index", pointIndex },
+                                        { "position", cameraPositionObjectPosition },
+                                        { "robot_name", robotName },
+                                        { "topic", mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic },
+                                        {"object_to_place", pickOrPlaceItemName },
+                                        { "message_data", realtimeMimicRequestPlaceMessage.GetData() }
+                                    };
+                                    LogService.LogDict(logDataPlace, "CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Place Point Set Data:");
                                     return;
                                 }
                                 else
@@ -2122,6 +2162,18 @@ namespace CompasXR.UI
                                 REALTIMEMIMICLASTSENTINDEX = pointIndex;
                                 REALTIMEMIMICINDEXCOUNTER++;
 
+                                //Add Logging
+                                LogService.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Point {pointIndex} set by user at position {cameraPositionObjectPosition} for robot {robotName}. Published Message to topic : {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic}");
+                                LogService.LogDict(realtimeMimicRequestMessage.GetData(), $"CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Message {pointIndex} sent :");
+                                Dictionary<string, object> logData = new Dictionary<string, object>
+                                {
+                                    { "point_index", pointIndex },
+                                    { "position", cameraPositionObjectPosition },
+                                    { "robot_name", robotName },
+                                    { "topic", mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic },
+                                    { "message_data", realtimeMimicRequestMessage.GetData() }
+                                };
+                                LogService.LogDict(logData, "CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Point Set Data:");
                             }
                         }
                         else
@@ -2170,6 +2222,19 @@ namespace CompasXR.UI
                             }
                             REALTIMEMIMICLASTSENTINDEX = pointIndex;
                             REALTIMEMIMICINDEXCOUNTER++;
+
+                            //Add Logging
+                            LogService.Log($"CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Point {pointIndex} set by user at position {cameraPositionObjectPosition} for robot {robotName}. Published Message to topic : {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic}");
+                            LogService.LogDict(realtimeMimicRequestMessage.GetData(), $"CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Message {pointIndex} sent :");
+                            Dictionary<string, object> logData = new Dictionary<string, object>
+                            {
+                                { "point_index", pointIndex },
+                                { "position", cameraPositionObjectPosition },
+                                { "robot_name", robotName },
+                                { "topic", mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic },
+                                { "message_data", realtimeMimicRequestMessage.GetData() }
+                            };
+                            LogService.LogDict(logData, "CreateRealtimeMimicPointsBasicTEMPORARY: Realtime Mimic Point Set Data:");
                         }
                     }
                     else
@@ -2240,6 +2305,9 @@ namespace CompasXR.UI
             */
             Debug.Log("SetMimicPoint: Setting Mimic Point based on Human and Robot Zone Objects.");
             Debug.Log("SetMimicPoint: Mimic Zone Objects: " + databaseManager.ProjectZones.MimicZones + "Type of Mimic Zones: " + databaseManager.ProjectZones.MimicZones.GetType());
+            
+            //Add logging
+            LogService.Log("SetMimicPoint: User initiated mimic point button pressed.");
 
             if (USERINSTIANTEDTRAJECTORYEXECUTED)
             {
@@ -2247,7 +2315,7 @@ namespace CompasXR.UI
                 instantiateObjects.DestroyUserInstatiatedMimicZoneObjects();
                 USERINSTIANTEDTRAJECTORYEXECUTED = false;
                 //TODO: Needs to reset the PickandPlaceStateManager
-                if(trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
+                if (trajectoryVisualizer.ActiveTrajectoryParentObject != null && trajectoryVisualizer.ActiveTrajectoryParentObject.transform.childCount > 0)
                 {
                     trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
                 }
@@ -2291,15 +2359,38 @@ namespace CompasXR.UI
                             string currentGoalName = instantiateObjects.MimicMirroredGeometryManagerImplementation.CurrentMimicGoalName;
                             instantiateObjects.FindHumanandRobotTargetInformation(pickOrPlaceItemName, instantiateObjects.TrackedGeometriesParentObject, instantiateObjects.MimicGoalsManager.CurrentGoal.GoalGameObject, instantiateObjects.MimicMirroredGeometryManagerImplementation.TrackedGeometriesParent, instantiateObjects.MimicMirroredGeometryManagerImplementation.GoalsParent.FindObject(currentGoalName));
                             StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(UserInitiatedMimicSetPointGreenScreen, MimicSetandUndoFlashDuration));
+
+                            //Add Logging
+                            LogService.Log($"SetMimicPoint: User set a pick or place state : {(pickState)} Point for object {pickOrPlaceItemName}.");
+                            Dictionary<string, object> setPointLoggingData = new Dictionary<string, object>()
+                            {
+                                { "PickOrPlaceState", pickState },
+                                { "PickOrPlaceObjectName", pickOrPlaceItemName },
+                                { "TotalMimicHumanPoints", instantiateObjects.MimicHumanPoints.Count + 1 }, //+1 because point is not yet added.
+                                { "TotalMimicRobotPoints", instantiateObjects.MimicRobotPoints.Count + 1 },  //+1 because point is not yet added.
+                                { "PickIndex", instantiateObjects.userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex },
+                                { "PlaceIndex", instantiateObjects.userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex }
+                            };
+                            LogService.LogDict(setPointLoggingData, "SetMimicPoint: Pick or Place Point Set Logging Data.");
                         }
                         else
                         {
                             //Set Lines active and Points active
-                            Debug.Log("SetMimicPoint: Point is a Normal Point and will be set as a trajectory goal point.");
+                            Debug.Log("SetMimicPoint: Point is a Normal Point and will be set as a trajectory goal point."); //TODO: log
                             instantiateObjects.MimicHumanObjects.SetActive(true);
                             instantiateObjects.MimicRobotObjects.SetActive(true);
                             instantiateObjects.CreateMimicPoints(humanZoneObject, robotZoneObject, ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, instantiateObjects.MimicHumanLine, instantiateObjects.MimicRobotLine, instantiateObjects.MimicHumanPointsParent, instantiateObjects.MimicRobotPointsParent, UserInitiatedMimicMirrorToggle.isOn);
                             StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(UserInitiatedMimicSetPointGreenScreen, MimicSetandUndoFlashDuration));
+
+                            //Add Logging
+                            LogService.Log("SetMimicPoint: User set a normal trajectory point.");
+                            Dictionary<string, object> setPointLoggingData = new Dictionary<string, object>()
+                            {
+                                { "TotalMimicHumanPoints", instantiateObjects.MimicHumanPoints.Count },
+                                { "TotalMimicRobotPoints", instantiateObjects.MimicRobotPoints.Count },
+                                { "PickIndex", instantiateObjects.userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex },
+                                { "PlaceIndex", instantiateObjects.userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex }
+                            };
                         }
 
                     }
@@ -2326,6 +2417,9 @@ namespace CompasXR.UI
             /*
             * Method is used to undo the last set mimic point.
             */
+            //Added Logging just to know when a button was pressed.
+            Debug.Log("UndoMimicPoint: Undoing Last Mimic Point based on Human and Robot Zone Objects.");
+
             if (USERINSTIANTEDTRAJECTORYEXECUTED)
             {
                 Debug.LogWarning("SetMimicPoint: User has already executed a trajectory, cannot set more points.");
@@ -2337,6 +2431,9 @@ namespace CompasXR.UI
                 {
                     trajectoryVisualizer.DestroyActiveTrajectoryandShowRobot();
                 }
+
+                //Adding Logging
+                LogService.Log("UndoUserInitiatedMimicPointButtonMethod: User has already executed a trajectory, resetting scene.");
                 return;
             }
 
@@ -2346,14 +2443,19 @@ namespace CompasXR.UI
                 if (instantiateObjects.MimicHumanPoints.Count != instantiateObjects.MimicRobotPoints.Count)
                 {
                     Debug.LogError("UndoMimicPoint: Mimic Human Points and Mimic Robot Points count do not match.");
+
+                    LogService.Log($"UndoMimicPoint: Error : Mimic Human Points Count: {instantiateObjects.MimicHumanPoints.Count}, Mimic Robot Points Count: {instantiateObjects.MimicRobotPoints.Count}");
                     return;
                 }
 
                 if (instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPicked || instantiateObjects.userIniatedMimicPickandPlaceManager.ObjectPlaced)
                 {
-                    if(instantiateObjects.MimicHumanPoints.Count - 1 == instantiateObjects.userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex)
+                    if (instantiateObjects.MimicHumanPoints.Count - 1 == instantiateObjects.userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex)
                     {
                         Debug.Log("UndoMimicPoint: Last Point is a Pick Point, resetting Pick State.");
+
+                        //Adding Logging
+                        LogService.Log($"UndoMimicPoint: Last Point was a Pick Point, resetting Pick State. Index : {instantiateObjects.userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex}");
                         instantiateObjects.userIniatedMimicPickandPlaceManager.ResetPickObjects();
                         //TODO: DO NOT DESTROY JUST REMOVE...
                         instantiateObjects.DestroyOrRemoveLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine, false);
@@ -2363,6 +2465,9 @@ namespace CompasXR.UI
                     else if (instantiateObjects.MimicHumanPoints.Count - 1 == instantiateObjects.userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex)
                     {
                         Debug.Log("UndoMimicPoint: Last Point is a Place Point, resetting Place State.");
+                        //Adding Logging
+                        LogService.Log($"UndoMimicPoint: Last Point was a Place Point, resetting Place State. Index : {instantiateObjects.userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex}");
+
                         //TODO: DO NOT DESTROY JUST REMOVE...
                         instantiateObjects.userIniatedMimicPickandPlaceManager.ResetPlaceObjects();
                         instantiateObjects.DestroyOrRemoveLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine, false);
@@ -2374,6 +2479,18 @@ namespace CompasXR.UI
                         Debug.Log("UndoMimicPoint: Last Point is not a Pick or Place Point, no need to reset Pick and Place State.");
                     }
                 }
+
+                //Adding Logging
+                LogService.Log($"UndoMimicPoint: Destroying Last Mimic Point. List Count is now {instantiateObjects.MimicHumanPoints.Count} Pick Point Index: {instantiateObjects.userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex}, Place Point Index: {instantiateObjects.userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex}");
+                Dictionary<string, object> undoData = new Dictionary<string, object>
+                {
+                    { "MimicHumanPointsCountBeforeUndo", instantiateObjects.MimicHumanPoints.Count },
+                    { "MimicRobotPointsCountBeforeUndo", instantiateObjects.MimicRobotPoints.Count },
+                    { "PickPointIndexBeforeUndo", instantiateObjects.userIniatedMimicPickandPlaceManager.PickPointTrajectoryIndex },
+                    { "PlacePointIndexBeforeUndo", instantiateObjects.userIniatedMimicPickandPlaceManager.PlacePointTrajectoryIndex },
+                    {"IndexAfterUndo", instantiateObjects.MimicHumanPoints.Count -1 }
+                };
+                LogService.LogDict(undoData, "UndoMimicPoint: Undo Data");
 
                 instantiateObjects.DestroyOrRemoveLastMimicPoint(ref instantiateObjects.MimicHumanPoints, ref instantiateObjects.MimicRobotPoints, ref instantiateObjects.MimicHumanLine, ref instantiateObjects.MimicRobotLine);
                 StartCoroutine(HelpersExtensions.FlashOnScreenObjectRoutine(UserInitiatedMimicUndoPointRedScreen, MimicSetandUndoFlashDuration));
@@ -2446,6 +2563,16 @@ namespace CompasXR.UI
             Debug.Log($"RealtimeMimicPublishAcceptPickButtonMethod: User ACCEPTED PICK Point, Publishing MSG : {realtimeMimicPickRequestMessage.GetData()} to Topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic}.");
             mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic, realtimeMimicPickRequestMessage.GetData());
             RealtimeMimicAcceptPickMessage.SetActive(false);
+
+            //Add Logging
+            LogService.Log($"RealtimeMimicPublishAcceptPickButtonMethod: User accepted pick point, published message to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic}");
+            LogService.LogDict(realtimeMimicPickRequestMessage.GetData(), "RealtimeMimicPublishAcceptPickButtonMethod: Published Pick Message Data:");
+            Dictionary<string, object> logData = new Dictionary<string, object>
+            {
+                { "topic", mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic },
+                { "message_data", realtimeMimicPickRequestMessage.GetData() }
+            };
+            LogService.LogDict(logData, "RealtimeMimicPublishAcceptPickButtonMethod: Published Pick Message Log Data:");
         }
         public void RealtimeMimicDeclinePickButtonMethod()
         {
@@ -2467,6 +2594,9 @@ namespace CompasXR.UI
             instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONROBOT = null;
             instantiateObjects.DestroyRealtimeMimicZoneObjects();
             RealtimeMimicAcceptPickMessage.SetActive(false);
+
+            //Add Logging
+            LogService.Log("RealtimeMimicDeclinePickButtonMethod: User declined pick point, resetting state.");
         }
         public void RealtimeMimicResetSceneFromPlanningFailure()
         {
@@ -2518,6 +2648,17 @@ namespace CompasXR.UI
             Debug.Log($"RealtimeMimicPublishAcceptPlaceButtonMethod: User ACCEPTED PLACE Point, Publishing MSG : {realtimeMimicPlaceRequestMessage.GetData()} to Topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic}.");
             mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic, realtimeMimicPlaceRequestMessage.GetData());
             RealtimeMimicAcceptPlaceMessage.SetActive(false);
+
+            //Add Logging
+            LogService.Log($"RealtimeMimicPublishAcceptPlaceButtonMethod: User accepted place point, published message to topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic}");
+            LogService.LogDict(realtimeMimicPlaceRequestMessage.GetData(), "RealtimeMimicPublishAcceptPlaceButtonMethod: Published Place Message Data:");
+            Dictionary<string, object> logData = new Dictionary<string, object>
+            {
+                { "topic", mqttTrajectoryManager.roboticTerritoriesTopics.publishers.realtimeMimicRequestTopic },
+                { "message_data", realtimeMimicPlaceRequestMessage.GetData() }
+
+            };
+            LogService.LogDict(logData, "RealtimeMimicPublishAcceptPlaceButtonMethod: Published Place Message Log Data:");
         }
         public void RealtimeMimicDeclinePlaceButtonMethod()
         {
@@ -2539,6 +2680,9 @@ namespace CompasXR.UI
             instantiateObjects.REALTIMEMIMICPICKORPLACEINFORMATIONROBOT = null;
             instantiateObjects.DestroyRealtimeMimicZoneObjects();
             RealtimeMimicAcceptPlaceMessage.SetActive(false);
+
+            //Add Logging
+            LogService.Log("RealtimeMimicDeclinePlaceButtonMethod: User declined place point, resetting state.");
         }
         public void RealtimeMimicSignalOnscreenMessageForPick()
         {
@@ -2553,6 +2697,9 @@ namespace CompasXR.UI
                     RealtimeMimicEditorTestToggleObject.GetComponentInChildren<Toggle>().isOn = false;
                 }
                 RealtimeMimicAcceptPickMessage.SetActive(true);
+
+                //Add Logging
+                LogService.Log("RealtimeMimicSignalOnscreenMessageForPick: Realtime Mimic Pick was requested, signaling onscreen message.");
             }
             else
             {
@@ -2897,6 +3044,10 @@ namespace CompasXR.UI
 
                 mqttTrajectoryManager.PublishToTopic(mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic, requestMessage.GetData());
                 SetUserInitiatedMimicControlsActivity(true, false, false, true, false);
+
+                //Add Logging
+                LogService.Log($"MimicRequestTrajectoryButtonMethod : Published Mimic Trajectory Request for {humanFrames.Count} points for Robot {mqttTrajectoryManager.serviceManager.ActiveRobotName} on topic {mqttTrajectoryManager.roboticTerritoriesTopics.publishers.mimicRequestTopic}");
+                LogService.LogDict(requestMessage.GetData(), "MimicRequestTrajectoryButtonMethod : Mimic Trajectory Request Data");
             }
         }
         public void SignalActiveRobotUpdateFromPlannerRoboticTerritories(string robotName, string activeRobotName, Action visualizeRobotMethod)
@@ -3015,6 +3166,8 @@ namespace CompasXR.UI
                         Debug.Log($"Belongs to Trajectory #{selectedTrajectoryIndex}, Local Config #{localIndex}");
                         trajectoryVisualizer.ColorRobotConfigfromSliderInputCompoundTrajectories(selectedTrajectoryIndex, localIndex, trajectories, instantiateObjects.InactiveRobotMaterial, instantiateObjects.ActiveRobotMaterial, ref trajectoryVisualizer.previousConfigIndex, ref trajectoryVisualizer.previousTrajectoryIndex);
 
+                        //Add Logging
+                        LogService.Log($"UserInitiatedMimicTrajectorySliderReviewCompoundTrajectories : Slider = {SliderValue : 0.000} Global Config #{targetGlobalIndex} belongs to Trajectory #{selectedTrajectoryIndex}, Local Config #{localIndex}");
                     }
                     else
                     {
@@ -5191,6 +5344,10 @@ namespace CompasXR.UI
             {
                 Debug.LogWarning($"SignalOnScreenMessageFromPrefab: {logMessageName}: Could not find message object or message component.");
             }
+
+            //Added Logging
+            string logMessage = $"SignalOnScreenMessageFromPrefab: {logMessageName}: Displayed On Screen Message: {message}";
+            LogService.Log(logMessage);
         }
         public static void CreateCenterAlignedSelfDestructiveMessageInstance(string messageGameObjectName, float messageHeight, float messageWidth, Color messagePanelColor, TextAlignmentOptions textAlignment, float textBoarderOffset, Color textColor, string message, float buttonHeight, float buttonWidth, Color buttonColor, float buttonTextBoarderOffset, string buttonText, Color buttonTextColor)
         {
@@ -5298,6 +5455,9 @@ namespace CompasXR.UI
                 {
                     AcknowledgeButton.GetComponent<Button>().onClick.AddListener(() => messageGameObject.SetActive(false));
                 }
+
+                //Added Logging
+                LogService.Log($"SignalOnScreenMessageWithButton: {messageGameObject.name} Displayed On Screen Message: {message}");
             }
             else
             {

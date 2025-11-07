@@ -10,6 +10,8 @@ using UnityEngine.InputSystem;
 using CompasXR.Core.Extentions;
 using Unity.VisualScripting;
 using CompasXR.Robots.MqttData.RoboticTerritories;
+using CompasXR.Systems;
+using RosSharp.RosBridgeClient;
 
 namespace CompasXR.RoboticTerritories.Data
 {   
@@ -820,6 +822,8 @@ namespace CompasXR.RoboticTerritories.Data
         }
         public void UpdateCompomponentState(string componentName, GoalObjectComponent satisfyingGoalComponentActual)
         {
+            //Added Logging
+            LogService.Log("UpdateCompomponentState called for component: " + componentName);
             if (string.IsNullOrEmpty(componentName))
             {
                 Debug.LogWarning("UpdateCompomponentState: componentName is null or empty — skipping.");
@@ -867,10 +871,26 @@ namespace CompasXR.RoboticTerritories.Data
                 {
                     component.SatisfyingObservedGeometry = null;
                 }
+                //Added Logging
+                LogService.Log("UpdateComoponentState: Mapped observed geometry for component '" + componentName);
+                Dictionary<string, object> logData = new Dictionary<string, object>
+                {
+                    { "ComponentName", componentName },
+                    { "SatisfyingObservedGeometryName", satisfyingGeometryName },
+                    { "MappedObservedGeometryFound", component.SatisfyingObservedGeometry != null }
+                };
             }
             else
             {
                 component.SatisfyingObservedGeometry = null;
+                //Added Logging
+                LogService.Log("UpdateComoponentState: Mapped observed geometry for component '" + componentName);
+                Dictionary<string, object> logData = new Dictionary<string, object>
+                {
+                    { "ComponentName", componentName },
+                    { "SatisfyingObservedGeometryName", null },
+                    { "MappedObservedGeometryFound", null }
+                };
             }
 
             // 3) Get the target renderer (include inactive children so hidden goals still work)

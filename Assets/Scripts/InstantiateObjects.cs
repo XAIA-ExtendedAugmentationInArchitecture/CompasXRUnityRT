@@ -1926,6 +1926,7 @@ namespace CompasXR.Core
         //TODO: Move to CLASS MADE FOR THIS........        
 
         //TODO: Finding targets and information for pick and place in mimic User Initiated mode.
+        //TODO: ADD LOGGING HERE...
         public void FindHumanandRobotTargetInformation(string objectName, GameObject observedObjectsParent, GameObject goalGeometryParent, GameObject mirroredObservedGeometriesParent, GameObject mirroredGoalGeometryParent)
         {
             Debug.Log("FindHumanandRobotTargetInformation: Finding Target Information for " + objectName);

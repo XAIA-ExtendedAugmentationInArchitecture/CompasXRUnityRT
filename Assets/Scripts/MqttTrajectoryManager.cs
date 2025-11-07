@@ -15,6 +15,7 @@ using CompasXR.Robots.MqttData.RoboticTerritories;
 using CompasXR.RoboticTerritories.Data;
 using System.IO;
 using CompasXR.Core.Extentions;
+using CompasXR.Systems;
 
 namespace CompasXR.Robots
 {
@@ -186,6 +187,15 @@ namespace CompasXR.Robots
                 Debug.Log("MQTT: MimicResult Message Handeling");
                 MimicTrajectoryResultMessage mimicResultMessage = MimicTrajectoryResultMessage.Parse(message);
                 MimicResultReceivedMessageHandler(mimicResultMessage);
+
+                //Added logging
+                LogService.Log("MQTT: MimicResult Message Handeling: Received");
+                Dictionary<string, object> logData = new Dictionary<string, object>
+                {
+                    { "mimicMessageData", mimicResultMessage.GetData() },
+                    { "messageAsString", JsonConvert.SerializeObject(mimicResultMessage) }
+                };
+                LogService.LogDict(logData, "MimicTrajectoryResultMessageData");
             }
             else if (topic == roboticTerritoriesTopics.subscribers.realtimeMimicResultTopic)
             {
@@ -193,6 +203,14 @@ namespace CompasXR.Robots
                 Debug.Log("MQTT: RealtimeMimicResult Message Handeling");
                 RealtimeMimicResultMessage realtimeMimicResultMessage = RealtimeMimicResultMessage.Parse(message);
                 RealtimeMimicResultHandler(realtimeMimicResultMessage);
+
+                LogService.Log("MQTT: RealtimeMimicResult Message Handeling: Received");
+                Dictionary<string, object> logData = new Dictionary<string, object>
+                {
+                    { "realtimeMimicMessageData", realtimeMimicResultMessage.GetData() },
+                    { "messageAsString", JsonConvert.SerializeObject(realtimeMimicResultMessage) }
+                };
+                LogService.LogDict(logData, "RealtimeMimicResultMessageData");
             }
             else if (topic == roboticTerritoriesTopics.subscribers.inferenceResultTopic)
             {
@@ -201,12 +219,30 @@ namespace CompasXR.Robots
                 InferenceResultMessage inferenceResultMessage = InferenceResultMessage.Parse(message);
                 InferenceResultReceivedMessageHandler(inferenceResultMessage);
                 Debug.Log($"MQTT: InferenceResult Message Handeling: Received {JsonConvert.SerializeObject(inferenceResultMessage)}");
+
+                //Added logging
+                LogService.Log("MQTT: InferenceResult Message Handeling: Received");
+                Dictionary<string, object> logData = new Dictionary<string, object>
+                {
+                    { "inferenceMessageData", inferenceResultMessage.GetData() },
+                    { "messageAsString", JsonConvert.SerializeObject(inferenceResultMessage) }
+                };
+                LogService.LogDict(logData, "InferenceResultMessageData");
             }
             else if (topic == roboticTerritoriesTopics.subscribers.inferencePostInferenceTargetTrajectoryResultTopic)
             {
                 PostInferenceTrajectoryResultMessage postInferenceTrajectoryResultMessage = PostInferenceTrajectoryResultMessage.Parse(message);
                 PostInferenceTargetTrajectoryResultReceivedMessageHandler(postInferenceTrajectoryResultMessage);
                 Debug.Log($"MQTT: InferencePostInferenceTargetTrajectoryResult Message Handeling {JsonConvert.SerializeObject(postInferenceTrajectoryResultMessage)}");
+
+                //Added logging
+                LogService.Log("MQTT: InferencePostInferenceTargetTrajectoryResult Message Handeling: Received");
+                Dictionary<string, object> logData = new Dictionary<string, object>
+                {
+                    { "postInferenceTrajectoryMessageData", postInferenceTrajectoryResultMessage.GetData() },
+                    { "messageAsString", JsonConvert.SerializeObject(postInferenceTrajectoryResultMessage) }
+                };
+                LogService.LogDict(logData, "PostInferenceTrajectoryResultMessageData");
             }
             else
             {
@@ -629,6 +665,16 @@ namespace CompasXR.Robots
             {
                 string messagePublish = JsonConvert.SerializeObject(message);
                 client.Publish(publishingTopic, System.Text.Encoding.UTF8.GetBytes(messagePublish), MqttMsgBase.QOS_LEVEL_AT_MOST_ONCE, false);
+
+                //Added logging
+                LogService.Log($"MQTT: PublishToTopic: Published message to topic: {publishingTopic}");
+                Dictionary<string, object> logData = new Dictionary<string, object>
+                {
+                    { "publishingTopic", publishingTopic },
+                    { "messageData", message },
+                    { "messageAsString", messagePublish }
+                };
+                LogService.LogDict(logData, "PublishedMessageData");
             }
             else
             {
