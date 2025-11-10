@@ -448,6 +448,9 @@ namespace CompasXR.RoboticTerritories.Data
 
         Debug.Log($"GoalStateObserver: '{observed.Name}' satisfies '{bestComp.Name}' (score {bestScore:F4}).");
 
+        //Add logging service
+        LogService.Log($"GoalStateObserver: '{observed.Name}' satisfies '{bestComp.Name}' (score {bestScore:F4}).");
+
         // CRITICAL: don’t add null key if Name is missing
         TryRecordChanged(changed, bestComp, "assign best");
 
