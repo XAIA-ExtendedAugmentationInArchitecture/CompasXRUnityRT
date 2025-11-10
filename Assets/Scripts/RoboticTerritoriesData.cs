@@ -437,6 +437,11 @@ namespace CompasXR.RoboticTerritories.Data
         // 6) assign best (this is the "becomes satisfied again" path)
         bestComp.IsSatisfied = true;
         bestComp.SatisfyingObservedGeometry = observed;
+        if (string.IsNullOrEmpty(observed.Name))
+        {
+            var go = observed.GeometryObject;
+            observed.Name = go != null ? go.name : "(unnamed observed)";
+        }
 
         var rBest = bestComp.ComponentGameObject?.GetComponentInChildren<Renderer>();
         if (rBest != null && satisfiedMaterial != null) rBest.material = satisfiedMaterial;
